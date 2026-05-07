@@ -1204,25 +1204,7 @@ function emitirAdvertencia(){
   notify(`Advertência de ${c?.nome} emitida!`);
   sincronizarScript('novaAdvertencia',obj);
 }
-function imprimirAdvertencia(){
-  const cId=document.getElementById('adv-colaborador').value,tipo=document.getElementById('adv-tipo').value,data=document.getElementById('adv-data').value,desc=document.getElementById('adv-descricao').value.trim();
-  if(!cId||!tipo||!desc){notify('Preencha todos os campos','error');return;}
-  const c=DB.colaboradores.find(x=>x.id==cId),empresa=c?.empresa||localStorage.getItem('rh_empresa')||'Explosão Alimentos';
-  const cnpjMap={'Explosão Alimentos':'CNPJ: 01.121.126/0001-87','AGS Distribuidora':'CNPJ: 51.943.609/0001-35'};
-  const cnpj=cnpjMap[empresa]||'';
-  const logo=getLogoUrl(empresa);
-  const w=window.open('','_blank');
-  w.document.write(`<html><head><title>Advertência — ${c?.nome}</title><style>body{font-family:Arial,sans-serif;font-size:14px;padding:40px;max-width:720px;margin:auto}.logo{text-align:center;margin-bottom:4px}.logo img{height:60px;width:auto}h3{text-align:center;color:#555;margin-bottom:30px}.sub{text-align:center;font-size:12px;color:#777;margin-top:-10px;margin-bottom:20px}.row{margin:12px 0}.sig{margin-top:60px;display:flex;gap:60px;justify-content:center}.sig div{text-align:center;border-top:1px solid #000;padding-top:6px;min-width:200px}@media print{button{display:none}}</style></head><body>
-  <div class="logo"><img src="${logo}" alt="${empresa}"></div><div class="sub">${cnpj}</div><h3>ADVERTÊNCIA FORMAL</h3>
-  <p>A empresa <strong>${empresa}</strong> adverte formalmente o(a) colaborador(a):</p>
-  <div class="row"><b>Nome:</b> ${c?.nome}</div><div class="row"><b>Cargo:</b> ${c?.cargo||'—'}</div><div class="row"><b>Setor:</b> ${c?.setor||'—'}</div>
-  <div class="row"><b>Tipo:</b> ${tipo}</div><div class="row"><b>Data da Ocorrência:</b> ${fmtData(data)}</div>
-  <div class="row"><b>Descrição:</b><br><br>${desc}</div>
-  <p style="margin-top:20px">Alertamos que a reincidência poderá acarretar em medidas mais severas.</p>
-  <div class="sig"><div>Assinatura do Responsável<br><small>${empresa}</small></div><div>Assinatura do Colaborador<br><small>Ciente em ___/___/______</small></div></div>
-  <button onclick="window.print()" style="margin:30px auto;display:block;padding:10px 30px;background:#1a5c38;color:#fff;border:none;border-radius:6px;cursor:pointer">🖨️ Imprimir</button>
-  </body></html>`);
-}
+
 function renderAdvertencias(){filtrarAdvertencias();}
 function filtrarAdvertencias(){
   const q=document.getElementById('busca-adv').value.toLowerCase();
@@ -1259,6 +1241,175 @@ function verAdvertencia(id){
   document.getElementById('modal-ver-adv').dataset.advId=id;
   abrirModal('modal-ver-adv');
 }
+function gerarHTMLAdvertencia(c, empresa, cnpj, logo, tipo, dataOcorr, desc, numAdv){
+  const advAntes = DB.advertencias.filter(x=>x.colaboradorId==c.id&&x.id!=(numAdv||0));
+  const totalAdv = advAntes.length;
+  const grau = totalAdv===0?'1ª Advertência (Verbal / Escrita)':totalAdv===1?'2ª Advertência (Escrita)':'3ª Advertência — Risco de Justa Causa';
+  const grauCor = totalAdv===0?'#1a5c38':totalAdv===1?'#b86000':'#c0392b';
+  const hoje_str = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
+  const admStr = c.admissao ? fmtData(c.admissao) : '—';
+  const cpfStr = c.cpf || '—';
+  const ctpsStr = c.ctps || '—';
+  const telefoneStr = c.telefone || '—';
+  const localStr = localStorage.getItem('rh_empresa_cidade') || 'Araguaína – TO';
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+<title>Advertência — ${c.nome}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Times New Roman",Times,serif;font-size:13px;color:#111;background:#fff;padding:0}
+  .page{max-width:740px;margin:0 auto;padding:40px 48px 48px}
+  /* cabeçalho */
+  .header{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #1a5c38;padding-bottom:14px;margin-bottom:6px}
+  .header-logo img{height:56px;width:auto;object-fit:contain}
+  .header-info{text-align:right;font-size:11px;color:#444;line-height:1.5}
+  .header-info strong{font-size:13px;color:#111}
+  /* título */
+  .doc-title{text-align:center;margin:18px 0 4px}
+  .doc-title h2{font-size:17px;letter-spacing:2px;font-weight:900;color:#111;text-transform:uppercase}
+  .doc-grau{text-align:center;margin-bottom:18px}
+  .doc-grau span{display:inline-block;font-size:12px;font-weight:700;color:${grauCor};border:1px solid ${grauCor};border-radius:3px;padding:2px 12px;letter-spacing:.5px}
+  /* seções */
+  .section{margin-bottom:14px}
+  .section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#1a5c38;border-bottom:1px solid #c8dfd0;padding-bottom:3px;margin-bottom:8px}
+  /* grid de dados */
+  .data-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 20px}
+  .data-grid.cols3{grid-template-columns:1fr 1fr 1fr}
+  .data-item{font-size:12px}
+  .data-item .lbl{color:#555;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:1px}
+  .data-item .val{color:#111;border-bottom:1px dotted #bbb;padding-bottom:2px;display:block}
+  /* corpo */
+  .body-text{font-size:13px;line-height:1.75;text-align:justify;margin-bottom:10px}
+  .desc-box{border:1px solid #bbb;border-radius:4px;padding:12px 14px;background:#fafafa;font-size:13px;line-height:1.75;white-space:pre-wrap;margin:8px 0 12px}
+  /* aviso reincidência */
+  .warn-box{border-left:3px solid ${grauCor};background:#fdf8f4;padding:10px 14px;font-size:12px;line-height:1.6;margin:14px 0}
+  /* assinaturas */
+  .sig-section{margin-top:44px}
+  .sig-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:10px}
+  .sig-item{text-align:center}
+  .sig-line{border-top:1px solid #333;margin-bottom:6px;padding-top:6px;font-size:11px;color:#333;line-height:1.5}
+  /* rodapé */
+  .footer{margin-top:32px;border-top:1px solid #ccc;padding-top:8px;font-size:10px;color:#888;display:flex;justify-content:space-between}
+  /* impressão */
+  @media print{
+    .no-print{display:none!important}
+    body{padding:0}
+    .page{padding:24px 32px}
+  }
+  .print-btn{display:block;margin:28px auto 0;padding:10px 36px;background:#1a5c38;color:#fff;border:none;border-radius:5px;font-size:14px;cursor:pointer;font-family:inherit}
+</style>
+</head><body>
+<div class="page">
+
+  <!-- CABEÇALHO -->
+  <div class="header">
+    <div class="header-logo"><img src="${logo}" alt="${empresa}"></div>
+    <div class="header-info">
+      <strong>${empresa}</strong><br>
+      ${cnpj}<br>
+      <span style="font-size:10px">Documento: Advertência Formal</span><br>
+      <span style="font-size:10px">Emitido em: ${hoje_str}</span>
+    </div>
+  </div>
+
+  <!-- TÍTULO -->
+  <div class="doc-title"><h2>Advertência Formal</h2></div>
+  <div class="doc-grau"><span>${grau}</span></div>
+
+  <!-- DADOS DO COLABORADOR -->
+  <div class="section">
+    <div class="section-title">I — Identificação do Colaborador</div>
+    <div class="data-grid">
+      <div class="data-item"><span class="lbl">Nome Completo</span><span class="val">${c.nome}</span></div>
+      <div class="data-item"><span class="lbl">CPF</span><span class="val">${cpfStr}</span></div>
+      <div class="data-item"><span class="lbl">Cargo</span><span class="val">${c.cargo||'—'}</span></div>
+      <div class="data-item"><span class="lbl">Setor / Departamento</span><span class="val">${c.setor||'—'}</span></div>
+      <div class="data-item"><span class="lbl">Data de Admissão</span><span class="val">${admStr}</span></div>
+      <div class="data-item"><span class="lbl">CTPS / PIS-PASEP</span><span class="val">${ctpsStr}</span></div>
+      <div class="data-item"><span class="lbl">Tipo de Contrato</span><span class="val">${c.contrato||'—'}</span></div>
+      <div class="data-item"><span class="lbl">Turno</span><span class="val">${c.turno||'—'}</span></div>
+    </div>
+  </div>
+
+  <!-- DADOS DA OCORRÊNCIA -->
+  <div class="section">
+    <div class="section-title">II — Dados da Ocorrência</div>
+    <div class="data-grid cols3">
+      <div class="data-item"><span class="lbl">Tipo de Ocorrência</span><span class="val">${tipo}</span></div>
+      <div class="data-item"><span class="lbl">Data da Ocorrência</span><span class="val">${fmtData(dataOcorr)}</span></div>
+      <div class="data-item"><span class="lbl">Nº de Advertências Anteriores</span><span class="val" style="color:${grauCor};font-weight:700">${totalAdv}</span></div>
+    </div>
+  </div>
+
+  <!-- DESCRIÇÃO -->
+  <div class="section">
+    <div class="section-title">III — Descrição dos Fatos</div>
+    <p class="body-text">Conforme apurado pela gestão, descrevemos abaixo os fatos que motivaram a presente advertência:</p>
+    <div class="desc-box">${desc}</div>
+    <p class="body-text">A conduta acima descrita contraria as normas internas da empresa e os deveres estabelecidos pelo contrato de trabalho, nos termos dos artigos 482 e 483 da Consolidação das Leis do Trabalho (CLT).</p>
+  </div>
+
+  <!-- AVISO LEGAL -->
+  <div class="section">
+    <div class="section-title">IV — Disposições e Consequências</div>
+    <div class="warn-box">
+      <strong>Atenção:</strong> A empresa <strong>${empresa}</strong> alerta que a reincidência nas condutas descritas neste documento ou o cometimento de novas infrações poderá acarretar em medidas disciplinares progressivas, incluindo <strong>suspensão</strong> e, em casos de reincidência grave ou justa causa, o <strong>encerramento do contrato de trabalho por justa causa</strong>, nos termos do art. 482 da CLT, sem direito às verbas rescisórias correspondentes.<br><br>
+      O(a) colaborador(a) declara, ao assinar este documento, estar ciente dos fatos narrados e das consequências previstas, sem prejuízo de apresentar defesa por escrito no prazo de <strong>48 horas</strong> úteis, caso discorde do teor desta advertência.
+    </div>
+  </div>
+
+  <!-- ASSINATURAS -->
+  <div class="sig-section">
+    <div class="section-title">V — Assinaturas</div>
+    <div style="font-size:12px;color:#555;margin-bottom:14px">${localStr}, ${hoje_str}</div>
+    <div class="sig-grid">
+      <div class="sig-item">
+        <div class="sig-line">
+          ________________________________________<br>
+          <strong>Gestor / Responsável RH</strong><br>
+          ${empresa}
+        </div>
+      </div>
+      <div class="sig-item">
+        <div class="sig-line">
+          ________________________________________<br>
+          <strong>${c.nome}</strong><br>
+          Colaborador(a) — Ciente em: ___/___/______
+        </div>
+      </div>
+      <div class="sig-item">
+        <div class="sig-line">
+          ________________________________________<br>
+          <strong>Testemunha</strong><br>
+          Nome: ______________________________
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RODAPÉ -->
+  <div class="footer">
+    <span>${empresa} · ${cnpj}</span>
+    <span>Documento gerado pelo Sistema RH · Rev 2.2</span>
+  </div>
+
+</div>
+<button class="print-btn no-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+</body></html>`;
+}
+
+function imprimirAdvertencia(){
+  const cId=document.getElementById('adv-colaborador').value,tipo=document.getElementById('adv-tipo').value,data=document.getElementById('adv-data').value,desc=document.getElementById('adv-descricao').value.trim();
+  if(!cId||!tipo||!desc){notify('Preencha todos os campos','error');return;}
+  const c=DB.colaboradores.find(x=>x.id==cId);
+  const empresa=c?.empresa||localStorage.getItem('rh_empresa')||'Explosão Alimentos';
+  const cnpjMap={'Explosão Alimentos':'CNPJ: 01.121.126/0001-87','AGS Distribuidora':'CNPJ: 51.943.609/0001-35'};
+  const cnpj=cnpjMap[empresa]||'';
+  const logo=getLogoUrl(empresa);
+  const w=window.open('','_blank');
+  w.document.write(gerarHTMLAdvertencia(c,empresa,cnpj,logo,tipo,data,desc,null));
+  w.document.close();
+}
+
 function imprimirAdvertenciaById(){
   const id=document.getElementById('modal-ver-adv').dataset.advId;
   const a=DB.advertencias.find(x=>x.id==id);if(!a)return;
@@ -1268,21 +1419,8 @@ function imprimirAdvertenciaById(){
   const cnpj=cnpjMap[empresa]||'';
   const logo=getLogoUrl(empresa);
   const w=window.open('','_blank');
-  w.document.write(`<html><head><title>Advertência — ${c?.nome}</title><style>body{font-family:Arial,sans-serif;font-size:14px;padding:40px;max-width:720px;margin:auto}.logo{text-align:center;margin-bottom:4px}.logo img{height:60px;width:auto}h3{text-align:center;color:#555;margin-bottom:30px}.sub{text-align:center;font-size:12px;color:#777;margin-top:-10px;margin-bottom:20px}.row{margin:12px 0}.desc{margin-top:8px;padding:12px;background:#f9f9f9;border:1px solid #ddd;border-radius:6px;white-space:pre-wrap;line-height:1.6}.sig{margin-top:60px;display:flex;gap:60px;justify-content:center}.sig div{text-align:center;border-top:1px solid #000;padding-top:6px;min-width:200px}@media print{button{display:none}}</style></head><body>
-  <div class="logo"><img src="${logo}" alt="${empresa}"></div><div class="sub">${cnpj}</div><h3>ADVERTÊNCIA FORMAL</h3>
-  <p>A empresa <strong>${empresa}</strong> adverte formalmente o(a) colaborador(a):</p>
-  <div class="row"><b>Nome:</b> ${c?.nome||'—'}</div>
-  <div class="row"><b>Cargo:</b> ${c?.cargo||'—'} &nbsp;|&nbsp; <b>Setor:</b> ${c?.setor||'—'}</div>
-  <div class="row"><b>Tipo:</b> ${a.tipo}</div>
-  <div class="row"><b>Data da Ocorrência:</b> ${fmtData(a.data)}</div>
-  <div class="row"><b>Descrição:</b><div class="desc">${a.descricao}</div></div>
-  <p style="margin-top:20px">Alertamos que a reincidência poderá acarretar em medidas mais severas.</p>
-  <div class="sig">
-    <div>Assinatura do Responsável<br><small>${empresa}</small></div>
-    <div>Assinatura do Colaborador<br><small>Ciente em ___/___/______</small></div>
-  </div>
-  <button onclick="window.print()" style="margin:30px auto;display:block;padding:10px 30px;background:#1a5c38;color:#fff;border:none;border-radius:6px;cursor:pointer">🖨️ Imprimir</button>
-  </body></html>`);
+  w.document.write(gerarHTMLAdvertencia(c,empresa,cnpj,logo,a.tipo,a.data,a.descricao,a.id));
+  w.document.close();
 }
 
 // ══════════════════════════════════════════
