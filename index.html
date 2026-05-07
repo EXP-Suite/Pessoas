@@ -489,12 +489,10 @@ tbody tr:hover td{background:var(--bg)}
   <div style="max-width:640px;display:flex;flex-direction:column;gap:14px">
     <div class="card">
       <div class="card-title">⚙️ Conexão com Google Sheets</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <input type="url" id="cfg-script-url" placeholder=https://script.google.com/macros/s/AKfycbzg4i8gmOPM5dClcj6KcUuqmzBTvKeWlXsUYZYeCpKKqrP4JQGP-oP0kS7C5Fh7LQQvJw/exec style="flex:1;min-width:200px;font-family:monospace;font-size:12px">
-        <button class="btn btn-primary" onclick="salvarConfig()">Salvar e Conectar</button>
-        <button class="btn" onclick="testarConexao()">↻ Testar</button>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:12px;color:var(--text2);font-family:monospace;word-break:break-all;flex:1">https://script.google.com/macros/s/AKfycbxT9WoWdpJlejCsvA-tA5lUWROPXx1UiOfPlEF8R0FOSDk0QrF7FqX4-RC75y9X2Igh6A/exec</span>
+        <button class="btn" onclick="testarConexao()">↻ Testar Conexão</button>
       </div>
-      <p class="form-note" style="margin-top:8px">No Apps Script: Implantar → Nova implantação → App da Web → copie a URL.</p>
       <div id="status-conexao" style="margin-top:10px"></div>
     </div>
     <div class="card">
@@ -535,7 +533,7 @@ tbody tr:hover td{background:var(--bg)}
         <div class="form-group"><label>Data de Nascimento</label><input type="date" id="f-nascimento"></div>
         <div class="form-group"><label>Estado Civil</label>
           <select id="f-estado-civil"><option>Solteiro(a)</option><option>Casado(a)</option><option>Divorciado(a)</option><option>Viúvo(a)</option><option>União Estável</option></select></div>
-        <div class="form-group"><label>Telefone *</label><input type="tel" id="f-telefone" placeholder="(63) 9 0000-0000"></div>
+        <div class="form-group"><label>Telefone *</label><input type="tel" id="f-telefone" placeholder="(62) 9xxxxxxxx" oninput="maskTel(this)" onblur="normalizaTelInput(this)" maxlength="15"><div id="f-telefone-hint" style="font-size:11px;color:#b86000;margin-top:3px;display:none">⚠ Formato esperado: (xx) 9xxxxxxxx</div></div>
         <div class="form-group"><label>E-mail</label><input type="email" id="f-email" placeholder="email@email.com"></div>
         <div class="form-group" style="grid-column:1/-1"><label>Endereço Completo</label><input type="text" id="f-endereco" placeholder="Rua, número, bairro, cidade - UF"></div>
         <div class="form-group"><label>Contato de Emergência</label><input type="text" id="f-emerg-nome" placeholder="Nome"></div>
@@ -552,7 +550,7 @@ tbody tr:hover td{background:var(--bg)}
         <div class="form-group"><label>Data de Admissão *</label><input type="date" id="f-admissao"></div>
         <div class="form-group"><label>Cargo *</label><input type="text" id="f-cargo" placeholder="Ex: Operador de Produção" list="list-cargos"><datalist id="list-cargos"></datalist></div>
         <div class="form-group"><label>Setor *</label>
-          <select id="f-setor"><option>Produção</option><option>Logística</option><option>Administrativo</option><option>Financeiro</option><option>Compras</option><option>Engenharia</option><option>RH</option><option>Comercial</option><option>TI</option><option>Outro</option></select></div>
+          <select id="f-setor"><option>Administração</option><option>Comercial</option><option>Compras</option><option>Empacotamento</option><option>Engenharia</option><option>Expedição</option><option>Financeiro</option><option>Logística</option><option>Manutenção</option><option>Produção</option><option>RH</option><option>Serviços Gerais</option><option>TI</option><option>Outro</option></select></div>
         <div class="form-group"><label>Turno</label>
           <select id="f-turno"><option>Diurno</option><option>Noturno</option><option>Misto</option><option>Administrativo</option></select></div>
         <div class="form-group"><label>Tipo de Contrato</label>
@@ -658,7 +656,7 @@ tbody tr:hover td{background:var(--bg)}
     <div class="modal-body">
       <div class="form-grid">
         <div class="form-group" style="grid-column:1/-1"><label>Nome do Cargo *</label><input type="text" id="cargo-nome" placeholder="Ex: Operador de Produção"></div>
-        <div class="form-group"><label>Setor *</label><select id="cargo-setor"><option>Produção</option><option>Logística</option><option>Administrativo</option><option>Financeiro</option><option>Compras</option><option>Engenharia</option><option>RH</option><option>Comercial</option></select></div>
+        <div class="form-group"><label>Setor *</label><select id="cargo-setor"><option>Administração</option><option>Comercial</option><option>Compras</option><option>Empacotamento</option><option>Engenharia</option><option>Expedição</option><option>Financeiro</option><option>Logística</option><option>Manutenção</option><option>Produção</option><option>RH</option><option>Serviços Gerais</option><option>TI</option><option>Outro</option></select></div>
         <div class="form-group"><label>Salário Base (R$)</label><input type="number" id="cargo-sal-base" placeholder="0,00" step="0.01"></div>
         <div class="form-group"><label>Salário Máximo (R$)</label><input type="number" id="cargo-sal-max" placeholder="0,00" step="0.01"></div>
         <div class="form-group" style="grid-column:1/-1"><label>Atribuições</label><textarea id="cargo-desc" rows="3" placeholder="Descreva as atribuições..."></textarea></div>
@@ -721,7 +719,7 @@ const LOGO_URL={
   'AGS Distribuidora':'https://i.postimg.cc/WhZffY07/Chat-GPT-Image-6-de-mai-de-2026-23-23-59.png'
 };
 function getLogoUrl(empresa){return LOGO_URL[empresa]||LOGO_URL['Explosão Alimentos'];}
-let SCRIPT_URL = localStorage.getItem('rh_script_url')||'https://script.google.com/macros/s/AKfycbzg4i8gmOPM5dClcj6KcUuqmzBTvKeWlXsUYZYeCpKKqrP4JQGP-oP0kS7C5Fh7LQQvJw/exec';let DB = {
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxT9WoWdpJlejCsvA-tA5lUWROPXx1UiOfPlEF8R0FOSDk0QrF7FqX4-RC75y9X2Igh6A/exec';let DB = {
   colaboradores:   JSON.parse(localStorage.getItem('rh_colaboradores')||'[]'),
   ferias_gozo:     JSON.parse(localStorage.getItem('rh_ferias_gozo')||'[]'),
   advertencias:    JSON.parse(localStorage.getItem('rh_advertencias')||'[]'),
@@ -927,12 +925,49 @@ function abrirModalColab(id){
   abrirModal('modal-colab');
 }
 function editarColab(id){abrirModalColab(id);}
+// ══════════════════════════════════════════
+// NORMALIZAÇÃO DE TELEFONE
+// ══════════════════════════════════════════
+function normalizarTel(raw){
+  if(!raw)return'';
+  let s=raw.toString().trim();
+  s=s.replace(/^\+55\s*/,'');
+  let d=s.replace(/\D/g,'');
+  if(d.length===13&&d.startsWith('55'))d=d.slice(2);
+  if(d.length>11)d=d.slice(0,11);
+  if(d.length<10)return null;
+  const ddd=d.slice(0,2);
+  let num=d.slice(2);
+  if(num.length===8)num='9'+num;
+  if(num.length!==9||!num.startsWith('9'))return null;
+  return'('+ddd+') '+num;
+}
+function maskTel(el){
+  let d=el.value.replace(/\D/g,'').slice(0,11);
+  if(d.length===0){el.value='';return;}
+  let r='';
+  if(d.length<=2){r='('+d;}
+  else if(d.length<=6){r='('+d.slice(0,2)+') '+d.slice(2);}
+  else{r='('+d.slice(0,2)+') '+d.slice(2,7)+'-'+d.slice(7);}
+  el.value=r;
+}
+function normalizaTelInput(el){
+  const norm=normalizarTel(el.value);
+  const hint=document.getElementById(el.id+'-hint');
+  if(!el.value.trim()){if(hint)hint.style.display='none';return;}
+  if(norm){el.value=norm;if(hint)hint.style.display='none';}
+  else{if(hint)hint.style.display='block';}
+}
 function salvarColaborador(editId){
   const nome=document.getElementById('f-nome').value.trim();
   const cpf=document.getElementById('f-cpf').value.trim();
   const admissao=document.getElementById('f-admissao').value;
   if(!nome||!cpf||!admissao){notify('Preencha Nome, CPF e Data de Admissão','error');return;}
-  const obj={id:editId||gerarId(),nome,cpf,empresa:document.getElementById('f-empresa').value,rg:document.getElementById('f-rg').value.trim(),nascimento:document.getElementById('f-nascimento').value,estadoCivil:document.getElementById('f-estado-civil').value,telefone:document.getElementById('f-telefone').value.trim(),email:document.getElementById('f-email').value.trim(),endereco:document.getElementById('f-endereco').value.trim(),emergNome:document.getElementById('f-emerg-nome').value.trim(),emergTel:document.getElementById('f-emerg-tel').value.trim(),admissao,cargo:document.getElementById('f-cargo').value.trim(),setor:document.getElementById('f-setor').value,turno:document.getElementById('f-turno').value,contrato:document.getElementById('f-contrato').value,salario:parseFloat(document.getElementById('f-salario').value)||0,ctps:document.getElementById('f-ctps').value.trim(),status:document.getElementById('f-status').value,aso:document.getElementById('f-aso').value,banco:document.getElementById('f-banco').value.trim(),agencia:document.getElementById('f-agencia').value.trim(),conta:document.getElementById('f-conta').value.trim(),tipoConta:document.getElementById('f-tipo-conta').value,pix:document.getElementById('f-pix').value.trim()};
+  const telRaw=document.getElementById('f-telefone').value.trim();
+  const telNorm=normalizarTel(telRaw);
+  if(telRaw && !telNorm){notify('Telefone inválido. Use o formato (xx) 9xxxxxxxx','error');document.getElementById('f-telefone-hint').style.display='block';return;}
+  document.getElementById('f-telefone-hint').style.display='none';
+  const obj={id:editId||gerarId(),nome,cpf,empresa:document.getElementById('f-empresa').value,rg:document.getElementById('f-rg').value.trim(),nascimento:document.getElementById('f-nascimento').value,estadoCivil:document.getElementById('f-estado-civil').value,telefone:normalizarTel(document.getElementById('f-telefone').value.trim())||document.getElementById('f-telefone').value.trim(),email:document.getElementById('f-email').value.trim(),endereco:document.getElementById('f-endereco').value.trim(),emergNome:document.getElementById('f-emerg-nome').value.trim(),emergTel:document.getElementById('f-emerg-tel').value.trim(),admissao,cargo:document.getElementById('f-cargo').value.trim(),setor:document.getElementById('f-setor').value,turno:document.getElementById('f-turno').value,contrato:document.getElementById('f-contrato').value,salario:parseFloat(document.getElementById('f-salario').value)||0,ctps:document.getElementById('f-ctps').value.trim(),status:document.getElementById('f-status').value,aso:document.getElementById('f-aso').value,banco:document.getElementById('f-banco').value.trim(),agencia:document.getElementById('f-agencia').value.trim(),conta:document.getElementById('f-conta').value.trim(),tipoConta:document.getElementById('f-tipo-conta').value,pix:document.getElementById('f-pix').value.trim()};
   if(editId){const idx=DB.colaboradores.findIndex(c=>c.id==editId);DB.colaboradores[idx]=obj;notify('Colaborador atualizado!');}
   else{if(DB.colaboradores.find(c=>c.cpf===cpf)){notify('CPF já cadastrado!','error');return;}DB.colaboradores.push(obj);notify('Colaborador cadastrado!');}
   salvarDB();fecharModal('modal-colab');renderColabs();
@@ -1518,13 +1553,10 @@ function renderDesligamentos(){
 // CONFIGURAÇÕES
 // ══════════════════════════════════════════
 function carregarConfig(){
-  document.getElementById('cfg-script-url').value=localStorage.getItem('rh_script_url')||SCRIPT_URL;  document.getElementById('cfg-empresa').value=localStorage.getItem('rh_empresa')||'Explosão Alimentos';
+  document.getElementById('cfg-empresa').value=localStorage.getItem('rh_empresa')||'Explosão Alimentos';
 }
 function salvarConfig(){
-  const url=document.getElementById('cfg-script-url').value.trim();
   const empresa=document.getElementById('cfg-empresa').value.trim()||'Explosão Alimentos';
-  SCRIPT_URL=url;
-  localStorage.setItem('rh_script_url',url);
   localStorage.setItem('rh_empresa',empresa);
   notify('Configurações salvas!');
 }
@@ -1557,7 +1589,7 @@ async function sincronizarScript(action,data){
   }catch(e){console.warn('Sync falhou:',e);}
 }
 async function sincronizar(){
-  if(!SCRIPT_URL){notify('Configure a URL do Script nas Configurações','error');return;}
+
   setSyncStatus('loading','Sincronizando...');loading(true);
   try{
     const r=await fetch(SCRIPT_URL+'?action=listarTodos');
