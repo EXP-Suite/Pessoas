@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RH Explosão — Gestão de Recursos Humanos</title>
+<link rel="icon" type="image/png" href="https://explosaoalimentos.com.br/wp-content/uploads/2024/11/logo-menor-e1731554322568.png">
+<meta property="og:title" content="RH Explosão — Explosão Alimentos">
+<meta property="og:description" content="Sistema de Gestão de Recursos Humanos">
+<meta property="fb:app_id" content="966242223397198">
+<style>
+:root {
+  --bg:#f7f6f3;--surface:#fff;--surface2:#f1f0ed;--border:#e2e0da;--border2:#ccc9c0;
+  --text:#1a1a18;--text2:#6b6960;--text3:#9b9890;
+  --accent:#1a5c38;--accent-bg:#e8f4ed;--accent-text:#1a5c38;
+  --danger:#c0392b;--danger-bg:#fdf0ee;
+  --warn-bg:#fef9ec;--warn-text:#7a5c00;
+  --blue-bg:#eaf1fb;--blue-text:#1a3f6f;
+  --radius:10px;--radius-sm:6px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* TOPBAR — padrão WMS */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:50}
+.topbar-brand{font-size:16px;font-weight:600;color:var(--accent);display:flex;align-items:center;gap:10px}
+.topbar-title{display:flex;align-items:center;gap:10px}
+.topbar-title span{font-size:16px;font-weight:600;color:var(--accent)}
+.topbar-sub{color:var(--text2);font-weight:400;font-size:13px}
+.topbar-right{display:flex;gap:8px;align-items:center}
+.sync-info{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:5px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#27ae60;flex-shrink:0}
+.sync-dot.offline{background:#e74c3c}
+
+/* NAV — padrão WMS */
+.nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;gap:2px;overflow-x:auto;position:sticky;top:64px;z-index:49}
+.nav::-webkit-scrollbar{height:3px}
+.nav-btn{padding:11px 14px;font-size:13px;color:var(--text2);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-family:inherit;font-weight:500;transition:all .15s;display:flex;align-items:center;gap:6px}
+.nav-btn:hover{color:var(--text)}
+.nav-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.nav-icon{font-size:15px}
+
+/* MAIN */
+.main{max-width:1400px;margin:0 auto;padding:1.5rem 2rem}
+.page{display:none;flex-direction:column;gap:16px}
+.page.active{display:flex}
+
+/* STAT CARDS */
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:900px){.summary-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px}
+.stat-label{font-size:11px;color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.stat-value{font-size:28px;font-weight:600;color:var(--text);line-height:1}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:3px}
+.stat-card.ok .stat-value{color:var(--accent)}
+.stat-card.danger .stat-value{color:var(--danger)}
+.stat-card.warn .stat-value{color:#c07000}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem}
+.card-title{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:800px){.grid2{grid-template-columns:1fr}}
+
+/* TOOLBAR */
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+select,input[type=text],input[type=date],input[type=number],input[type=email],input[type=tel],input[type=url],textarea{padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;background:var(--surface);color:var(--text);outline:none;font-family:inherit}
+select:focus,input:focus,textarea:focus{border-color:var(--accent)}
+textarea{resize:vertical}
+
+/* BUTTONS */
+.btn{padding:7px 14px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;background:var(--surface);color:var(--text);cursor:pointer;font-weight:500;transition:background .15s;white-space:nowrap;font-family:inherit;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--surface2)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{background:#155030;border-color:#155030}
+.btn-sm{padding:5px 11px;font-size:12px}
+.btn-danger{background:var(--danger-bg);color:var(--danger);border-color:#f5c6c2}
+.btn-danger:hover{background:#fce4e2}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+
+/* TABLES */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead{background:var(--surface2)}
+th{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:left;border-bottom:2px solid var(--border2);white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--bg)}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px;white-space:nowrap}
+.b-ok    {background:var(--accent-bg);color:var(--accent-text)}
+.b-warn  {background:#fef9c3;color:#7a5200}
+.b-danger{background:var(--danger-bg);color:var(--danger)}
+.b-info  {background:var(--blue-bg);color:var(--blue-text)}
+.b-gray  {background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.b-venc  {background:var(--danger-bg);color:var(--danger)}
+.b-urg   {background:#fff0e0;color:#b84c00;border:1px solid #f5c897}
+.b-prox  {background:var(--warn-bg);color:var(--warn-text)}
+
+/* PROGRESS */
+.prog-wrap{display:flex;align-items:center;gap:7px;min-width:110px}
+.prog-bar{flex:1;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;border:1px solid var(--border)}
+.prog-fill{height:100%;border-radius:3px;background:var(--accent)}
+.prog-fill.warn{background:#e0a000}
+.prog-fill.danger{background:var(--danger)}
+.prog-label{font-size:11px;color:var(--text2);min-width:30px;text-align:right;font-weight:600}
+
+/* FORMS */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:12px;font-weight:600;color:var(--text2)}
+.form-group input,.form-group select,.form-group textarea{width:100%}
+.form-section{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--accent);margin:8px 0 4px;padding-bottom:6px;border-bottom:1px solid var(--border);grid-column:1/-1}
+.form-note{font-size:11px;color:var(--text3);margin-top:8px}
+
+/* ALERT STRIPS */
+.alert-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);margin-bottom:7px;border:1px solid transparent}
+.alert-item.danger{background:var(--danger-bg);border-color:#f5c6c2}
+.alert-item.warn{background:var(--warn-bg);border-color:#f0d060}
+.alert-item.ok{background:var(--accent-bg);border-color:#b8dfc9}
+.alert-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.alert-icon.danger{background:#fdd;color:var(--danger)}
+.alert-icon.warn{background:#fef3c7;color:#9a6200}
+.alert-icon.ok{background:#d4edda;color:var(--accent)}
+.alert-body{flex:1;min-width:0}
+.alert-name{font-size:13px;font-weight:600}
+.alert-desc{font-size:11px;color:var(--text2);margin-top:1px}
+.alert-cta{font-size:12px;font-weight:600;color:var(--accent);cursor:pointer;white-space:nowrap}
+.alert-cta:hover{text-decoration:underline}
+
+/* BIRTHDAY CARD */
+.bday-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:12px;border-left:3px solid var(--accent)}
+.bday-avatar{width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0}
+.bday-name{font-weight:600;font-size:13px}
+.bday-info{font-size:11px;color:var(--text2);margin-top:1px}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.hidden{display:none}
+.modal{background:var(--surface);border-radius:12px;width:100%;max-width:760px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.22)}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:5}
+.modal-header h3{font-size:15px;font-weight:700;color:var(--text)}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2);line-height:1;padding:2px 6px;border-radius:4px}
+.modal-close:hover{background:var(--surface2)}
+.modal-body{padding:20px}
+.modal-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:#1a1a18;color:#fff;padding:11px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;pointer-events:none;z-index:9999;max-width:340px}
+.toast.show{opacity:1;transform:none}
+.toast.error{background:var(--danger)}
+.toast.warn-t{background:#8a5e00}
+
+/* LOADING */
+.loading-overlay{display:none;position:fixed;inset:0;background:rgba(247,246,243,.8);z-index:100;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+.loading-overlay.show{display:flex}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* TOOLTIP */
+#wms-tooltip{position:fixed;z-index:99999;background:#1a1a18;color:#fff;font-size:12px;padding:8px 12px;border-radius:7px;pointer-events:none;display:none;max-width:260px;line-height:1.5;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+
+/* VERSION */
+#app-version{position:fixed;bottom:10px;right:14px;font-size:10px;color:var(--text3);background:var(--surface);border:1px solid var(--border2);border-radius:4px;padding:3px 8px;z-index:99999;pointer-events:none;letter-spacing:.3px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:28px;color:var(--text3);font-size:13px}
+
+/* SECTION HEADER */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.section-header h3{font-size:14px;font-weight:600;color:var(--text)}
+
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+@media(max-width:600px){.main{padding:1rem};.nav{padding:0 1rem}}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading-overlay"><div class="spinner"></div><div style="font-size:13px;color:var(--text2);font-weight:500">Carregando...</div></div>
+
+<!-- TOPBAR — padrão WMS -->
+<div class="topbar">
+  <div class="topbar-title">
+    <img src="https://explosaoalimentos.com.br/wp-content/uploads/2024/11/logo-menor-e1731554322568.png" alt="Explosão Alimentos" style="height:38px;width:auto;object-fit:contain">
+    <span class="topbar-sub" style="font-size:13px;color:var(--text2)">· Gestão de Recursos Humanos</span>
+  </div>
+  <div class="topbar-right">
+    <select id="filtro-empresa-global" onchange="setFiltroEmpresa(this.value)" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit">
+      <option value="">Todas as Empresas</option>
+      <option value="Explosão Alimentos">Explosão Alimentos</option>
+      <option value="AGS Distribuidora">AGS Distribuidora</option>
+    </select>
+    <div class="sync-info"><div class="sync-dot offline" id="sync-dot"></div><span id="sync-label">Sem conexão</span></div>
+    <button class="btn btn-sm" onclick="sincronizar()">↻ Sincronizar</button>
+  </div>
+</div>
+
+<!-- NAV — padrão WMS -->
+<nav class="nav">
+  <button class="nav-btn active" onclick="showPage('dashboard',this)"><span class="nav-icon">📊</span>Dashboard</button>
+  <button class="nav-btn" onclick="showPage('colaboradores',this)"><span class="nav-icon">👥</span>Colaboradores</button>
+  <button class="nav-btn" onclick="showPage('ferias',this)"><span class="nav-icon">🏖️</span>Férias</button>
+  <button class="nav-btn" onclick="showPage('carreira',this)"><span class="nav-icon">📈</span>Carreira</button>
+  <button class="nav-btn" onclick="showPage('advertencias',this)"><span class="nav-icon">⚠️</span>Advertências</button>
+  <button class="nav-btn" onclick="showPage('aniversarios',this)"><span class="nav-icon">🎂</span>Aniversários</button>
+  <button class="nav-btn" onclick="showPage('desligamentos',this)"><span class="nav-icon">📋</span>Desligamentos</button>
+  <button class="nav-btn" onclick="showPage('config',this)"><span class="nav-icon">⚙️</span>Configurações</button>
+</nav>
+
+<div class="main">
+
+<!-- ═══ DASHBOARD ═══════════════════════════════════════ -->
+<div class="page active" id="page-dashboard">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px">
+    <div style="font-size:13px;font-weight:600;color:var(--text2)">Visão Geral</div>
+    <select id="filtro-empresa-dash" onchange="renderDashboard()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit">
+      <option value="">Todas as Empresas</option>
+      <option value="Explosão Alimentos">Explosão Alimentos</option>
+      <option value="AGS Distribuidora">AGS Distribuidora</option>
+    </select>
+  </div>
+  <div id="dash-alerts"></div>
+  <div class="summary-grid" id="kpi-grid">
+    <div class="stat-card"><div class="stat-label">Total de Colaboradores</div><div class="stat-value" id="kpi-total">—</div><div class="stat-sub">ativos + afastados</div></div>
+    <div class="stat-card ok"><div class="stat-label">Ativos</div><div class="stat-value" id="kpi-ativos">—</div><div class="stat-sub">em atividade</div></div>
+    <div class="stat-card warn"><div class="stat-label">Afastados</div><div class="stat-value" id="kpi-afastados">—</div><div class="stat-sub">temporariamente</div></div>
+    <div class="stat-card danger"><div class="stat-label">Desligados (mês)</div><div class="stat-value" id="kpi-desligados">—</div><div class="stat-sub">no mês atual</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">🏖️ Férias a Vencer</div>
+      <div id="dash-ferias-list"><div class="empty">Carregando...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">⚠️ Contratos de Experiência</div>
+      <div id="dash-contratos-list"><div class="empty">Carregando...</div></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">🎂 Aniversariantes do Mês</div>
+      <div id="dash-bday-list"><div class="empty">Carregando...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">👥 Headcount por Setor</div>
+      <div id="dash-headcount"><div class="empty">Carregando...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ COLABORADORES ═══════════════════════════════════ -->
+<div class="page" id="page-colaboradores">
+  <div class="card">
+    <div class="toolbar">
+      <input type="text" id="busca-colab" placeholder="Buscar por nome, CPF ou setor..." oninput="filtrarColabs()" style="flex:1;min-width:200px">
+      <select id="filtro-status" onchange="filtrarColabs()">
+        <option value="">Todos os Status</option>
+        <option value="Ativo">Ativo</option>
+        <option value="Afastado">Afastado</option>
+        <option value="Desligado">Desligado</option>
+      </select>
+      <select id="filtro-empresa-colab" onchange="filtrarColabs()">
+        <option value="">Todas as Empresas</option>
+        <option value="Explosão Alimentos">Explosão Alimentos</option>
+        <option value="AGS Distribuidora">AGS Distribuidora</option>
+      </select>
+      <select id="filtro-setor-colab" onchange="filtrarColabs()">
+        <option value="">Todos os Setores</option>
+        <option>Produção</option><option>Logística</option><option>Administrativo</option>
+        <option>Financeiro</option><option>Compras</option><option>Engenharia</option>
+        <option>RH</option><option>Comercial</option>
+      </select>
+      <button class="btn btn-primary" onclick="abrirModalColab()">＋ Novo Colaborador</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Nome</th><th>Empresa</th><th>Cargo</th><th>Setor</th><th>Admissão</th><th>Contrato</th><th>Status</th><th></th></tr></thead>
+        <tbody id="body-colabs"><tr><td colspan="8" class="empty">Nenhum colaborador cadastrado.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ FÉRIAS ══════════════════════════════════════════ -->
+<div class="page" id="page-ferias">
+  <div class="card">
+    <div class="section-header">
+      <h3>Controle de Férias</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input type="text" id="busca-ferias" placeholder="Buscar colaborador..." oninput="filtrarFerias()" style="min-width:180px">
+        <select id="filtro-empresa-ferias" onchange="filtrarFerias()">
+          <option value="">Todas as Empresas</option>
+          <option value="Explosão Alimentos">Explosão Alimentos</option>
+          <option value="AGS Distribuidora">AGS Distribuidora</option>
+        </select>
+        <select id="filtro-ferias" onchange="filtrarFerias()">
+          <option value="">Todos</option>
+          <option value="vencidas">Vencidas</option>
+          <option value="critico">Crítico ≤30d</option>
+          <option value="atencao">Atenção ≤60d</option>
+          <option value="ok">Em dia</option>
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="abrirModalFerias()">＋ Registrar Gozo</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Colaborador</th><th>Cargo</th><th>Admissão</th><th>Início Período</th><th>Fim Período</th><th>Limite Gozo</th><th>Restante</th><th>Status</th><th></th></tr></thead>
+        <tbody id="body-ferias"><tr><td colspan="9" class="empty">Carregando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">📋 Histórico de Gozo</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Colaborador</th><th>Período Aquisitivo</th><th>Início Gozo</th><th>Fim Gozo</th><th>Dias</th><th>Obs</th></tr></thead>
+        <tbody id="body-hist-ferias"><tr><td colspan="6" class="empty">Nenhum registro.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CARREIRA ════════════════════════════════════════ -->
+<div class="page" id="page-carreira">
+  <div class="grid2">
+    <div class="card">
+      <div class="section-header">
+        <h3>Cargos Cadastrados</h3>
+        <button class="btn btn-primary btn-sm" onclick="abrirModalCargo()">＋ Novo Cargo</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Cargo</th><th>Setor</th><th>Sal. Base</th><th>Sal. Máx</th><th>Colabs</th><th></th></tr></thead>
+          <tbody id="body-cargos"><tr><td colspan="6" class="empty">Nenhum cargo.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📈 Progressão por Colaborador</div>
+      <input type="text" id="busca-progressao" placeholder="Buscar colaborador..." oninput="filtrarProgressao()" style="width:100%;margin-bottom:12px">
+      <div id="lista-progressao"><div class="empty">Nenhum registro.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ADVERTÊNCIAS ════════════════════════════════════ -->
+<div class="page" id="page-advertencias">
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">⚠️ Emitir Advertência</div>
+      <div class="form-grid">
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Colaborador *</label>
+          <select id="adv-colaborador"><option value="">Selecione...</option></select>
+        </div>
+        <div class="form-group">
+          <label>Tipo de Ocorrência *</label>
+          <select id="adv-tipo" onchange="preencherModelo()">
+            <option value="">Selecione...</option>
+            <option>Atraso Reiterado</option>
+            <option>Falta sem Justificativa</option>
+            <option>Descumprimento de Normas Internas</option>
+            <option>Comportamento Inadequado</option>
+            <option>Uso Indevido de Equipamentos</option>
+            <option>Negligência no Trabalho</option>
+            <option>Desrespeito a Superior Hierárquico</option>
+            <option>Descumprimento de Normas de Segurança</option>
+            <option>Uso de Celular em Horário Proibido</option>
+            <option>Abandono de Posto</option>
+            <option>Conflito com Colegas de Trabalho</option>
+            <option>Outros</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Data da Ocorrência *</label>
+          <input type="date" id="adv-data">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Descrição *</label>
+          <textarea id="adv-descricao" rows="4" placeholder="Descreva o ocorrido..."></textarea>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="emitirAdvertencia()">📄 Emitir e Salvar</button>
+        <button class="btn" onclick="imprimirAdvertencia()">🖨️ Pré-visualizar PDF</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 Histórico de Advertências</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+        <input type="text" id="busca-adv" placeholder="Buscar..." oninput="filtrarAdvertencias()" style="flex:1;min-width:160px">
+        <select id="filtro-empresa-adv" onchange="filtrarAdvertencias()">
+          <option value="">Todas as Empresas</option>
+          <option value="Explosão Alimentos">Explosão Alimentos</option>
+          <option value="AGS Distribuidora">AGS Distribuidora</option>
+        </select>
+      </div>
+      <div id="lista-advertencias"><div class="empty">Nenhuma advertência emitida.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ANIVERSÁRIOS ════════════════════════════════════ -->
+<div class="page" id="page-aniversarios">
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">🎂 Aniversariantes do Mês</div>
+      <div id="bday-mes" style="display:flex;flex-direction:column;gap:8px"><div class="empty">Carregando...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📅 ASO — Vencimentos</div>
+      <div id="lista-aso" style="margin-bottom:20px"><div class="empty">Nenhum vencimento próximo.</div></div>
+      <div class="card-title">🔖 Contratos de Experiência</div>
+      <div id="lista-experiencia"><div class="empty">Nenhum vencimento próximo.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DESLIGAMENTOS ════════════════════════════════════ -->
+<div class="page" id="page-desligamentos">
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">📋 Registrar Desligamento</div>
+      <div class="form-grid">
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Colaborador *</label>
+          <select id="desl-colaborador"><option value="">Selecione...</option></select>
+        </div>
+        <div class="form-group">
+          <label>Data de Desligamento *</label>
+          <input type="date" id="desl-data">
+        </div>
+        <div class="form-group">
+          <label>Motivo *</label>
+          <select id="desl-motivo">
+            <option value="">Selecione...</option>
+            <option>Demissão sem Justa Causa</option>
+            <option>Pedido de Demissão</option>
+            <option>Justa Causa</option>
+            <option>Fim de Contrato</option>
+            <option>Acordo</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Observações</label>
+          <textarea id="desl-obs" rows="3" placeholder="Informações adicionais..."></textarea>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-danger" onclick="registrarDesligamento()">✓ Confirmar Desligamento</button>
+        <button class="btn" onclick="gerarChecklist()">📋 Gerar Checklist</button>
+      </div>
+      <p class="form-note">O histórico do colaborador nunca é excluído — apenas o status é alterado para Desligado.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🕒 Histórico de Desligamentos</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+        <select id="filtro-empresa-desl" onchange="renderDesligamentos()" style="flex:1;min-width:180px">
+          <option value="">Todas as Empresas</option>
+          <option value="Explosão Alimentos">Explosão Alimentos</option>
+          <option value="AGS Distribuidora">AGS Distribuidora</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nome</th><th>Cargo</th><th>Data</th><th>Motivo</th><th></th></tr></thead>
+          <tbody id="body-desligamentos"><tr><td colspan="5" class="empty">Nenhum registro.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CONFIGURAÇÕES ════════════════════════════════════ -->
+<div class="page" id="page-config">
+  <div style="max-width:640px;display:flex;flex-direction:column;gap:14px">
+    <div class="card">
+      <div class="card-title">⚙️ Conexão com Google Sheets</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input type="url" id="cfg-script-url" placeholder="https://script.google.com/macros/s/..." style="flex:1;min-width:200px;font-family:monospace;font-size:12px">
+        <button class="btn btn-primary" onclick="salvarConfig()">Salvar e Conectar</button>
+        <button class="btn" onclick="testarConexao()">↻ Testar</button>
+      </div>
+      <p class="form-note" style="margin-top:8px">No Apps Script: Implantar → Nova implantação → App da Web → copie a URL.</p>
+      <div id="status-conexao" style="margin-top:10px"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🏢 Nome da Empresa</div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="cfg-empresa" value="Explosão Alimentos" style="flex:1">
+        <button class="btn btn-primary" onclick="salvarConfig()">Salvar</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">💾 Dados Locais</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Todos os dados são armazenados no Google Sheets via Apps Script.</p>
+      <div class="btn-row">
+        <button class="btn btn-sm" onclick="exportarJSON()">⬇️ Exportar JSON</button>
+        <button class="btn btn-sm btn-danger" onclick="limparDadosLocais()">🗑️ Limpar Cache</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ═══ MODAIS ═══════════════════════════════════════════ -->
+
+<!-- Modal Colaborador -->
+<div class="modal-overlay hidden" id="modal-colab">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-colab-title">Novo Colaborador</h3>
+      <button class="modal-close" onclick="fecharModal('modal-colab')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-section">👤 Dados Pessoais</div>
+        <div class="form-group" style="grid-column:1/-1"><label>Nome Completo *</label><input type="text" id="f-nome" placeholder="Nome completo"></div>
+        <div class="form-group"><label>CPF *</label><input type="text" id="f-cpf" placeholder="000.000.000-00" maxlength="14" oninput="mascaraCPF(this)"></div>
+        <div class="form-group"><label>RG</label><input type="text" id="f-rg" placeholder="0000000-0"></div>
+        <div class="form-group"><label>Data de Nascimento</label><input type="date" id="f-nascimento"></div>
+        <div class="form-group"><label>Estado Civil</label>
+          <select id="f-estado-civil"><option>Solteiro(a)</option><option>Casado(a)</option><option>Divorciado(a)</option><option>Viúvo(a)</option><option>União Estável</option></select></div>
+        <div class="form-group"><label>Telefone *</label><input type="tel" id="f-telefone" placeholder="(63) 9 0000-0000"></div>
+        <div class="form-group"><label>E-mail</label><input type="email" id="f-email" placeholder="email@email.com"></div>
+        <div class="form-group" style="grid-column:1/-1"><label>Endereço Completo</label><input type="text" id="f-endereco" placeholder="Rua, número, bairro, cidade - UF"></div>
+        <div class="form-group"><label>Contato de Emergência</label><input type="text" id="f-emerg-nome" placeholder="Nome"></div>
+        <div class="form-group"><label>Tel. Emergência</label><input type="tel" id="f-emerg-tel" placeholder="(63) 9 0000-0000"></div>
+
+        <div class="form-section">💼 Dados Profissionais</div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Empresa *</label>
+          <select id="f-empresa">
+            <option value="Explosão Alimentos">Explosão Alimentos — CNPJ: 01.121.126/0001-87</option>
+            <option value="AGS Distribuidora">AGS Distribuidora — CNPJ: 51.943.609/0001-35</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Data de Admissão *</label><input type="date" id="f-admissao"></div>
+        <div class="form-group"><label>Cargo *</label><input type="text" id="f-cargo" placeholder="Ex: Operador de Produção" list="list-cargos"><datalist id="list-cargos"></datalist></div>
+        <div class="form-group"><label>Setor *</label>
+          <select id="f-setor"><option>Produção</option><option>Logística</option><option>Administrativo</option><option>Financeiro</option><option>Compras</option><option>Engenharia</option><option>RH</option><option>Comercial</option><option>TI</option><option>Outro</option></select></div>
+        <div class="form-group"><label>Turno</label>
+          <select id="f-turno"><option>Diurno</option><option>Noturno</option><option>Misto</option><option>Administrativo</option></select></div>
+        <div class="form-group"><label>Tipo de Contrato</label>
+          <select id="f-contrato"><option>CLT</option><option>Temporário</option><option>Estágio</option><option>PJ</option><option>Aprendiz</option></select></div>
+        <div class="form-group"><label>Salário (R$) *</label><input type="number" id="f-salario" placeholder="0,00" step="0.01" min="0"></div>
+        <div class="form-group"><label>CTPS / PIS-PASEP</label><input type="text" id="f-ctps" placeholder="Nº CTPS / PIS"></div>
+        <div class="form-group"><label>Status</label>
+          <select id="f-status"><option>Ativo</option><option>Afastado</option></select></div>
+        <div class="form-group"><label>ASO — Vencimento</label><input type="date" id="f-aso"></div>
+
+        <div class="form-section">🏦 Dados Bancários</div>
+        <div class="form-group"><label>Banco</label><input type="text" id="f-banco" placeholder="Ex: Bradesco"></div>
+        <div class="form-group"><label>Agência</label><input type="text" id="f-agencia" placeholder="0000-0"></div>
+        <div class="form-group"><label>Conta</label><input type="text" id="f-conta" placeholder="00000-0"></div>
+        <div class="form-group"><label>Tipo de Conta</label>
+          <select id="f-tipo-conta"><option>Corrente</option><option>Poupança</option><option>Salário</option></select></div>
+        <div class="form-group"><label>Chave PIX</label><input type="text" id="f-pix" placeholder="CPF, telefone ou e-mail"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal('modal-colab')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-salvar-colab" onclick="salvarColaborador()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Férias -->
+<div class="modal-overlay hidden" id="modal-ferias">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header"><h3>Registrar Gozo de Férias</h3><button class="modal-close" onclick="fecharModal('modal-ferias')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group" style="grid-column:1/-1"><label>Colaborador *</label><select id="ferias-colab"><option value="">Selecione...</option></select></div>
+        <div class="form-group"><label>Início do Gozo *</label><input type="date" id="ferias-inicio"></div>
+        <div class="form-group"><label>Fim do Gozo *</label><input type="date" id="ferias-fim"></div>
+        <div class="form-group" style="grid-column:1/-1"><label>Observações</label><textarea id="ferias-obs" rows="2" placeholder="Ex: 10 dias + 20 dias..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal('modal-ferias')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-salvar-ferias" onclick="salvarFerias()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Cargo -->
+<div class="modal-overlay hidden" id="modal-cargo">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header"><h3 id="modal-cargo-title">Novo Cargo</h3><button class="modal-close" onclick="fecharModal('modal-cargo')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group" style="grid-column:1/-1"><label>Nome do Cargo *</label><input type="text" id="cargo-nome" placeholder="Ex: Operador de Produção"></div>
+        <div class="form-group"><label>Setor *</label><select id="cargo-setor"><option>Produção</option><option>Logística</option><option>Administrativo</option><option>Financeiro</option><option>Compras</option><option>Engenharia</option><option>RH</option><option>Comercial</option></select></div>
+        <div class="form-group"><label>Salário Base (R$)</label><input type="number" id="cargo-sal-base" placeholder="0,00" step="0.01"></div>
+        <div class="form-group"><label>Salário Máximo (R$)</label><input type="number" id="cargo-sal-max" placeholder="0,00" step="0.01"></div>
+        <div class="form-group" style="grid-column:1/-1"><label>Atribuições</label><textarea id="cargo-desc" rows="3" placeholder="Descreva as atribuições..."></textarea></div>
+        <div class="form-group" style="grid-column:1/-1"><label>Requisitos</label><textarea id="cargo-req" rows="2" placeholder="Ex: Ensino médio completo..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal('modal-cargo')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-salvar-cargo" onclick="salvarCargo()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ver Colaborador -->
+<div class="modal-overlay hidden" id="modal-ver-colab">
+  <div class="modal">
+    <div class="modal-header"><h3 id="ver-colab-nome">—</h3><button class="modal-close" onclick="fecharModal('modal-ver-colab')">✕</button></div>
+    <div class="modal-body" id="ver-colab-body"></div>
+    <div class="modal-footer"><button class="btn" onclick="fecharModal('modal-ver-colab')">Fechar</button></div>
+  </div>
+</div>
+
+<!-- Modal Ver Advertência -->
+<div class="modal-overlay hidden" id="modal-ver-adv">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-header">
+      <h3 id="ver-adv-titulo">Advertência</h3>
+      <button class="modal-close" onclick="fecharModal('modal-ver-adv')">✕</button>
+    </div>
+    <div class="modal-body" id="ver-adv-body"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal('modal-ver-adv')">Fechar</button>
+      <button class="btn btn-primary" onclick="imprimirAdvertenciaById()">🖨️ Imprimir</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Checklist -->
+<div class="modal-overlay hidden" id="modal-checklist">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header"><h3>Checklist de Desligamento</h3><button class="modal-close" onclick="fecharModal('modal-checklist')">✕</button></div>
+    <div class="modal-body" id="checklist-body"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal('modal-checklist')">Fechar</button>
+      <button class="btn btn-primary" onclick="imprimirChecklist()">🖨️ Imprimir</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="wms-tooltip"></div>
+<div id="app-version">Rev 2.1</div>
+
+<script>
+// ══════════════════════════════════════════
+// ESTADO GLOBAL
+// ══════════════════════════════════════════
+const LOGO_URL={
+  'Explosão Alimentos':'https://explosaoalimentos.com.br/wp-content/uploads/2024/11/logo-menor-e1731554322568.png',
+  'AGS Distribuidora':'https://i.postimg.cc/WhZffY07/Chat-GPT-Image-6-de-mai-de-2026-23-23-59.png'
+};
+function getLogoUrl(empresa){return LOGO_URL[empresa]||LOGO_URL['Explosão Alimentos'];}
+let SCRIPT_URL = localStorage.getItem('rh_script_url')||'https://script.google.com/macros/s/AKfycbz9dCilm276ooYy8Olcvi-eYrfkPtAfoxeC_RW0LzRr9a-8FwTaUKR8jhmvsHfbqdiVVw/exec';let DB = {
+  colaboradores: JSON.parse(localStorage.getItem('rh_colaboradores')||'[]'),
+  ferias_gozo:   JSON.parse(localStorage.getItem('rh_ferias_gozo')||'[]'),
+  advertencias:  JSON.parse(localStorage.getItem('rh_advertencias')||'[]'),
+  cargos:        JSON.parse(localStorage.getItem('rh_cargos')||'[]'),
+  desligamentos: JSON.parse(localStorage.getItem('rh_desligamentos')||'[]'),
+};
+// Empresas cadastradas
+const EMPRESAS = [
+  { nome: 'Explosão Alimentos', cnpj: '01.121.126/0001-87' },
+  { nome: 'AGS Distribuidora',  cnpj: '51.943.609/0001-35' }
+];
+let filtroEmpresaAtivo = localStorage.getItem('rh_filtro_empresa') || '';
+function getColaboradoresFiltrados() {
+  if (!filtroEmpresaAtivo) return DB.colaboradores;
+  return DB.colaboradores.filter(c => c.empresa === filtroEmpresaAtivo);
+}
+
+function salvarDB(){
+  localStorage.setItem('rh_colaboradores',JSON.stringify(DB.colaboradores));
+  localStorage.setItem('rh_ferias_gozo',JSON.stringify(DB.ferias_gozo));
+  localStorage.setItem('rh_advertencias',JSON.stringify(DB.advertencias));
+  localStorage.setItem('rh_cargos',JSON.stringify(DB.cargos));
+  localStorage.setItem('rh_desligamentos',JSON.stringify(DB.desligamentos));
+}
+
+// ══════════════════════════════════════════
+// UTILITÁRIOS
+// ══════════════════════════════════════════
+function gerarId(){ return Date.now()+Math.floor(Math.random()*1000); }
+function hoje(){ return new Date().toISOString().slice(0,10); }
+function fmtData(s){ if(!s)return'—'; const[y,m,d]=s.split('-'); return`${d}/${m}/${y}`; }
+function diasEntre(d1,d2){ return Math.round((new Date(d2)-new Date(d1))/86400000); }
+function addDias(d,n){ const dt=new Date(d); dt.setDate(dt.getDate()+n); return dt.toISOString().slice(0,10); }
+function mascaraCPF(el){ let v=el.value.replace(/\D/g,'').slice(0,11); v=v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3}\.\d{3})(\d)/,'$1.$2').replace(/(\.\d{3})(\d)/,'$1-$2'); el.value=v; }
+function loading(show){ document.getElementById('loading-overlay').classList.toggle('show',show); }
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+function notify(msg,tipo='ok'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show'+(tipo==='error'?' error':tipo==='warn'?' warn-t':'');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+// ══════════════════════════════════════════
+// TOOLTIP
+// ══════════════════════════════════════════
+(function(){
+  const box=document.getElementById('wms-tooltip');
+  document.addEventListener('mouseover',e=>{const t=e.target.closest('[data-tip]');if(!t)return;box.textContent=t.dataset.tip;box.style.display='block';});
+  document.addEventListener('mousemove',e=>{if(box.style.display==='none')return;box.style.left=(e.clientX+14)+'px';box.style.top=(e.clientY+14)+'px';});
+  document.addEventListener('mouseout',e=>{if(!e.target.closest('[data-tip]'))box.style.display='none';});
+})();
+
+// ══════════════════════════════════════════
+// SYNC STATUS
+// ══════════════════════════════════════════
+function setSyncStatus(st,msg){
+  const dot=document.getElementById('sync-dot');
+  dot.className='sync-dot'+(st==='online'?'':st==='loading'?' loading':' offline');
+  document.getElementById('sync-label').textContent=msg;
+}
+
+// ══════════════════════════════════════════
+// NAVEGAÇÃO
+// ══════════════════════════════════════════
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  // Se btn não foi passado (chamada via código), encontra o botão correto pelo onclick
+  const activeBtn=btn||[...document.querySelectorAll('.nav-btn')].find(b=>b.getAttribute('onclick')&&b.getAttribute('onclick').includes("'"+id+"'"));
+  if(activeBtn)activeBtn.classList.add('active');
+  const m={dashboard:renderDashboard,colaboradores:renderColabs,ferias:renderFerias,carreira:renderCarreira,advertencias:()=>{populateSelectColabs(['adv-colaborador']);renderAdvertencias();},aniversarios:renderAniversarios,desligamentos:()=>{populateSelectColabs(['desl-colaborador'],true);renderDesligamentos();},config:carregarConfig};
+  if(m[id])m[id]();
+}
+
+// ══════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════
+function renderDashboard(){
+  const empFiltro=(document.getElementById('filtro-empresa-dash')?.value)||'';
+  const colabsFiltrados=empFiltro?DB.colaboradores.filter(c=>c.empresa===empFiltro):DB.colaboradores;
+  const ativos=colabsFiltrados.filter(c=>c.status==='Ativo');
+  const afastados=colabsFiltrados.filter(c=>c.status==='Afastado');
+  const mes=new Date().getMonth()+1,ano=new Date().getFullYear();
+  const deslFiltrados=empFiltro?DB.desligamentos.filter(d=>{const c=DB.colaboradores.find(x=>x.id==d.colaboradorId);return !empFiltro||(c&&c.empresa===empFiltro);}):DB.desligamentos;
+  const deslMes=deslFiltrados.filter(d=>{const dt=new Date(d.data);return dt.getMonth()+1===mes&&dt.getFullYear()===ano;});
+  document.getElementById('kpi-total').textContent=ativos.length+afastados.length;
+  document.getElementById('kpi-ativos').textContent=ativos.length;
+  document.getElementById('kpi-afastados').textContent=afastados.length;
+  document.getElementById('kpi-desligados').textContent=deslMes.length;
+
+  // Alertas de férias vencidas
+  const fvc=calcularFeriasColab(empFiltro);
+  const venc=fvc.filter(f=>f.diasRestantes<0);
+  const crit30=fvc.filter(f=>f.diasRestantes>=0&&f.diasRestantes<=30);
+  const alerts=[];
+  if(venc.length)alerts.push(`<div class="alert-item danger"><div class="alert-icon danger">!</div><div class="alert-body"><div class="alert-name">${venc.length} colaborador(es) com férias VENCIDAS</div><div class="alert-desc">Ação imediata necessária</div></div><span class="alert-cta" onclick="showPage('ferias')">Ver →</span></div>`);
+  if(crit30.length)alerts.push(`<div class="alert-item warn"><div class="alert-icon warn">↓</div><div class="alert-body"><div class="alert-name">${crit30.length} colaborador(es) com férias vencendo em ≤30 dias</div></div><span class="alert-cta" onclick="showPage('ferias')">Ver →</span></div>`);
+  document.getElementById('dash-alerts').innerHTML=alerts.join('');
+
+  // Férias a vencer
+  const fv=fvc.filter(f=>f.diasRestantes<=90).sort((a,b)=>a.diasRestantes-b.diasRestantes).slice(0,6);
+  const fvEl=document.getElementById('dash-ferias-list');
+  fvEl.innerHTML=fv.length?fv.map(f=>`<div class="alert-item ${f.diasRestantes<0?'danger':f.diasRestantes<=30?'warn':'ok'}">
+    <div class="alert-icon ${f.diasRestantes<0?'danger':f.diasRestantes<=30?'warn':'ok'}">${f.diasRestantes<0?'!':'-'}</div>
+    <div class="alert-body"><div class="alert-name">${f.nome}</div><div class="alert-desc">${f.cargo||'—'} · ${f.setor||'—'}</div></div>
+    <span class="badge ${f.diasRestantes<0?'b-venc':f.diasRestantes<=30?'b-urg':'b-warn'}">${f.diasRestantes<0?'Vencido':f.diasRestantes+'d'}</span>
+  </div>`).join(''): '<div class="empty">Nenhuma férias crítica.</div>';
+
+  // Contratos de experiência
+  const ce=colabsFiltrados.filter(c=>c.status==='Ativo'&&c.admissao&&(c.contrato==='Temporário'||c.contrato==='Estágio'||c.contrato==='Aprendiz')).map(c=>({...c,d45:diasEntre(hoje(),addDias(c.admissao,45)),d90:diasEntre(hoje(),addDias(c.admissao,90))})).filter(c=>c.d45<=30||c.d90<=30).slice(0,6);
+  const ceEl=document.getElementById('dash-contratos-list');
+  ceEl.innerHTML=ce.length?ce.map(c=>`<div class="alert-item ${c.d45<=7?'danger':'warn'}">
+    <div class="alert-icon ${c.d45<=7?'danger':'warn'}">!</div>
+    <div class="alert-body"><div class="alert-name">${c.nome}</div><div class="alert-desc">${c.contrato} · Admissão: ${fmtData(c.admissao)}</div></div>
+    <span class="badge ${c.d45<=7?'b-venc':'b-warn'}">45d: ${c.d45<=0?'Venc.':c.d45+'d'}</span>
+  </div>`).join(''): '<div class="empty">Nenhum contrato próximo do vencimento.</div>';
+
+  // Aniversariantes
+  const bdays=getBdayMes(colabsFiltrados);
+  const bdEl=document.getElementById('dash-bday-list');
+  bdEl.innerHTML=bdays.length?bdays.map(c=>`<div class="bday-card"><div class="bday-avatar">${c.nome[0]}</div><div><div class="bday-name">${c.nome}</div><div class="bday-info">${c.cargo||'—'} · dia ${new Date(c.nascimento+'T00:00').getDate()}</div></div></div>`).join(''): '<div class="empty">Nenhum aniversariante este mês.</div>';
+
+  // Headcount
+  const hc={};
+  colabsFiltrados.filter(c=>c.status!=='Desligado').forEach(c=>{hc[c.setor]=(hc[c.setor]||0)+1;});
+  const total=Object.values(hc).reduce((a,b)=>a+b,0)||1;
+  const hcEl=document.getElementById('dash-headcount');
+  hcEl.innerHTML=Object.keys(hc).length?Object.entries(hc).sort((a,b)=>b[1]-a[1]).map(([s,n])=>`
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;color:var(--text2)"><span style="font-weight:600;color:var(--text)">${s}</span><span>${n}</span></div>
+      <div class="prog-bar" style="height:8px"><div class="prog-fill" style="width:${Math.round(n/total*100)}%"></div></div>
+    </div>`).join(''): '<div class="empty">Nenhum dado.</div>';
+}
+
+// ══════════════════════════════════════════
+// COLABORADORES
+// ══════════════════════════════════════════
+function renderColabs(lista){
+  const src=lista||getColaboradoresFiltrados();
+  document.getElementById('list-cargos').innerHTML=DB.cargos.map(c=>`<option value="${c.nome}">`).join('');
+  const tbody=document.getElementById('body-colabs');
+  if(!src.length){tbody.innerHTML='<tr><td colspan="9" class="empty">Nenhum colaborador encontrado.</td></tr>';return;}
+  tbody.innerHTML=src.map((c,i)=>{
+    const empBadge=c.empresa==='AGS Distribuidora'?'b-info':'b-ok';
+    const empAbrev=c.empresa==='AGS Distribuidora'?'AGS':'EA';
+    return`<tr>
+    <td style="color:var(--text3)">${i+1}</td>
+    <td style="font-weight:600">${c.nome}</td>
+    <td><span class="badge ${empBadge}" style="font-size:10px">${empAbrev}</span></td>
+    <td>${c.cargo||'—'}</td>
+    <td>${c.setor||'—'}</td>
+    <td>${fmtData(c.admissao)}</td>
+    <td><span class="badge b-gray">${c.contrato||'—'}</span></td>
+    <td><span class="badge ${c.status==='Ativo'?'b-ok':c.status==='Afastado'?'b-warn':'b-danger'}">${c.status}</span></td>
+    <td><div style="display:flex;gap:4px">
+      <button class="btn btn-sm" data-tip="Ver ficha" onclick="verColab('${c.id}')">👁</button>
+      <button class="btn btn-sm" data-tip="Editar" onclick="editarColab('${c.id}')">✏️</button>
+    </div></td>
+  </tr>`;}).join('');
+}
+function filtrarColabs(){
+  const q=document.getElementById('busca-colab').value.toLowerCase();
+  const st=document.getElementById('filtro-status').value;
+  const se=document.getElementById('filtro-setor-colab').value;
+  const emp=document.getElementById('filtro-empresa-colab')?.value||'';
+  const src=emp?DB.colaboradores:getColaboradoresFiltrados();
+  renderColabs(src.filter(c=>
+    (!q||c.nome.toLowerCase().includes(q)||c.cpf?.includes(q)||c.setor?.toLowerCase().includes(q))
+    &&(!st||c.status===st)
+    &&(!se||c.setor===se)
+    &&(!emp||c.empresa===emp)
+  ));
+}
+function abrirModalColab(id){
+  document.getElementById('modal-colab-title').textContent=id?'Editar Colaborador':'Novo Colaborador';
+  ['nome','cpf','rg','telefone','email','endereco','emerg-nome','emerg-tel','cargo','salario','ctps','banco','agencia','conta','pix'].forEach(f=>{const el=document.getElementById('f-'+f);if(el)el.value='';});
+  document.getElementById('f-empresa').value='Explosão Alimentos';
+  ['nascimento','admissao','aso'].forEach(f=>{const el=document.getElementById('f-'+f);if(el)el.value='';});
+  if(id){
+    const c=DB.colaboradores.find(x=>x.id==id);
+    if(c){
+      const fs={'nome':c.nome,'cpf':c.cpf,'rg':c.rg,'nascimento':c.nascimento,'telefone':c.telefone,'email':c.email,'endereco':c.endereco,'emerg-nome':c.emergNome,'emerg-tel':c.emergTel,'admissao':c.admissao,'cargo':c.cargo,'salario':c.salario,'ctps':c.ctps,'aso':c.aso,'banco':c.banco,'agencia':c.agencia,'conta':c.conta,'pix':c.pix};
+      if(c.empresa)document.getElementById('f-empresa').value=c.empresa;
+      Object.entries(fs).forEach(([k,v])=>{const el=document.getElementById('f-'+k);if(el&&v)el.value=v;});
+      if(c.estadoCivil)document.getElementById('f-estado-civil').value=c.estadoCivil;
+      if(c.setor)document.getElementById('f-setor').value=c.setor;
+      if(c.turno)document.getElementById('f-turno').value=c.turno;
+      if(c.contrato)document.getElementById('f-contrato').value=c.contrato;
+      if(c.status)document.getElementById('f-status').value=c.status;
+      if(c.tipoConta)document.getElementById('f-tipo-conta').value=c.tipoConta;
+    }
+    document.getElementById('btn-salvar-colab').onclick=()=>salvarColaborador(id);
+  } else {
+    document.getElementById('btn-salvar-colab').onclick=()=>salvarColaborador();
+    document.getElementById('f-admissao').value=hoje();
+  }
+  abrirModal('modal-colab');
+}
+function editarColab(id){abrirModalColab(id);}
+function salvarColaborador(editId){
+  const nome=document.getElementById('f-nome').value.trim();
+  const cpf=document.getElementById('f-cpf').value.trim();
+  const admissao=document.getElementById('f-admissao').value;
+  if(!nome||!cpf||!admissao){notify('Preencha Nome, CPF e Data de Admissão','error');return;}
+  const obj={id:editId||gerarId(),nome,cpf,empresa:document.getElementById('f-empresa').value,rg:document.getElementById('f-rg').value.trim(),nascimento:document.getElementById('f-nascimento').value,estadoCivil:document.getElementById('f-estado-civil').value,telefone:document.getElementById('f-telefone').value.trim(),email:document.getElementById('f-email').value.trim(),endereco:document.getElementById('f-endereco').value.trim(),emergNome:document.getElementById('f-emerg-nome').value.trim(),emergTel:document.getElementById('f-emerg-tel').value.trim(),admissao,cargo:document.getElementById('f-cargo').value.trim(),setor:document.getElementById('f-setor').value,turno:document.getElementById('f-turno').value,contrato:document.getElementById('f-contrato').value,salario:parseFloat(document.getElementById('f-salario').value)||0,ctps:document.getElementById('f-ctps').value.trim(),status:document.getElementById('f-status').value,aso:document.getElementById('f-aso').value,banco:document.getElementById('f-banco').value.trim(),agencia:document.getElementById('f-agencia').value.trim(),conta:document.getElementById('f-conta').value.trim(),tipoConta:document.getElementById('f-tipo-conta').value,pix:document.getElementById('f-pix').value.trim()};
+  if(editId){const idx=DB.colaboradores.findIndex(c=>c.id==editId);DB.colaboradores[idx]=obj;notify('Colaborador atualizado!');}
+  else{if(DB.colaboradores.find(c=>c.cpf===cpf)){notify('CPF já cadastrado!','error');return;}DB.colaboradores.push(obj);notify('Colaborador cadastrado!');}
+  salvarDB();fecharModal('modal-colab');renderColabs();
+  sincronizarScript(editId?'editarColaborador':'novoColaborador',obj);
+}
+function verColab(id){
+  const c=DB.colaboradores.find(x=>x.id==id);if(!c)return;
+  document.getElementById('ver-colab-nome').textContent=c.nome;
+  const advs=DB.advertencias.filter(a=>a.colaboradorId==id).length;
+  const fer=DB.ferias_gozo.filter(f=>f.colaboradorId==id).length;
+  document.getElementById('ver-colab-body').innerHTML=`<div class="form-grid">
+    <div class="form-section">👤 Dados Pessoais</div>
+    ${row2('CPF',c.cpf)}${row2('RG',c.rg)}${row2('Nascimento',fmtData(c.nascimento))}${row2('Estado Civil',c.estadoCivil)}${row2('Telefone',c.telefone)}${row2('E-mail',c.email)}${row2('Endereço',c.endereco)}${row2('Emerg.',c.emergNome+(c.emergTel?' · '+c.emergTel:''))}
+    <div class="form-section">💼 Dados Profissionais</div>
+    ${row2('Admissão',fmtData(c.admissao))}${row2('Cargo',c.cargo)}${row2('Setor',c.setor)}${row2('Turno',c.turno)}${row2('Contrato',c.contrato)}${row2('Salário',c.salario?'R$ '+c.salario.toLocaleString('pt-BR',{minimumFractionDigits:2}):'—')}${row2('Status',c.status)}${row2('ASO Vence',fmtData(c.aso))}
+    <div class="form-section">🏦 Dados Bancários</div>
+    ${row2('Banco',c.banco)}${row2('Ag./Conta',c.agencia?(c.agencia+' / '+c.conta+' ('+c.tipoConta+')'):'—')}${row2('PIX',c.pix)}
+    <div class="form-section">📊 Resumo</div>
+    ${row2('Advertências',advs+' emitida(s)')}${row2('Períodos de Férias',fer+' registrado(s)')}
+  </div>`;
+  abrirModal('modal-ver-colab');
+}
+function row2(l,v){return`<div class="form-group"><label>${l}</label><div style="padding:7px 10px;background:var(--surface2);border-radius:var(--radius-sm);font-size:13px;border:1px solid var(--border)">${v||'—'}</div></div>`;}
+function populateSelectColabs(ids,apenasAtivos=false){
+  const lista=DB.colaboradores.filter(c=>apenasAtivos?c.status!=='Desligado':c.status!=='Desligado');
+  ids.forEach(id=>{const el=document.getElementById(id);if(!el)return;const cur=el.value;el.innerHTML='<option value="">Selecione...</option>'+lista.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');if(cur)el.value=cur;});
+}
+
+// ══════════════════════════════════════════
+// FÉRIAS
+// ══════════════════════════════════════════
+function calcularFeriasColab(empresaFiltro){
+  const base=empresaFiltro?DB.colaboradores.filter(c=>c.empresa===empresaFiltro):DB.colaboradores;
+  return base.filter(c=>c.status!=='Desligado'&&c.admissao).map(c=>{
+    const h=hoje(),dias=diasEntre(c.admissao,h);
+    const per=Math.floor(dias/365);
+    const ini=addDias(c.admissao,per*365);
+    const fim=addDias(c.admissao,(per+1)*365);
+    return{id:c.id,nome:c.nome,cargo:c.cargo,setor:c.setor,admissao:c.admissao,inicioPeriodo:ini,fimPeriodo:fim,limiteGozo:fim,diasRestantes:diasEntre(h,fim)};
+  });
+}
+function renderFerias(lista){
+  const src=lista||calcularFeriasColab();
+  document.getElementById('body-ferias').innerHTML=src.length?src.map(f=>{
+    const cls=f.diasRestantes<0?'b-venc':f.diasRestantes<=30?'b-urg':f.diasRestantes<=60?'b-warn':'b-ok';
+    const lbl=f.diasRestantes<0?'Vencida':f.diasRestantes<=30?'Crítico':f.diasRestantes<=60?'Atenção':'Em dia';
+    return`<tr>
+      <td style="font-weight:600">${f.nome}</td><td>${f.cargo||'—'}</td><td>${fmtData(f.admissao)}</td>
+      <td>${fmtData(f.inicioPeriodo)}</td><td>${fmtData(f.fimPeriodo)}</td><td>${fmtData(f.limiteGozo)}</td>
+      <td>${f.diasRestantes<0?'Vencida há '+Math.abs(f.diasRestantes)+'d':f.diasRestantes+'d'}</td>
+      <td><span class="badge ${cls}">${lbl}</span></td>
+      <td><button class="btn btn-sm" onclick="agendarFerias('${f.id}')">📅 Agendar</button></td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="9" class="empty">Nenhum colaborador ativo.</td></tr>';
+  const bh=document.getElementById('body-hist-ferias');
+  bh.innerHTML=DB.ferias_gozo.length?DB.ferias_gozo.map(f=>{
+    const c=DB.colaboradores.find(x=>x.id==f.colaboradorId);
+    return`<tr><td>${c?c.nome:'—'}</td><td>${fmtData(f.periodInicio)} – ${fmtData(f.periodFim)}</td><td>${fmtData(f.inicio)}</td><td>${fmtData(f.fim)}</td><td>${diasEntre(f.inicio,f.fim)+1}</td><td>${f.obs||'—'}</td></tr>`;
+  }).join(''):'<tr><td colspan="6" class="empty">Nenhum registro.</td></tr>';
+}
+function filtrarFerias(){
+  const q=document.getElementById('busca-ferias').value.toLowerCase();
+  const ft=document.getElementById('filtro-ferias').value;
+  const emp=document.getElementById('filtro-empresa-ferias')?.value||'';
+  let src=calcularFeriasColab(emp);
+  if(q)src=src.filter(f=>f.nome.toLowerCase().includes(q));
+  if(ft==='vencidas')src=src.filter(f=>f.diasRestantes<0);
+  else if(ft==='critico')src=src.filter(f=>f.diasRestantes>=0&&f.diasRestantes<=30);
+  else if(ft==='atencao')src=src.filter(f=>f.diasRestantes>30&&f.diasRestantes<=60);
+  else if(ft==='ok')src=src.filter(f=>f.diasRestantes>60);
+  renderFerias(src);
+}
+function abrirModalFerias(colabId){
+  populateSelectColabs(['ferias-colab']);
+  if(colabId)document.getElementById('ferias-colab').value=colabId;
+  document.getElementById('ferias-inicio').value='';
+  document.getElementById('ferias-fim').value='';
+  document.getElementById('ferias-obs').value='';
+  abrirModal('modal-ferias');
+}
+function agendarFerias(id){abrirModalFerias(id);}
+function salvarFerias(){
+  const colabId=document.getElementById('ferias-colab').value;
+  const inicio=document.getElementById('ferias-inicio').value;
+  const fim=document.getElementById('ferias-fim').value;
+  if(!colabId||!inicio||!fim){notify('Preencha colaborador, início e fim','error');return;}
+  const fc=calcularFeriasColab().find(f=>f.id==colabId);
+  const reg={id:gerarId(),colaboradorId:colabId,inicio,fim,obs:document.getElementById('ferias-obs').value.trim(),periodInicio:fc?fc.inicioPeriodo:'',periodFim:fc?fc.fimPeriodo:''};
+  DB.ferias_gozo.push(reg);salvarDB();fecharModal('modal-ferias');renderFerias();
+  const c=DB.colaboradores.find(x=>x.id==colabId);
+  notify(`Férias de ${c?.nome} registradas!`);
+  sincronizarScript('novaFerias',reg);
+}
+
+// ══════════════════════════════════════════
+// CARREIRA
+// ══════════════════════════════════════════
+function renderCarreira(){
+  document.getElementById('body-cargos').innerHTML=DB.cargos.length?DB.cargos.map(c=>{
+    const n=DB.colaboradores.filter(x=>x.cargo===c.nome&&x.status!=='Desligado').length;
+    return`<tr><td style="font-weight:600">${c.nome}</td><td>${c.setor}</td>
+      <td>${c.salBase?'R$ '+Number(c.salBase).toLocaleString('pt-BR',{minimumFractionDigits:2}):'—'}</td>
+      <td>${c.salMax?'R$ '+Number(c.salMax).toLocaleString('pt-BR',{minimumFractionDigits:2}):'—'}</td>
+      <td><span class="badge b-info">${n}</span></td>
+      <td><button class="btn btn-sm" onclick="editarCargo('${c.id}')">✏️</button></td></tr>`;
+  }).join(''):'<tr><td colspan="6" class="empty">Nenhum cargo cadastrado.</td></tr>';
+  renderProgressao();
+}
+function abrirModalCargo(id){
+  document.getElementById('modal-cargo-title').textContent=id?'Editar Cargo':'Novo Cargo';
+  ['nome','desc','req'].forEach(f=>{const el=document.getElementById('cargo-'+f);if(el)el.value='';});
+  ['sal-base','sal-max'].forEach(f=>{const el=document.getElementById('cargo-'+f);if(el)el.value='';});
+  if(id){const c=DB.cargos.find(x=>x.id==id);if(c){document.getElementById('cargo-nome').value=c.nome;document.getElementById('cargo-setor').value=c.setor;document.getElementById('cargo-sal-base').value=c.salBase;document.getElementById('cargo-sal-max').value=c.salMax;document.getElementById('cargo-desc').value=c.desc||'';;document.getElementById('cargo-req').value=c.req||'';}
+    document.getElementById('btn-salvar-cargo').onclick=()=>salvarCargo(id);
+  }else document.getElementById('btn-salvar-cargo').onclick=()=>salvarCargo();
+  abrirModal('modal-cargo');
+}
+function editarCargo(id){abrirModalCargo(id);}
+function salvarCargo(editId){
+  const nome=document.getElementById('cargo-nome').value.trim();
+  if(!nome){notify('Nome obrigatório','error');return;}
+  const obj={id:editId||gerarId(),nome,setor:document.getElementById('cargo-setor').value,salBase:document.getElementById('cargo-sal-base').value,salMax:document.getElementById('cargo-sal-max').value,desc:document.getElementById('cargo-desc').value.trim(),req:document.getElementById('cargo-req').value.trim()};
+  if(editId){const i=DB.cargos.findIndex(c=>c.id==editId);DB.cargos[i]=obj;}else DB.cargos.push(obj);
+  salvarDB();fecharModal('modal-cargo');renderCarreira();notify(editId?'Cargo atualizado!':'Cargo cadastrado!');
+  sincronizarScript(editId?'editarCargo':'novoCargo',obj);
+}
+function renderProgressao(q){
+  let colabs=DB.colaboradores.filter(c=>c.status!=='Desligado');
+  if(q)colabs=colabs.filter(c=>c.nome.toLowerCase().includes(q.toLowerCase()));
+  document.getElementById('lista-progressao').innerHTML=colabs.length?colabs.map(c=>`
+    <div style="padding:10px;background:var(--surface2);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <strong style="font-size:13px">${c.nome}</strong>
+        <span class="badge b-info">${c.cargo||'—'}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text2);margin-top:3px">${c.setor} · Admissão: ${fmtData(c.admissao)} · R$ ${c.salario?c.salario.toLocaleString('pt-BR',{minimumFractionDigits:2}):'—'}</div>
+    </div>`).join(''):'<div class="empty">Nenhum registro.</div>';
+}
+function filtrarProgressao(){renderProgressao(document.getElementById('busca-progressao').value);}
+
+// ══════════════════════════════════════════
+// ADVERTÊNCIAS
+// ══════════════════════════════════════════
+const modelos={
+  'Atraso Reiterado':'O(a) colaborador(a) apresentou atrasos reiterados no horário de entrada, contrariando as normas internas da empresa. Tal comportamento prejudica o bom andamento das atividades e o respeito ao horário de trabalho estabelecido contratualmente.',
+  'Falta sem Justificativa':'O(a) colaborador(a) faltou ao trabalho no dia __/__/____ sem apresentar justificativa, atestado médico ou qualquer comunicação prévia, descumprindo suas obrigações contratuais e causando transtornos ao funcionamento da equipe.',
+  'Descumprimento de Normas Internas':'O(a) colaborador(a) descumpriu normas internas da empresa, conforme apurado pela gestão. A conduta infringida refere-se a: ____________________________. Reiteramos a obrigatoriedade do cumprimento de todas as regras e regulamentos estabelecidos.',
+  'Comportamento Inadequado':'O(a) colaborador(a) apresentou comportamento inadequado no ambiente de trabalho, contrariando as diretrizes de conduta da empresa. O ocorrido gerou desconforto no ambiente laboral e impacto negativo nas relações de trabalho.',
+  'Uso Indevido de Equipamentos':'O(a) colaborador(a) fez uso indevido de equipamentos e/ou bens patrimoniais da empresa para fins particulares ou não autorizados, contrariando expressamente as normas de utilização dos recursos corporativos.',
+  'Negligência no Trabalho':'O(a) colaborador(a) demonstrou negligência no desempenho de suas funções, deixando de executar suas atividades com o zelo, atenção e qualidade exigidos pelo cargo, causando prejuízo e/ou retrabalho para a equipe.',
+  'Desrespeito a Superior Hierárquico':'O(a) colaborador(a) desrespeitou superior hierárquico, utilizando linguagem inadequada e/ou adotando postura de confronto e desobediência a orientações e determinações legítimas da gestão, em desacordo com as normas de conduta da empresa.',
+  'Descumprimento de Normas de Segurança':'O(a) colaborador(a) descumpriu normas de segurança do trabalho estabelecidas pela empresa, deixando de utilizar EPI obrigatório e/ou adotando procedimento de risco, colocando em perigo sua própria integridade física e a de terceiros.',
+  'Uso de Celular em Horário Proibido':'O(a) colaborador(a) fez uso de aparelho celular durante o horário de trabalho em situação não autorizada, contrariando a política de uso de dispositivos móveis da empresa, o que comprometeu sua produtividade e concentração nas atividades.',
+  'Abandono de Posto':'O(a) colaborador(a) ausentou-se do seu posto de trabalho sem autorização prévia da chefia imediata, deixando suas atividades e responsabilidades sem cobertura durante o período de __:__ às __:__, causando prejuízo ao fluxo operacional.',
+  'Conflito com Colegas de Trabalho':'O(a) colaborador(a) envolveu-se em conflito com colegas de trabalho no ambiente da empresa, adotando postura agressiva e/ou desrespeitosa, em desacordo com as diretrizes de convivência e respeito mútuo estabelecidas pela empresa.'
+};
+function preencherModelo(){const t=document.getElementById('adv-tipo').value;if(modelos[t])document.getElementById('adv-descricao').value=modelos[t];}
+function emitirAdvertencia(){
+  const cId=document.getElementById('adv-colaborador').value,tipo=document.getElementById('adv-tipo').value,data=document.getElementById('adv-data').value,desc=document.getElementById('adv-descricao').value.trim();
+  if(!cId||!tipo||!data||!desc){notify('Preencha todos os campos','error');return;}
+  const obj={id:gerarId(),colaboradorId:cId,tipo,data,descricao:desc,emitidaEm:hoje()};
+  DB.advertencias.push(obj);salvarDB();filtrarAdvertencias();
+  const c=DB.colaboradores.find(x=>x.id==cId);
+  notify(`Advertência de ${c?.nome} emitida!`);
+  sincronizarScript('novaAdvertencia',obj);
+}
+function imprimirAdvertencia(){
+  const cId=document.getElementById('adv-colaborador').value,tipo=document.getElementById('adv-tipo').value,data=document.getElementById('adv-data').value,desc=document.getElementById('adv-descricao').value.trim();
+  if(!cId||!tipo||!desc){notify('Preencha todos os campos','error');return;}
+  const c=DB.colaboradores.find(x=>x.id==cId),empresa=c?.empresa||localStorage.getItem('rh_empresa')||'Explosão Alimentos';
+  const cnpjMap={'Explosão Alimentos':'CNPJ: 01.121.126/0001-87','AGS Distribuidora':'CNPJ: 51.943.609/0001-35'};
+  const cnpj=cnpjMap[empresa]||'';
+  const logo=getLogoUrl(empresa);
+  const w=window.open('','_blank');
+  w.document.write(`<html><head><title>Advertência — ${c?.nome}</title><style>body{font-family:Arial,sans-serif;font-size:14px;padding:40px;max-width:720px;margin:auto}.logo{text-align:center;margin-bottom:4px}.logo img{height:60px;width:auto}h3{text-align:center;color:#555;margin-bottom:30px}.sub{text-align:center;font-size:12px;color:#777;margin-top:-10px;margin-bottom:20px}.row{margin:12px 0}.sig{margin-top:60px;display:flex;gap:60px;justify-content:center}.sig div{text-align:center;border-top:1px solid #000;padding-top:6px;min-width:200px}@media print{button{display:none}}</style></head><body>
+  <div class="logo"><img src="${logo}" alt="${empresa}"></div><div class="sub">${cnpj}</div><h3>ADVERTÊNCIA FORMAL</h3>
+  <p>A empresa <strong>${empresa}</strong> adverte formalmente o(a) colaborador(a):</p>
+  <div class="row"><b>Nome:</b> ${c?.nome}</div><div class="row"><b>Cargo:</b> ${c?.cargo||'—'}</div><div class="row"><b>Setor:</b> ${c?.setor||'—'}</div>
+  <div class="row"><b>Tipo:</b> ${tipo}</div><div class="row"><b>Data da Ocorrência:</b> ${fmtData(data)}</div>
+  <div class="row"><b>Descrição:</b><br><br>${desc}</div>
+  <p style="margin-top:20px">Alertamos que a reincidência poderá acarretar em medidas mais severas.</p>
+  <div class="sig"><div>Assinatura do Responsável<br><small>${empresa}</small></div><div>Assinatura do Colaborador<br><small>Ciente em ___/___/______</small></div></div>
+  <button onclick="window.print()" style="margin:30px auto;display:block;padding:10px 30px;background:#1a5c38;color:#fff;border:none;border-radius:6px;cursor:pointer">🖨️ Imprimir</button>
+  </body></html>`);
+}
+function renderAdvertencias(){filtrarAdvertencias();}
+function filtrarAdvertencias(){
+  const q=document.getElementById('busca-adv').value.toLowerCase();
+  const emp=document.getElementById('filtro-empresa-adv')?.value||'';
+  let lista=DB.advertencias;
+  if(q||emp)lista=lista.filter(a=>{const c=DB.colaboradores.find(x=>x.id==a.colaboradorId);return (!q||(c?.nome.toLowerCase().includes(q)||a.tipo.toLowerCase().includes(q)))&&(!emp||(c&&c.empresa===emp));});
+  const el=document.getElementById('lista-advertencias');
+  el.innerHTML=lista.length?[...lista].reverse().map(a=>{
+    const c=DB.colaboradores.find(x=>x.id==a.colaboradorId);
+    const preview=a.descricao.slice(0,100)+(a.descricao.length>100?'...':'');
+    return`<div class="alert-item warn" style="margin-bottom:8px;cursor:pointer" onclick="verAdvertencia('${a.id}')" title="Clique para ver completo">
+      <div class="alert-body">
+        <div class="alert-name">${c?.nome||'—'} <span class="badge b-warn" style="margin-left:6px">${a.tipo}</span></div>
+        <div class="alert-desc">${fmtData(a.data)} · ${preview}</div>
+      </div>
+      <span style="font-size:18px;color:var(--text3);flex-shrink:0">›</span>
+    </div>`;
+  }).join(''):'<div class="empty">Nenhuma advertência.</div>';
+}
+function verAdvertencia(id){
+  const a=DB.advertencias.find(x=>x.id==id);if(!a)return;
+  const c=DB.colaboradores.find(x=>x.id==a.colaboradorId);
+  document.getElementById('ver-adv-titulo').textContent='Advertência — '+(c?.nome||'—');
+  document.getElementById('ver-adv-body').innerHTML=`
+    <div class="form-grid">
+      <div class="form-group"><label>Colaborador</label><div style="padding:7px 10px;background:var(--surface2);border-radius:var(--radius-sm);font-size:13px;border:1px solid var(--border)">${c?.nome||'—'}</div></div>
+      <div class="form-group"><label>Cargo / Setor</label><div style="padding:7px 10px;background:var(--surface2);border-radius:var(--radius-sm);font-size:13px;border:1px solid var(--border)">${c?.cargo||'—'} · ${c?.setor||'—'}</div></div>
+      <div class="form-group"><label>Tipo de Ocorrência</label><div style="padding:7px 10px;background:var(--surface2);border-radius:var(--radius-sm);font-size:13px;border:1px solid var(--border)"><span class="badge b-warn">${a.tipo}</span></div></div>
+      <div class="form-group"><label>Data da Ocorrência</label><div style="padding:7px 10px;background:var(--surface2);border-radius:var(--radius-sm);font-size:13px;border:1px solid var(--border)">${fmtData(a.data)}</div></div>
+      <div class="form-group" style="grid-column:1/-1"><label>Descrição Completa</label><div style="padding:10px 12px;background:var(--surface2);border-radius:var(--radius-sm);font-size:13px;border:1px solid var(--border);white-space:pre-wrap;line-height:1.6">${a.descricao}</div></div>
+      <div class="form-group"><label>Emitida em</label><div style="padding:7px 10px;background:var(--surface2);border-radius:var(--radius-sm);font-size:13px;border:1px solid var(--border)">${fmtData(a.emitidaEm)||'—'}</div></div>
+    </div>`;
+  // guarda id para o botão imprimir
+  document.getElementById('modal-ver-adv').dataset.advId=id;
+  abrirModal('modal-ver-adv');
+}
+function imprimirAdvertenciaById(){
+  const id=document.getElementById('modal-ver-adv').dataset.advId;
+  const a=DB.advertencias.find(x=>x.id==id);if(!a)return;
+  const c=DB.colaboradores.find(x=>x.id==a.colaboradorId);
+  const empresa=c?.empresa||localStorage.getItem('rh_empresa')||'Explosão Alimentos';
+  const cnpjMap={'Explosão Alimentos':'CNPJ: 01.121.126/0001-87','AGS Distribuidora':'CNPJ: 51.943.609/0001-35'};
+  const cnpj=cnpjMap[empresa]||'';
+  const logo=getLogoUrl(empresa);
+  const w=window.open('','_blank');
+  w.document.write(`<html><head><title>Advertência — ${c?.nome}</title><style>body{font-family:Arial,sans-serif;font-size:14px;padding:40px;max-width:720px;margin:auto}.logo{text-align:center;margin-bottom:4px}.logo img{height:60px;width:auto}h3{text-align:center;color:#555;margin-bottom:30px}.sub{text-align:center;font-size:12px;color:#777;margin-top:-10px;margin-bottom:20px}.row{margin:12px 0}.desc{margin-top:8px;padding:12px;background:#f9f9f9;border:1px solid #ddd;border-radius:6px;white-space:pre-wrap;line-height:1.6}.sig{margin-top:60px;display:flex;gap:60px;justify-content:center}.sig div{text-align:center;border-top:1px solid #000;padding-top:6px;min-width:200px}@media print{button{display:none}}</style></head><body>
+  <div class="logo"><img src="${logo}" alt="${empresa}"></div><div class="sub">${cnpj}</div><h3>ADVERTÊNCIA FORMAL</h3>
+  <p>A empresa <strong>${empresa}</strong> adverte formalmente o(a) colaborador(a):</p>
+  <div class="row"><b>Nome:</b> ${c?.nome||'—'}</div>
+  <div class="row"><b>Cargo:</b> ${c?.cargo||'—'} &nbsp;|&nbsp; <b>Setor:</b> ${c?.setor||'—'}</div>
+  <div class="row"><b>Tipo:</b> ${a.tipo}</div>
+  <div class="row"><b>Data da Ocorrência:</b> ${fmtData(a.data)}</div>
+  <div class="row"><b>Descrição:</b><div class="desc">${a.descricao}</div></div>
+  <p style="margin-top:20px">Alertamos que a reincidência poderá acarretar em medidas mais severas.</p>
+  <div class="sig">
+    <div>Assinatura do Responsável<br><small>${empresa}</small></div>
+    <div>Assinatura do Colaborador<br><small>Ciente em ___/___/______</small></div>
+  </div>
+  <button onclick="window.print()" style="margin:30px auto;display:block;padding:10px 30px;background:#1a5c38;color:#fff;border:none;border-radius:6px;cursor:pointer">🖨️ Imprimir</button>
+  </body></html>`);
+}
+
+// ══════════════════════════════════════════
+// ANIVERSÁRIOS
+// ══════════════════════════════════════════
+function getBdayMes(colabsParam,mes){
+  const m=mes||new Date().getMonth()+1;
+  const base=colabsParam||DB.colaboradores;
+  return base.filter(c=>c.status!=='Desligado'&&c.nascimento).filter(c=>new Date(c.nascimento+'T00:00').getMonth()+1===m).sort((a,b)=>new Date(a.nascimento).getDate()-new Date(b.nascimento).getDate());
+}
+function renderAniversarios(){
+  const h=hoje(),hObj=new Date(h+'T00:00');
+  const bdays=getBdayMes();
+  document.getElementById('bday-mes').innerHTML=bdays.length?bdays.map(c=>{
+    const dt=new Date(c.nascimento+'T00:00'),dia=dt.getDate(),isHoje=dia===hObj.getDate();
+    const tag=isHoje?'<span class="badge b-ok" style="margin-left:6px">🎂 Hoje!</span>':dia<=hObj.getDate()+7&&dia>=hObj.getDate()?'<span class="badge b-warn" style="margin-left:6px">Esta semana</span>':'';
+    return`<div class="bday-card" style="${isHoje?'border-left-color:#2e7d32;background:#f0fff4':''}">
+      <div class="bday-avatar" style="${isHoje?'background:#2e7d32':''}">  ${c.nome[0]}</div>
+      <div><div class="bday-name">Dia ${dia} — ${c.nome} ${tag}</div><div class="bday-info">${c.cargo||'—'} · ${c.setor||'—'}</div></div>
+    </div>`;
+  }).join(''):'<div class="empty">Nenhum aniversariante este mês.</div>';
+  // ASO
+  const asoItems=DB.colaboradores.filter(c=>c.status!=='Desligado'&&c.aso).map(c=>({...c,d:diasEntre(h,c.aso)})).filter(c=>c.d<=60).sort((a,b)=>a.d-b.d);
+  document.getElementById('lista-aso').innerHTML=asoItems.length?asoItems.map(c=>`
+    <div class="alert-item ${c.d<0?'danger':c.d<=7?'danger':'warn'}" style="margin-bottom:6px">
+      <div class="alert-body"><div class="alert-name">${c.nome} <span class="badge ${c.d<0?'b-venc':c.d<=7?'b-urg':'b-warn'}">${c.d<0?'Vencido':'Vence em '+c.d+'d'}</span></div>
+      <div class="alert-desc">${c.cargo||'—'} · ${fmtData(c.aso)}</div></div>
+    </div>`).join(''):'<div class="empty">Nenhum vencimento próximo.</div>';
+  // Contratos
+  const expItems=DB.colaboradores.filter(c=>c.status==='Ativo'&&c.admissao&&(c.contrato==='Temporário'||c.contrato==='Estágio'||c.contrato==='Aprendiz')).map(c=>({...c,d45:diasEntre(h,addDias(c.admissao,45)),d90:diasEntre(h,addDias(c.admissao,90))})).filter(c=>c.d45<=30||c.d90<=30).sort((a,b)=>a.d45-b.d45);
+  document.getElementById('lista-experiencia').innerHTML=expItems.length?expItems.map(c=>`
+    <div class="alert-item ${c.d45<=7?'danger':'warn'}" style="margin-bottom:6px">
+      <div class="alert-body"><div class="alert-name">${c.nome} <span class="badge b-gray">${c.contrato}</span></div>
+      <div class="alert-desc"><span class="badge ${c.d45<=7?'b-venc':'b-warn'}" style="margin-right:6px">45d: ${c.d45<=0?'Venc.':c.d45+'d'}</span><span class="badge ${c.d90<=7?'b-venc':'b-warn'}">90d: ${c.d90<=0?'Venc.':c.d90+'d'}</span></div></div>
+    </div>`).join(''):'<div class="empty">Nenhum vencimento próximo.</div>';
+}
+
+// ══════════════════════════════════════════
+// DESLIGAMENTOS
+// ══════════════════════════════════════════
+function registrarDesligamento(){
+  const cId=document.getElementById('desl-colaborador').value,data=document.getElementById('desl-data').value,motivo=document.getElementById('desl-motivo').value;
+  if(!cId||!data||!motivo){notify('Preencha todos os campos','error');return;}
+  const c=DB.colaboradores.find(x=>x.id==cId);
+  if(!confirm(`Confirmar desligamento de ${c?.nome}?`))return;
+  const obj={id:gerarId(),colaboradorId:cId,nome:c?.nome,cargo:c?.cargo,setor:c?.setor,data,motivo,obs:document.getElementById('desl-obs').value.trim(),registradoEm:hoje()};
+  DB.desligamentos.push(obj);
+  const idx=DB.colaboradores.findIndex(x=>x.id==cId);DB.colaboradores[idx].status='Desligado';
+  salvarDB();renderDesligamentos();populateSelectColabs(['desl-colaborador'],true);
+  notify(`${c?.nome} desligado(a). Histórico preservado.`);
+  sincronizarScript('novoDesligamento',obj);
+}
+function gerarChecklist(){
+  const cId=document.getElementById('desl-colaborador').value;
+  const c=DB.colaboradores.find(x=>x.id==cId);
+  if(!c){notify('Selecione um colaborador','error');return;}
+  document.getElementById('modal-checklist').dataset.empresa=c.empresa||'Explosão Alimentos';
+  document.getElementById('checklist-body').innerHTML=`<p style="margin-bottom:14px;font-size:13px">Colaborador: <strong>${c.nome}</strong> — ${c.cargo||'—'}</p>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    ${['Devolução de EPI e equipamentos de proteção','Devolução de crachá e uniformes','Devolução de ferramentas e equipamentos','Acerto de férias proporcionais','Acerto de 13º proporcional','FGTS: guias e saque','Seguro Desemprego: verificar elegibilidade','Carteira de trabalho: baixa e assinatura','Entrega de documentos: aviso prévio e TRCT','Exame demissional','Revogação de acessos ao sistema','Transferência de responsabilidades para a equipe'].map(i=>`
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13px">
+        <input type="checkbox" style="margin-top:2px;width:16px;height:16px;accent-color:var(--accent)">
+        <span>${i}</span>
+      </label>`).join('')}
+  </div>`;
+  abrirModal('modal-checklist');
+}
+function imprimirChecklist(){
+  const el=document.getElementById('checklist-body');
+  const empresa=document.getElementById('modal-checklist').dataset.empresa||'Explosão Alimentos';
+  const logo=getLogoUrl(empresa);
+  const w=window.open('','_blank');
+  w.document.write(`<html><head><title>Checklist Desligamento</title><style>body{font-family:Arial,sans-serif;padding:40px;max-width:600px;margin:auto;font-size:13px}.logo{text-align:center;margin-bottom:16px}.logo img{height:50px;width:auto}@media print{button{display:none}}</style></head><body><div class="logo"><img src="${logo}" alt="${empresa}"></div><h2>Checklist de Desligamento</h2>${el.innerHTML}<button onclick="window.print()" style="margin-top:30px;padding:10px 30px;background:#1a5c38;color:#fff;border:none;border-radius:6px;cursor:pointer">🖨️ Imprimir</button></body></html>`);
+}
+function renderDesligamentos(){
+  const emp=document.getElementById('filtro-empresa-desl')?.value||'';
+  let lista=DB.desligamentos;
+  if(emp)lista=lista.filter(d=>{const c=DB.colaboradores.find(x=>x.id==d.colaboradorId);return c&&c.empresa===emp;});
+  document.getElementById('body-desligamentos').innerHTML=lista.length?[...lista].reverse().map(d=>`<tr>
+    <td style="font-weight:600">${d.nome}</td><td>${d.cargo||'—'}</td><td>${fmtData(d.data)}</td>
+    <td><span class="badge ${d.motivo==='Justa Causa'?'b-danger':'b-gray'}">${d.motivo}</span></td>
+    <td><button class="btn btn-sm" data-tip="Ver histórico" onclick="verColab('${d.colaboradorId}')">👁</button></td>
+  </tr>`).join(''):'<tr><td colspan="5" class="empty">Nenhum registro.</td></tr>';
+}
+
+// ══════════════════════════════════════════
+// CONFIGURAÇÕES
+// ══════════════════════════════════════════
+function carregarConfig(){
+  document.getElementById('cfg-script-url').value=localStorage.getItem('rh_script_url')||'';  document.getElementById('cfg-empresa').value=localStorage.getItem('rh_empresa')||'Explosão Alimentos';
+}
+function salvarConfig(){
+  const url=document.getElementById('cfg-script-url').value.trim();
+  const empresa=document.getElementById('cfg-empresa').value.trim()||'Explosão Alimentos';
+  SCRIPT_URL=url;
+  localStorage.setItem('rh_script_url',url);
+  localStorage.setItem('rh_empresa',empresa);
+  notify('Configurações salvas!');
+}
+function testarConexao(){
+  const el=document.getElementById('status-conexao');
+  if(!SCRIPT_URL){el.innerHTML='<div class="alert-item danger"><div class="alert-body">URL não configurada.</div></div>';return;}
+  el.innerHTML='<span style="font-size:12px;color:var(--text2)">Testando...</span>';
+  fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'ping'})}).then(r=>r.json()).then(d=>{el.innerHTML=d.ok?'<div class="alert-item ok"><div class="alert-body"><div class="alert-name">✅ Conexão OK!</div></div></div>':'<div class="alert-item warn"><div class="alert-body">Conectado mas sem resposta esperada.</div></div>';}).catch(()=>el.innerHTML='<div class="alert-item danger"><div class="alert-body"><div class="alert-name">❌ Erro de conexão. Verifique a URL.</div></div></div>');
+}
+function exportarJSON(){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(DB,null,2)],{type:'application/json'}));
+  a.download='rh_explosao_backup.json';a.click();notify('JSON exportado!');
+}
+function limparDadosLocais(){
+  if(!confirm('Limpar todos os dados locais?'))return;
+  ['rh_colaboradores','rh_ferias_gozo','rh_advertencias','rh_cargos','rh_desligamentos'].forEach(k=>localStorage.removeItem(k));
+  DB={colaboradores:[],ferias_gozo:[],advertencias:[],cargos:[],desligamentos:[]};
+  notify('Cache limpo.','warn');
+}
+
+// ══════════════════════════════════════════
+// SINCRONIZAÇÃO
+// ══════════════════════════════════════════
+async function sincronizarScript(action,data){
+  if(!SCRIPT_URL)return;
+  try{await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action,data})});}catch(e){console.warn('Sync falhou:',e);}
+}
+async function sincronizar(){
+  if(!SCRIPT_URL){notify('Configure a URL do Script nas Configurações','error');return;}
+  setSyncStatus('loading','Sincronizando...');loading(true);
+  try{
+    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'listarTodos'})});
+    const d=await r.json();
+    if(d.ok&&d.result){
+      if(d.result.colaboradores)DB.colaboradores=d.result.colaboradores;
+      if(d.result.ferias_gozo)DB.ferias_gozo=d.result.ferias_gozo;
+      if(d.result.advertencias)DB.advertencias=d.result.advertencias;
+      if(d.result.cargos)DB.cargos=d.result.cargos;
+      if(d.result.desligamentos)DB.desligamentos=d.result.desligamentos;
+      salvarDB();
+      const hr=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      setSyncStatus('online','Sincronizado '+hr);
+      notify('Dados sincronizados!');
+      renderDashboard();
+    }else{setSyncStatus('offline','Erro: '+(d.error||'?'));notify(d.error||'Erro ao sincronizar','error');}
+  }catch(e){setSyncStatus('offline','Erro de conexão');notify('Erro: '+e.message,'error');}
+  finally{loading(false);}
+}
+
+// ══════════════════════════════════════════
+// MODAIS
+// ══════════════════════════════════════════
+function abrirModal(id){document.getElementById(id).classList.remove('hidden');}
+function fecharModal(id){document.getElementById(id).classList.add('hidden');}
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)fecharModal(m.id);}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(m=>fecharModal(m.id));});
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+window.addEventListener('DOMContentLoaded',()=>{
+  renderDashboard();
+  if(SCRIPT_URL)setSyncStatus('online','Configurado');
+});
+</script>
+</body>
+</html>
