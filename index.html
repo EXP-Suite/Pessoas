@@ -1532,7 +1532,7 @@ function testarConexao(){
   const el=document.getElementById('status-conexao');
   if(!SCRIPT_URL){el.innerHTML='<div class="alert-item danger"><div class="alert-body">URL não configurada.</div></div>';return;}
   el.innerHTML='<span style="font-size:12px;color:var(--text2)">Testando...</span>';
-  fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'ping'})}).then(r=>r.json()).then(d=>{el.innerHTML=d.ok?'<div class="alert-item ok"><div class="alert-body"><div class="alert-name">✅ Conexão OK!</div></div></div>':'<div class="alert-item warn"><div class="alert-body">Conectado mas sem resposta esperada.</div></div>';}).catch(()=>el.innerHTML='<div class="alert-item danger"><div class="alert-body"><div class="alert-name">❌ Erro de conexão. Verifique a URL.</div></div></div>');
+  fetch(SCRIPT_URL+'?action=ping').then(r=>r.json()).then(d=>{el.innerHTML=d.ok?'<div class="alert-item ok"><div class="alert-body"><div class="alert-name">✅ Conexão OK!</div></div></div>':'<div class="alert-item warn"><div class="alert-body">Conectado mas sem resposta esperada.</div></div>';}).catch(()=>el.innerHTML='<div class="alert-item danger"><div class="alert-body"><div class="alert-name">❌ Erro de conexão. Verifique a URL.</div></div></div>');
 }
 function exportarJSON(){
   const a=document.createElement('a');
@@ -1551,13 +1551,13 @@ function limparDadosLocais(){
 // ══════════════════════════════════════════
 async function sincronizarScript(action,data){
   if(!SCRIPT_URL)return;
-  try{await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action,data})});}catch(e){console.warn('Sync falhou:',e);}
+  try{await fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action,data})});}catch(e){console.warn('Sync falhou:',e);}
 }
 async function sincronizar(){
   if(!SCRIPT_URL){notify('Configure a URL do Script nas Configurações','error');return;}
   setSyncStatus('loading','Sincronizando...');loading(true);
   try{
-    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'listarTodos'})});
+    const r=await fetch(SCRIPT_URL+'?action=listarTodos');
     const d=await r.json();
     if(d.ok&&d.result){
       if(d.result.colaboradores)DB.colaboradores=d.result.colaboradores;
