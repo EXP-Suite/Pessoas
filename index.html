@@ -318,8 +318,8 @@ tbody tr:hover td{background:var(--bg)}
     <div class="card-title">📋 Histórico de Gozo</div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Colaborador</th><th>Período Aquisitivo</th><th>Início Gozo</th><th>Fim Gozo</th><th>Dias</th><th>Obs</th></tr></thead>
-        <tbody id="body-hist-ferias"><tr><td colspan="6" class="empty">Nenhum registro.</td></tr></tbody>
+        <thead><tr><th>Colaborador</th><th>Período Aquisitivo</th><th>Início Gozo</th><th>Fim Gozo</th><th>Dias</th><th>Obs</th><th></th></tr></thead>
+        <tbody id="body-hist-ferias"><tr><td colspan="7" class="empty">Nenhum registro.</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -482,7 +482,7 @@ tbody tr:hover td{background:var(--bg)}
     <div class="card">
       <div class="card-title">⚙️ Conexão com Google Sheets</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <input type="url" id="cfg-script-url" placeholder="https://script.google.com/macros/s/..." style="flex:1;min-width:200px;font-family:monospace;font-size:12px">
+        <input type="url" id="cfg-script-url" placeholder=https://script.google.com/macros/s/AKfycbzg4i8gmOPM5dClcj6KcUuqmzBTvKeWlXsUYZYeCpKKqrP4JQGP-oP0kS7C5Fh7LQQvJw/exec style="flex:1;min-width:200px;font-family:monospace;font-size:12px">
         <button class="btn btn-primary" onclick="salvarConfig()">Salvar e Conectar</button>
         <button class="btn" onclick="testarConexao()">↻ Testar</button>
       </div>
@@ -571,11 +571,64 @@ tbody tr:hover td{background:var(--bg)}
   </div>
 </div>
 
+<!-- Modal Progressão de Cargo -->
+<div class="modal-overlay hidden" id="modal-progressao">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <h3>📈 Registrar Progressão de Cargo</h3>
+      <button class="modal-close" onclick="fecharModal('modal-progressao')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="prog-colab-id">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;display:flex;gap:24px;flex-wrap:wrap">
+        <div><div style="font-size:11px;color:var(--text2);font-weight:600;margin-bottom:2px">COLABORADOR</div><div style="font-size:13px;font-weight:700" id="prog-colab-nome">—</div></div>
+        <div><div style="font-size:11px;color:var(--text2);font-weight:600;margin-bottom:2px">CARGO ATUAL</div><div style="font-size:13px;font-weight:600;color:var(--accent)" id="prog-cargo-atual">—</div></div>
+        <div><div style="font-size:11px;color:var(--text2);font-weight:600;margin-bottom:2px">SALÁRIO ATUAL</div><div style="font-size:13px" id="prog-salario-atual">—</div></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Novo Cargo *</label>
+          <input type="text" id="prog-cargo-novo" placeholder="Digite ou selecione o novo cargo..." list="list-prog-cargos">
+          <datalist id="list-prog-cargos"></datalist>
+        </div>
+        <div class="form-group">
+          <label>Novo Salário (R$)</label>
+          <input type="number" id="prog-salario-novo" placeholder="Deixe em branco para manter" step="0.01" min="0">
+        </div>
+        <div class="form-group">
+          <label>Data da Alteração *</label>
+          <input type="date" id="prog-data">
+        </div>
+        <div class="form-group">
+          <label>Motivo</label>
+          <select id="prog-motivo">
+            <option>Promoção</option>
+            <option>Transferência de Setor</option>
+            <option>Restruturação</option>
+            <option>Mérito</option>
+            <option>Acordo Coletivo</option>
+            <option>Outro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Observações</label>
+          <input type="text" id="prog-obs" placeholder="Opcional...">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal('modal-progressao')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarProgressao()">💾 Confirmar Progressão</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Férias -->
 <div class="modal-overlay hidden" id="modal-ferias">
   <div class="modal" style="max-width:520px">
-    <div class="modal-header"><h3>Registrar Gozo de Férias</h3><button class="modal-close" onclick="fecharModal('modal-ferias')">✕</button></div>
+    <div class="modal-header"><h3 id="modal-ferias-title">Registrar Gozo de Férias</h3><button class="modal-close" onclick="fecharModal('modal-ferias')">✕</button></div>
     <div class="modal-body">
+      <input type="hidden" id="ferias-edit-id">
       <div class="form-grid">
         <div class="form-group" style="grid-column:1/-1"><label>Colaborador *</label><select id="ferias-colab"><option value="">Selecione...</option></select></div>
         <div class="form-group"><label>Início do Gozo *</label><input type="date" id="ferias-inicio"></div>
@@ -616,7 +669,7 @@ tbody tr:hover td{background:var(--bg)}
   <div class="modal">
     <div class="modal-header"><h3 id="ver-colab-nome">—</h3><button class="modal-close" onclick="fecharModal('modal-ver-colab')">✕</button></div>
     <div class="modal-body" id="ver-colab-body"></div>
-    <div class="modal-footer"><button class="btn" onclick="fecharModal('modal-ver-colab')">Fechar</button></div>
+    <div class="modal-footer"><button class="btn" onclick="fecharModal('modal-ver-colab')">Fechar</button><button class="btn btn-primary" id="btn-promover-ficha" onclick="">📈 Registrar Progressão</button></div>
   </div>
 </div>
 
@@ -649,7 +702,7 @@ tbody tr:hover td{background:var(--bg)}
 
 <div class="toast" id="toast"></div>
 <div id="wms-tooltip"></div>
-<div id="app-version">Rev 2.1</div>
+<div id="app-version">Rev 2.2</div>
 
 <script>
 // ══════════════════════════════════════════
@@ -661,11 +714,12 @@ const LOGO_URL={
 };
 function getLogoUrl(empresa){return LOGO_URL[empresa]||LOGO_URL['Explosão Alimentos'];}
 let SCRIPT_URL = localStorage.getItem('rh_script_url')||'https://script.google.com/macros/s/AKfycbz9dCilm276ooYy8Olcvi-eYrfkPtAfoxeC_RW0LzRr9a-8FwTaUKR8jhmvsHfbqdiVVw/exec';let DB = {
-  colaboradores: JSON.parse(localStorage.getItem('rh_colaboradores')||'[]'),
-  ferias_gozo:   JSON.parse(localStorage.getItem('rh_ferias_gozo')||'[]'),
-  advertencias:  JSON.parse(localStorage.getItem('rh_advertencias')||'[]'),
-  cargos:        JSON.parse(localStorage.getItem('rh_cargos')||'[]'),
-  desligamentos: JSON.parse(localStorage.getItem('rh_desligamentos')||'[]'),
+  colaboradores:   JSON.parse(localStorage.getItem('rh_colaboradores')||'[]'),
+  ferias_gozo:     JSON.parse(localStorage.getItem('rh_ferias_gozo')||'[]'),
+  advertencias:    JSON.parse(localStorage.getItem('rh_advertencias')||'[]'),
+  cargos:          JSON.parse(localStorage.getItem('rh_cargos')||'[]'),
+  desligamentos:   JSON.parse(localStorage.getItem('rh_desligamentos')||'[]'),
+  historico_cargo: JSON.parse(localStorage.getItem('rh_historico_cargo')||'[]'),
 };
 // Empresas cadastradas
 const EMPRESAS = [
@@ -684,6 +738,7 @@ function salvarDB(){
   localStorage.setItem('rh_advertencias',JSON.stringify(DB.advertencias));
   localStorage.setItem('rh_cargos',JSON.stringify(DB.cargos));
   localStorage.setItem('rh_desligamentos',JSON.stringify(DB.desligamentos));
+  localStorage.setItem('rh_historico_cargo',JSON.stringify(DB.historico_cargo));
 }
 
 // ══════════════════════════════════════════
@@ -691,7 +746,7 @@ function salvarDB(){
 // ══════════════════════════════════════════
 function gerarId(){ return Date.now()+Math.floor(Math.random()*1000); }
 function hoje(){ return new Date().toISOString().slice(0,10); }
-function fmtData(s){ if(!s)return'—'; const[y,m,d]=s.split('-'); return`${d}/${m}/${y}`; }
+function fmtData(s){ if(!s)return'—'; const p=s.slice(0,10); const[y,m,d]=p.split('-'); return`${d}/${m}/${y}`; }
 function diasEntre(d1,d2){ return Math.round((new Date(d2)-new Date(d1))/86400000); }
 function addDias(d,n){ const dt=new Date(d); dt.setDate(dt.getDate()+n); return dt.toISOString().slice(0,10); }
 function mascaraCPF(el){ let v=el.value.replace(/\D/g,'').slice(0,11); v=v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3}\.\d{3})(\d)/,'$1.$2').replace(/(\.\d{3})(\d)/,'$1-$2'); el.value=v; }
@@ -880,6 +935,16 @@ function verColab(id){
   document.getElementById('ver-colab-nome').textContent=c.nome;
   const advs=DB.advertencias.filter(a=>a.colaboradorId==id).length;
   const fer=DB.ferias_gozo.filter(f=>f.colaboradorId==id).length;
+  const histCargo=DB.historico_cargo.filter(h=>h.colaboradorId==id).sort((a,b)=>a.data>b.data?-1:1);
+  const histCargoHTML=histCargo.length?histCargo.map(h=>`
+    <tr>
+      <td>${fmtData(h.data)}</td>
+      <td>${h.cargoAnterior||'—'}</td>
+      <td style="font-weight:600;color:var(--accent)">${h.cargoNovo}</td>
+      <td>${h.motivo||'—'}</td>
+      <td>${h.salarioNovo?'R$ '+Number(h.salarioNovo).toLocaleString('pt-BR',{minimumFractionDigits:2}):'—'}</td>
+      <td style="font-size:11px;color:var(--text3)">${h.obs||''}</td>
+    </tr>`).join(''):'<tr><td colspan="6" class="empty">Nenhuma progressão registrada.</td></tr>';
   document.getElementById('ver-colab-body').innerHTML=`<div class="form-grid">
     <div class="form-section">👤 Dados Pessoais</div>
     ${row2('CPF',c.cpf)}${row2('RG',c.rg)}${row2('Nascimento',fmtData(c.nascimento))}${row2('Estado Civil',c.estadoCivil)}${row2('Telefone',c.telefone)}${row2('E-mail',c.email)}${row2('Endereço',c.endereco)}${row2('Emerg.',c.emergNome+(c.emergTel?' · '+c.emergTel:''))}
@@ -888,8 +953,21 @@ function verColab(id){
     <div class="form-section">🏦 Dados Bancários</div>
     ${row2('Banco',c.banco)}${row2('Ag./Conta',c.agencia?(c.agencia+' / '+c.conta+' ('+c.tipoConta+')'):'—')}${row2('PIX',c.pix)}
     <div class="form-section">📊 Resumo</div>
-    ${row2('Advertências',advs+' emitida(s)')}${row2('Períodos de Férias',fer+' registrado(s)')}
+    ${row2('Advertências',advs+' emitida(s)')}${row2('Períodos de Férias',fer+' registrado(s)')}${row2('Progressões de Cargo',histCargo.length+' registro(s)')}
+  </div>
+  <div style="margin-top:16px">
+    <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+      📈 Histórico de Progressão de Cargo
+      <button class="btn btn-sm btn-primary" onclick="fecharModal('modal-ver-colab');abrirModalProgressao('${id}')" style="font-size:11px">＋ Registrar Progressão</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Data</th><th>Cargo Anterior</th><th>Cargo Novo</th><th>Motivo</th><th>Salário</th><th>Obs</th></tr></thead>
+        <tbody>${histCargoHTML}</tbody>
+      </table>
+    </div>
   </div>`;
+  document.getElementById('btn-promover-ficha').onclick=()=>{fecharModal('modal-ver-colab');abrirModalProgressao(id);};
   abrirModal('modal-ver-colab');
 }
 function row2(l,v){return`<div class="form-group"><label>${l}</label><div style="padding:7px 10px;background:var(--surface2);border-radius:var(--radius-sm);font-size:13px;border:1px solid var(--border)">${v||'—'}</div></div>`;}
@@ -927,8 +1005,9 @@ function renderFerias(lista){
   const bh=document.getElementById('body-hist-ferias');
   bh.innerHTML=DB.ferias_gozo.length?DB.ferias_gozo.map(f=>{
     const c=DB.colaboradores.find(x=>x.id==f.colaboradorId);
-    return`<tr><td>${c?c.nome:'—'}</td><td>${fmtData(f.periodInicio)} – ${fmtData(f.periodFim)}</td><td>${fmtData(f.inicio)}</td><td>${fmtData(f.fim)}</td><td>${diasEntre(f.inicio,f.fim)+1}</td><td>${f.obs||'—'}</td></tr>`;
-  }).join(''):'<tr><td colspan="6" class="empty">Nenhum registro.</td></tr>';
+    return`<tr><td>${c?c.nome:'—'}</td><td>${fmtData(f.periodInicio)} – ${fmtData(f.periodFim)}</td><td>${fmtData(f.inicio)}</td><td>${fmtData(f.fim)}</td><td>${diasEntre(f.inicio,f.fim)+1}</td><td>${f.obs||'—'}</td>
+    <td><button class="btn btn-sm" data-tip="Editar registro" onclick="editarFerias('${f.id}')">✏️</button></td></tr>`;
+  }).join(''):'<tr><td colspan="7" class="empty">Nenhum registro.</td></tr>';
 }
 function filtrarFerias(){
   const q=document.getElementById('busca-ferias').value.toLowerCase();
@@ -943,6 +1022,9 @@ function filtrarFerias(){
   renderFerias(src);
 }
 function abrirModalFerias(colabId){
+  document.getElementById('modal-ferias-title').textContent='Registrar Gozo de Férias';
+  document.getElementById('ferias-edit-id').value='';
+  document.getElementById('ferias-colab').disabled=false;
   populateSelectColabs(['ferias-colab']);
   if(colabId)document.getElementById('ferias-colab').value=colabId;
   document.getElementById('ferias-inicio').value='';
@@ -950,18 +1032,43 @@ function abrirModalFerias(colabId){
   document.getElementById('ferias-obs').value='';
   abrirModal('modal-ferias');
 }
+function editarFerias(fId){
+  const f=DB.ferias_gozo.find(x=>x.id==fId);
+  if(!f){notify('Registro não encontrado','error');return;}
+  document.getElementById('modal-ferias-title').textContent='Editar Registro de Férias';
+  document.getElementById('ferias-edit-id').value=fId;
+  populateSelectColabs(['ferias-colab']);
+  document.getElementById('ferias-colab').value=f.colaboradorId;
+  document.getElementById('ferias-colab').disabled=true;
+  document.getElementById('ferias-inicio').value=f.inicio?f.inicio.slice(0,10):'';
+  document.getElementById('ferias-fim').value=f.fim?f.fim.slice(0,10):'';
+  document.getElementById('ferias-obs').value=f.obs||'';
+  abrirModal('modal-ferias');
+}
 function agendarFerias(id){abrirModalFerias(id);}
 function salvarFerias(){
+  const editId=document.getElementById('ferias-edit-id').value;
   const colabId=document.getElementById('ferias-colab').value;
   const inicio=document.getElementById('ferias-inicio').value;
   const fim=document.getElementById('ferias-fim').value;
   if(!colabId||!inicio||!fim){notify('Preencha colaborador, início e fim','error');return;}
   const fc=calcularFeriasColab().find(f=>f.id==colabId);
-  const reg={id:gerarId(),colaboradorId:colabId,inicio,fim,obs:document.getElementById('ferias-obs').value.trim(),periodInicio:fc?fc.inicioPeriodo:'',periodFim:fc?fc.fimPeriodo:''};
-  DB.ferias_gozo.push(reg);salvarDB();fecharModal('modal-ferias');renderFerias();
-  const c=DB.colaboradores.find(x=>x.id==colabId);
-  notify(`Férias de ${c?.nome} registradas!`);
-  sincronizarScript('novaFerias',reg);
+  if(editId){
+    const idx=DB.ferias_gozo.findIndex(x=>x.id==editId);
+    if(idx===-1){notify('Registro não encontrado','error');return;}
+    const old=DB.ferias_gozo[idx];
+    DB.ferias_gozo[idx]={...old,inicio,fim,obs:document.getElementById('ferias-obs').value.trim()};
+    salvarDB();fecharModal('modal-ferias');renderFerias();
+    document.getElementById('ferias-colab').disabled=false;
+    notify('Registro de férias atualizado!');
+    sincronizarScript('editarFerias',DB.ferias_gozo[idx]);
+  } else {
+    const reg={id:gerarId(),colaboradorId:colabId,inicio,fim,obs:document.getElementById('ferias-obs').value.trim(),periodInicio:fc?fc.inicioPeriodo:'',periodFim:fc?fc.fimPeriodo:''};
+    DB.ferias_gozo.push(reg);salvarDB();fecharModal('modal-ferias');renderFerias();
+    const c=DB.colaboradores.find(x=>x.id==colabId);
+    notify(`Férias de ${c?.nome} registradas!`);
+    sincronizarScript('novaFerias',reg);
+  }
 }
 
 // ══════════════════════════════════════════
@@ -999,16 +1106,77 @@ function salvarCargo(editId){
 function renderProgressao(q){
   let colabs=DB.colaboradores.filter(c=>c.status!=='Desligado');
   if(q)colabs=colabs.filter(c=>c.nome.toLowerCase().includes(q.toLowerCase()));
-  document.getElementById('lista-progressao').innerHTML=colabs.length?colabs.map(c=>`
-    <div style="padding:10px;background:var(--surface2);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:8px">
-      <div style="display:flex;justify-content:space-between;align-items:center">
+  document.getElementById('lista-progressao').innerHTML=colabs.length?colabs.map(c=>{
+    const hist=DB.historico_cargo.filter(h=>h.colaboradorId==c.id).sort((a,b)=>a.data>b.data?1:-1);
+    const timeline=hist.length?`<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:7px">
+      ${hist.map((h,i)=>`<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);margin-bottom:3px">
+        <span style="color:var(--accent);font-weight:600">${fmtData(h.data)}</span>
+        <span>→</span><span style="font-weight:600;color:var(--text)">${h.cargoNovo}</span>
+        ${h.motivo?`<span style="color:var(--text3)">· ${h.motivo}</span>`:''}
+        ${h.salarioNovo?`<span class="badge b-ok" style="font-size:10px">R$ ${Number(h.salarioNovo).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>`:''}
+      </div>`).join('')}
+    </div>`:'';
+    return`<div style="padding:10px;background:var(--surface2);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
         <strong style="font-size:13px">${c.nome}</strong>
-        <span class="badge b-info">${c.cargo||'—'}</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="badge b-info">${c.cargo||'—'}</span>
+          <button class="btn btn-sm" data-tip="Registrar Progressão" onclick="abrirModalProgressao('${c.id}')" style="padding:3px 9px;font-size:11px">📈 Promover</button>
+        </div>
       </div>
       <div style="font-size:11px;color:var(--text2);margin-top:3px">${c.setor} · Admissão: ${fmtData(c.admissao)} · R$ ${c.salario?c.salario.toLocaleString('pt-BR',{minimumFractionDigits:2}):'—'}</div>
-    </div>`).join(''):'<div class="empty">Nenhum registro.</div>';
+      ${timeline}
+    </div>`;
+  }).join(''):'<div class="empty">Nenhum registro.</div>';
 }
 function filtrarProgressao(){renderProgressao(document.getElementById('busca-progressao').value);}
+
+// ══════════════════════════════════════════
+// PROGRESSÃO DE CARGO
+// ══════════════════════════════════════════
+function abrirModalProgressao(colabId){
+  const c=DB.colaboradores.find(x=>x.id==colabId);if(!c)return;
+  document.getElementById('prog-colab-id').value=colabId;
+  document.getElementById('prog-colab-nome').textContent=c.nome;
+  document.getElementById('prog-cargo-atual').textContent=c.cargo||'—';
+  document.getElementById('prog-salario-atual').textContent=c.salario?'R$ '+Number(c.salario).toLocaleString('pt-BR',{minimumFractionDigits:2}):'—';
+  // populate cargo datalist
+  const dl=document.getElementById('list-prog-cargos');
+  dl.innerHTML=DB.cargos.map(g=>`<option value="${g.nome}">`).join('');
+  document.getElementById('prog-cargo-novo').value='';
+  document.getElementById('prog-salario-novo').value='';
+  document.getElementById('prog-data').value=hoje();
+  document.getElementById('prog-motivo').value='Promoção';
+  document.getElementById('prog-obs').value='';
+  abrirModal('modal-progressao');
+}
+function salvarProgressao(){
+  const colabId=document.getElementById('prog-colab-id').value;
+  const cargoNovo=document.getElementById('prog-cargo-novo').value.trim();
+  const data=document.getElementById('prog-data').value;
+  if(!colabId||!cargoNovo||!data){notify('Preencha novo cargo e data','error');return;}
+  const c=DB.colaboradores.find(x=>x.id==colabId);
+  if(!c){notify('Colaborador não encontrado','error');return;}
+  const salarioNovo=parseFloat(document.getElementById('prog-salario-novo').value)||null;
+  const reg={
+    id:gerarId(),colaboradorId:colabId,
+    cargoAnterior:c.cargo,salarioAnterior:c.salario,
+    cargoNovo,salarioNovo:salarioNovo||c.salario,
+    data,motivo:document.getElementById('prog-motivo').value,
+    obs:document.getElementById('prog-obs').value.trim(),
+    registradoEm:hoje()
+  };
+  DB.historico_cargo.push(reg);
+  // update colab
+  const idx=DB.colaboradores.findIndex(x=>x.id==colabId);
+  DB.colaboradores[idx].cargo=cargoNovo;
+  if(salarioNovo)DB.colaboradores[idx].salario=salarioNovo;
+  salvarDB();fecharModal('modal-progressao');
+  renderProgressao(document.getElementById('busca-progressao').value);
+  renderColabs();
+  notify(`Cargo de ${c.nome} atualizado para ${cargoNovo}!`);
+  sincronizarScript('progressaoCargo',reg);
+}
 
 // ══════════════════════════════════════════
 // ADVERTÊNCIAS
@@ -1204,7 +1372,7 @@ function renderDesligamentos(){
 // CONFIGURAÇÕES
 // ══════════════════════════════════════════
 function carregarConfig(){
-  document.getElementById('cfg-script-url').value=localStorage.getItem('rh_script_url')||'';  document.getElementById('cfg-empresa').value=localStorage.getItem('rh_empresa')||'Explosão Alimentos';
+  document.getElementById('cfg-script-url').value=localStorage.getItem('rh_script_url')||SCRIPT_URL;  document.getElementById('cfg-empresa').value=localStorage.getItem('rh_empresa')||'Explosão Alimentos';
 }
 function salvarConfig(){
   const url=document.getElementById('cfg-script-url').value.trim();
@@ -1227,8 +1395,8 @@ function exportarJSON(){
 }
 function limparDadosLocais(){
   if(!confirm('Limpar todos os dados locais?'))return;
-  ['rh_colaboradores','rh_ferias_gozo','rh_advertencias','rh_cargos','rh_desligamentos'].forEach(k=>localStorage.removeItem(k));
-  DB={colaboradores:[],ferias_gozo:[],advertencias:[],cargos:[],desligamentos:[]};
+  ['rh_colaboradores','rh_ferias_gozo','rh_advertencias','rh_cargos','rh_desligamentos','rh_historico_cargo'].forEach(k=>localStorage.removeItem(k));
+  DB={colaboradores:[],ferias_gozo:[],advertencias:[],cargos:[],desligamentos:[],historico_cargo:[]};
   notify('Cache limpo.','warn');
 }
 
@@ -1251,6 +1419,7 @@ async function sincronizar(){
       if(d.result.advertencias)DB.advertencias=d.result.advertencias;
       if(d.result.cargos)DB.cargos=d.result.cargos;
       if(d.result.desligamentos)DB.desligamentos=d.result.desligamentos;
+      if(d.result.historico_cargo)DB.historico_cargo=d.result.historico_cargo;
       salvarDB();
       const hr=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
       setSyncStatus('online','Sincronizado '+hr);
