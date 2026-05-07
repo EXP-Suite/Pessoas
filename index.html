@@ -1551,7 +1551,10 @@ function limparDadosLocais(){
 // ══════════════════════════════════════════
 async function sincronizarScript(action,data){
   if(!SCRIPT_URL)return;
-  try{await fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action,data})});}catch(e){console.warn('Sync falhou:',e);}
+  try{
+    const payload=encodeURIComponent(JSON.stringify(data||{}));
+    await fetch(`${SCRIPT_URL}?action=${action}&data=${payload}`);
+  }catch(e){console.warn('Sync falhou:',e);}
 }
 async function sincronizar(){
   if(!SCRIPT_URL){notify('Configure a URL do Script nas Configurações','error');return;}
