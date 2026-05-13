@@ -1703,8 +1703,8 @@ function renderDesligamentos(){
 // ══════════════════════════════════════════
 function carregarConfig(){
   document.getElementById('cfg-empresa').value=localStorage.getItem('rh_empresa')||'Explosão Alimentos';
-  document.getElementById('cfg-client-id').value=localStorage.getItem('rh_client_id')||'';
-  document.getElementById('cfg-drive-folder').value=localStorage.getItem('rh_drive_folder')||'';
+  document.getElementById('cfg-client-id').value=localStorage.getItem('rh_client_id')||'1053419492913-vgsl79l0nlmc600as1q32rs22q55bv44.apps.googleusercontent.com';
+  document.getElementById('cfg-drive-folder').value=localStorage.getItem('rh_drive_folder')||'1UB2oxM5PYzb01RxBFxo5yi2-e6ysQmGk';
 }
 function salvarConfig(){
   const empresa=document.getElementById('cfg-empresa').value.trim()||'Explosão Alimentos';
@@ -1786,8 +1786,8 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelect
 // ══════════════════════════════════════════
 // DOCUMENTOS — Google Drive API (binário, sem base64)
 // ══════════════════════════════════════════
-let DRIVE_CLIENT_ID  = localStorage.getItem('rh_client_id')||'';
-let DRIVE_FOLDER_ID  = localStorage.getItem('rh_drive_folder')||'';
+let DRIVE_CLIENT_ID  = localStorage.getItem('rh_client_id')||'1053419492913-vgsl79l0nlmc600as1q32rs22q55bv44.apps.googleusercontent.com';
+let DRIVE_FOLDER_ID  = localStorage.getItem('rh_drive_folder')||'1UB2oxM5PYzb01RxBFxo5yi2-e6ysQmGk';
 let _driveToken      = null;   // access token OAuth atual
 let _docArquivo      = null;   // File object selecionado
 
