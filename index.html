@@ -216,6 +216,7 @@ tbody tr:hover td{background:var(--bg)}
   <button class="nav-btn" onclick="showPage('advertencias',this)"><span class="nav-icon">⚠️</span>Advertências</button>
   <button class="nav-btn" onclick="showPage('aniversarios',this)"><span class="nav-icon">🎂</span>Aniversários</button>
   <button class="nav-btn" onclick="showPage('desligamentos',this)"><span class="nav-icon">📋</span>Desligamentos</button>
+  <button class="nav-btn" onclick="showPage('documentos',this)"><span class="nav-icon">📁</span>Documentos</button>
   <button class="nav-btn" onclick="showPage('config',this)"><span class="nav-icon">⚙️</span>Configurações</button>
 </nav>
 
@@ -510,12 +511,144 @@ tbody tr:hover td{background:var(--bg)}
         <button class="btn btn-sm btn-danger" onclick="limparDadosLocais()">🗑️ Limpar Cache</button>
       </div>
     </div>
+    <div class="card">
+      <div class="card-title">🔐 Google OAuth — Upload de Documentos</div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:10px">
+        Necessário para enviar PDFs direto ao Google Drive sem conversão.<br>
+        Crie um <strong>OAuth 2.0 Client ID</strong> (tipo Web) no Google Cloud Console e cole abaixo.
+      </p>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="form-group">
+          <label>Client ID (OAuth 2.0)</label>
+          <input type="text" id="cfg-client-id" placeholder="xxxxxxxxx.apps.googleusercontent.com" style="font-family:monospace;font-size:12px">
+        </div>
+        <div class="form-group">
+          <label>ID da pasta no Drive (opcional)</label>
+          <input type="text" id="cfg-drive-folder" placeholder="Cole o ID da pasta — ex: 1A2B3C4D5E... (deixe vazio para usar a pasta raiz)">
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">O ID está na URL da pasta: drive.google.com/drive/folders/<strong style="color:var(--accent)">ID_AQUI</strong></div>
+        </div>
+        <button class="btn btn-primary" style="align-self:flex-start" onclick="salvarConfigDrive()">💾 Salvar configurações do Drive</button>
+      </div>
+      <div id="cfg-drive-status" style="margin-top:10px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DOCUMENTOS ════════════════════════════════════════ -->
+<div class="page" id="page-documentos">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px">
+    <div style="font-size:13px;font-weight:600;color:var(--text2)">Documentos de Colaboradores</div>
+    <button class="btn btn-primary" onclick="abrirUploadDoc()">＋ Anexar PDF</button>
+  </div>
+  <div class="summary-grid">
+    <div class="stat-card"><div class="stat-label">Total de Arquivos</div><div class="stat-value" id="doc-kpi-total">—</div><div class="stat-sub">no Drive</div></div>
+    <div class="stat-card warn"><div class="stat-label">Atestados Médicos</div><div class="stat-value" id="doc-kpi-atestados">—</div></div>
+    <div class="stat-card danger"><div class="stat-label">Advertências Assinadas</div><div class="stat-value" id="doc-kpi-adv">—</div></div>
+    <div class="stat-card"><div class="stat-label">Outros Tipos</div><div class="stat-value" id="doc-kpi-outros">—</div></div>
+  </div>
+  <div class="card">
+    <div class="toolbar" style="margin-bottom:0">
+      <select id="doc-filtro-colab" onchange="renderDocumentos()" style="min-width:180px"><option value="">Todos os colaboradores</option></select>
+      <select id="doc-filtro-tipo" onchange="renderDocumentos()">
+        <option value="">Todos os tipos</option>
+        <option>Atestado Médico</option><option>Advertência Assinada</option><option>Contrato de Trabalho</option>
+        <option>Exame ASO / PCMSO</option><option>Certidão / Declaração</option><option>Comprovante de Endereço</option>
+        <option>Holerite / Recibo</option><option>Outro</option>
+      </select>
+      <input type="text" id="doc-busca" placeholder="🔍 Buscar..." oninput="renderDocumentos()" style="min-width:160px">
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Data</th><th>Colaborador</th><th>Empresa</th><th>Tipo</th><th>Nome do Arquivo</th><th>Descrição</th><th>Ações</th></tr></thead>
+      <tbody id="body-documentos"><tr><td colspan="7" class="empty">Nenhum documento.</td></tr></tbody>
+    </table>
   </div>
 </div>
 
 </div><!-- /main -->
 
-<!-- ═══ MODAIS ═══════════════════════════════════════════ -->
+<!-- ═══ MODAL UPLOAD DOCUMENTO ═══════════════════════════ -->
+<div class="modal-overlay hidden" id="modal-upload-doc">
+  <div class="modal" style="max-width:540px">
+    <div class="modal-header">
+      <h3>📁 Anexar Documento PDF</h3>
+      <button class="modal-close" onclick="fecharModal('modal-upload-doc')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Aviso se não configurado -->
+      <div id="doc-aviso-config" style="display:none;margin-bottom:14px">
+        <div class="alert-item danger">
+          <div class="alert-icon danger">!</div>
+          <div class="alert-body">
+            <div class="alert-name">Client ID do Google não configurado</div>
+            <div class="alert-desc">Configure o Client ID OAuth nas <span class="alert-cta" onclick="fecharModal('modal-upload-doc');showPage('config')">Configurações</span> para habilitar o upload.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Colaborador *</label>
+          <select id="doc-colab"><option value="">Selecione...</option></select>
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Tipo de Documento *</label>
+          <select id="doc-tipo">
+            <option value="">Selecione...</option>
+            <option>Atestado Médico</option><option>Advertência Assinada</option><option>Contrato de Trabalho</option>
+            <option>Exame ASO / PCMSO</option><option>Certidão / Declaração</option><option>Comprovante de Endereço</option>
+            <option>Holerite / Recibo</option><option>Outro</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Descrição (opcional)</label>
+          <input type="text" id="doc-desc" placeholder="Ex: Atestado 3 dias — Dr. Souza — 12/05/2026">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Arquivo PDF *</label>
+          <!-- Drop zone -->
+          <div id="doc-drop-area"
+            style="border:2px dashed var(--border2);border-radius:var(--radius);padding:32px 16px;text-align:center;cursor:pointer;background:var(--surface2);transition:all .2s"
+            onclick="document.getElementById('doc-file-input').click()"
+            ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+            ondragleave="this.style.borderColor='var(--border2)'"
+            ondrop="docDrop(event)">
+            <div style="font-size:32px;margin-bottom:6px">📄</div>
+            <div id="doc-drop-label" style="font-size:13px;font-weight:600;color:var(--text2)">Clique ou arraste o PDF aqui</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px">Apenas PDF · Máximo 10 MB</div>
+          </div>
+          <input type="file" id="doc-file-input" accept="application/pdf" style="display:none" onchange="docFileSelected(this)">
+        </div>
+
+        <!-- Preview arquivo selecionado -->
+        <div id="doc-preview" style="grid-column:1/-1;display:none">
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--accent-bg);border:1px solid #b8dfc9;border-radius:var(--radius-sm)">
+            <span style="font-size:20px">📄</span>
+            <div style="flex:1;min-width:0">
+              <div id="doc-preview-nome" style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+              <div id="doc-preview-tam" style="font-size:11px;color:var(--text2)"></div>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="docLimpar()">✕ Remover</button>
+          </div>
+        </div>
+
+        <!-- Barra de progresso -->
+        <div id="doc-progresso" style="grid-column:1/-1;display:none">
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px">
+            <div id="doc-prog-msg" style="font-size:12px;color:var(--text2);margin-bottom:8px">Aguardando...</div>
+            <div class="prog-bar" style="height:8px"><div class="prog-fill" id="doc-prog-bar" style="width:0%;transition:width .4s"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal('modal-upload-doc')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-doc-upload" onclick="confirmarUploadDoc()">⬆️ Enviar para o Drive</button>
+    </div>
+  </div>
+</div>
 
 <!-- Modal Colaborador -->
 <div class="modal-overlay hidden" id="modal-colab">
@@ -675,7 +808,7 @@ tbody tr:hover td{background:var(--bg)}
   <div class="modal">
     <div class="modal-header"><h3 id="ver-colab-nome">—</h3><button class="modal-close" onclick="fecharModal('modal-ver-colab')">✕</button></div>
     <div class="modal-body" id="ver-colab-body"></div>
-    <div class="modal-footer"><button class="btn" onclick="fecharModal('modal-ver-colab')">Fechar</button><button class="btn btn-primary" id="btn-promover-ficha" onclick="">📈 Registrar Progressão</button></div>
+    <div class="modal-footer"><button class="btn" onclick="fecharModal('modal-ver-colab')">Fechar</button><button class="btn" id="btn-docs-ficha">📁 Documentos</button><button class="btn btn-primary" id="btn-promover-ficha" onclick="">📈 Registrar Progressão</button></div>
   </div>
 </div>
 
@@ -708,8 +841,9 @@ tbody tr:hover td{background:var(--bg)}
 
 <div class="toast" id="toast"></div>
 <div id="wms-tooltip"></div>
-<div id="app-version">Rev 2.2</div>
+<div id="app-version">Rev 2.3</div>
 
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 // ══════════════════════════════════════════
 // ESTADO GLOBAL
@@ -726,6 +860,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxT9WoWdpJlejCsvA-tA
   cargos:          JSON.parse(localStorage.getItem('rh_cargos')||'[]'),
   desligamentos:   JSON.parse(localStorage.getItem('rh_desligamentos')||'[]'),
   historico_cargo: JSON.parse(localStorage.getItem('rh_historico_cargo')||'[]'),
+  documentos:      JSON.parse(localStorage.getItem('rh_documentos')||'[]'),
 };
 // Empresas cadastradas
 const EMPRESAS = [
@@ -745,6 +880,7 @@ function salvarDB(){
   localStorage.setItem('rh_cargos',JSON.stringify(DB.cargos));
   localStorage.setItem('rh_desligamentos',JSON.stringify(DB.desligamentos));
   localStorage.setItem('rh_historico_cargo',JSON.stringify(DB.historico_cargo));
+  localStorage.setItem('rh_documentos',JSON.stringify(DB.documentos));
 }
 
 // ══════════════════════════════════════════
@@ -796,7 +932,7 @@ function showPage(id,btn){
   // Se btn não foi passado (chamada via código), encontra o botão correto pelo onclick
   const activeBtn=btn||[...document.querySelectorAll('.nav-btn')].find(b=>b.getAttribute('onclick')&&b.getAttribute('onclick').includes("'"+id+"'"));
   if(activeBtn)activeBtn.classList.add('active');
-  const m={dashboard:renderDashboard,colaboradores:renderColabs,ferias:renderFerias,carreira:renderCarreira,advertencias:()=>{populateSelectColabs(['adv-colaborador']);renderAdvertencias();},aniversarios:renderAniversarios,desligamentos:()=>{populateSelectColabs(['desl-colaborador'],true);renderDesligamentos();},config:carregarConfig};
+  const m={dashboard:renderDashboard,colaboradores:renderColabs,ferias:renderFerias,carreira:renderCarreira,advertencias:()=>{populateSelectColabs(['adv-colaborador']);renderAdvertencias();},aniversarios:renderAniversarios,desligamentos:()=>{populateSelectColabs(['desl-colaborador'],true);renderDesligamentos();},documentos:()=>{populateSelectColabs(['doc-filtro-colab','doc-colab']);renderDocumentos();},config:carregarConfig};
   if(m[id])m[id]();
 }
 
@@ -883,6 +1019,7 @@ function renderColabs(lista){
     <td><div style="display:flex;gap:4px">
       <button class="btn btn-sm" data-tip="Ver ficha" onclick="verColab('${c.id}')">👁</button>
       <button class="btn btn-sm" data-tip="Editar" onclick="editarColab('${c.id}')">✏️</button>
+      <button class="btn btn-sm" data-tip="Documentos" onclick="abrirDocsColab('${c.id}')">📁</button>
     </div></td>
   </tr>`;}).join('');
 }
@@ -988,6 +1125,15 @@ function verColab(id){
       <td>${h.salarioNovo?'R$ '+Number(h.salarioNovo).toLocaleString('pt-BR',{minimumFractionDigits:2}):'—'}</td>
       <td style="font-size:11px;color:var(--text3)">${h.obs||''}</td>
     </tr>`).join(''):'<tr><td colspan="6" class="empty">Nenhuma progressão registrada.</td></tr>';
+  const docsColab=DB.documentos.filter(d=>d.colaboradorId==id);
+  const tipoCor={'Atestado Médico':'b-warn','Advertência Assinada':'b-danger','Exame ASO / PCMSO':'b-info','Contrato de Trabalho':'b-ok'};
+  const docsHTML=docsColab.length?docsColab.map(d=>`<tr>
+    <td style="font-size:12px">${fmtData(d.dataUpload)}</td>
+    <td><span class="badge ${tipoCor[d.tipo]||'b-gray'}" style="font-size:10px">${d.tipo}</span></td>
+    <td style="font-weight:500">${d.nome}</td>
+    <td style="font-size:11px;color:var(--text2)">${d.descricao||'—'}</td>
+    <td>${d.driveUrl?`<a href="${d.driveUrl}" target="_blank" class="btn btn-sm" style="text-decoration:none">🔗 Abrir</a>`:'<span style="font-size:11px;color:var(--text3)">—</span>'}</td>
+  </tr>`).join(''):'<tr><td colspan="5" class="empty">Nenhum documento anexado.</td></tr>';
   document.getElementById('ver-colab-body').innerHTML=`<div class="form-grid">
     <div class="form-section">👤 Dados Pessoais</div>
     ${row2('CPF',c.cpf)}${row2('RG',c.rg)}${row2('Nascimento',fmtData(c.nascimento))}${row2('Estado Civil',c.estadoCivil)}${row2('Telefone',c.telefone)}${row2('E-mail',c.email)}${row2('Endereço',c.endereco)}${row2('Emerg.',c.emergNome+(c.emergTel?' · '+c.emergTel:''))}
@@ -996,21 +1142,24 @@ function verColab(id){
     <div class="form-section">🏦 Dados Bancários</div>
     ${row2('Banco',c.banco)}${row2('Ag./Conta',c.agencia?(c.agencia+' / '+c.conta+' ('+c.tipoConta+')'):'—')}${row2('PIX',c.pix)}
     <div class="form-section">📊 Resumo</div>
-    ${row2('Advertências',advs+' emitida(s)')}${row2('Períodos de Férias',fer+' registrado(s)')}${row2('Progressões de Cargo',histCargo.length+' registro(s)')}
+    ${row2('Advertências',advs+' emitida(s)')}${row2('Períodos de Férias',fer+' registrado(s)')}${row2('Progressões de Cargo',histCargo.length+' registro(s)')}${row2('Documentos',docsColab.length+' arquivo(s)')}
   </div>
   <div style="margin-top:16px">
     <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
       📈 Histórico de Progressão de Cargo
       <button class="btn btn-sm btn-primary" onclick="fecharModal('modal-ver-colab');abrirModalProgressao('${id}')" style="font-size:11px">＋ Registrar Progressão</button>
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Data</th><th>Cargo Anterior</th><th>Cargo Novo</th><th>Motivo</th><th>Salário</th><th>Obs</th></tr></thead>
-        <tbody>${histCargoHTML}</tbody>
-      </table>
+    <div class="table-wrap"><table><thead><tr><th>Data</th><th>Cargo Anterior</th><th>Cargo Novo</th><th>Motivo</th><th>Salário</th><th>Obs</th></tr></thead><tbody>${histCargoHTML}</tbody></table></div>
+  </div>
+  <div style="margin-top:16px">
+    <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
+      📁 Documentos Anexados
+      <button class="btn btn-sm btn-primary" onclick="fecharModal('modal-ver-colab');abrirUploadDoc('${id}')" style="font-size:11px">＋ Anexar PDF</button>
     </div>
+    <div class="table-wrap"><table><thead><tr><th>Data</th><th>Tipo</th><th>Nome</th><th>Descrição</th><th>Ação</th></tr></thead><tbody>${docsHTML}</tbody></table></div>
   </div>`;
   document.getElementById('btn-promover-ficha').onclick=()=>{fecharModal('modal-ver-colab');abrirModalProgressao(id);};
+  document.getElementById('btn-docs-ficha').onclick=()=>{fecharModal('modal-ver-colab');abrirDocsColab(id);};
   abrirModal('modal-ver-colab');
 }
 function row2(l,v){return`<div class="form-group"><label>${l}</label><div style="padding:7px 10px;background:var(--surface2);border-radius:var(--radius-sm);font-size:13px;border:1px solid var(--border)">${v||'—'}</div></div>`;}
@@ -1554,11 +1703,25 @@ function renderDesligamentos(){
 // ══════════════════════════════════════════
 function carregarConfig(){
   document.getElementById('cfg-empresa').value=localStorage.getItem('rh_empresa')||'Explosão Alimentos';
+  document.getElementById('cfg-client-id').value=localStorage.getItem('rh_client_id')||'';
+  document.getElementById('cfg-drive-folder').value=localStorage.getItem('rh_drive_folder')||'';
 }
 function salvarConfig(){
   const empresa=document.getElementById('cfg-empresa').value.trim()||'Explosão Alimentos';
   localStorage.setItem('rh_empresa',empresa);
   notify('Configurações salvas!');
+}
+function salvarConfigDrive(){
+  const cid=(document.getElementById('cfg-client-id').value||'').trim();
+  const fid=(document.getElementById('cfg-drive-folder').value||'').trim();
+  localStorage.setItem('rh_client_id',cid);
+  localStorage.setItem('rh_drive_folder',fid);
+  DRIVE_CLIENT_ID=cid;
+  DRIVE_FOLDER_ID=fid;
+  const st=document.getElementById('cfg-drive-status');
+  if(cid){st.innerHTML='<div class="alert-item ok"><div class="alert-body"><div class="alert-name">✅ Client ID salvo com sucesso.</div></div></div>';}
+  else{st.innerHTML='<div class="alert-item warn"><div class="alert-body"><div class="alert-name">⚠️ Client ID não informado.</div></div></div>';}
+  notify('Configurações do Drive salvas!');
 }
 function testarConexao(){
   const el=document.getElementById('status-conexao');
@@ -1573,8 +1736,8 @@ function exportarJSON(){
 }
 function limparDadosLocais(){
   if(!confirm('Limpar todos os dados locais?'))return;
-  ['rh_colaboradores','rh_ferias_gozo','rh_advertencias','rh_cargos','rh_desligamentos','rh_historico_cargo'].forEach(k=>localStorage.removeItem(k));
-  DB={colaboradores:[],ferias_gozo:[],advertencias:[],cargos:[],desligamentos:[],historico_cargo:[]};
+  ['rh_colaboradores','rh_ferias_gozo','rh_advertencias','rh_cargos','rh_desligamentos','rh_historico_cargo','rh_documentos'].forEach(k=>localStorage.removeItem(k));
+  DB={colaboradores:[],ferias_gozo:[],advertencias:[],cargos:[],desligamentos:[],historico_cargo:[],documentos:[]};
   notify('Cache limpo.','warn');
 }
 
@@ -1601,6 +1764,7 @@ async function sincronizar(){
       if(d.result.cargos)DB.cargos=d.result.cargos;
       if(d.result.desligamentos)DB.desligamentos=d.result.desligamentos;
       if(d.result.historico_cargo)DB.historico_cargo=d.result.historico_cargo;
+      if(d.result.documentos)DB.documentos=d.result.documentos;
       salvarDB();
       const hr=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
       setSyncStatus('online','Sincronizado '+hr);
@@ -1618,6 +1782,229 @@ function abrirModal(id){document.getElementById(id).classList.remove('hidden');}
 function fecharModal(id){document.getElementById(id).classList.add('hidden');}
 document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)fecharModal(m.id);}));
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(m=>fecharModal(m.id));});
+
+// ══════════════════════════════════════════
+// DOCUMENTOS — Google Drive API (binário, sem base64)
+// ══════════════════════════════════════════
+let DRIVE_CLIENT_ID  = localStorage.getItem('rh_client_id')||'';
+let DRIVE_FOLDER_ID  = localStorage.getItem('rh_drive_folder')||'';
+let _driveToken      = null;   // access token OAuth atual
+let _docArquivo      = null;   // File object selecionado
+
+// ── Utilitários ─────────────────────────────
+function fmtBytes(b){if(!b)return'—';if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';return(b/1048576).toFixed(2)+' MB';}
+
+// ── Drop zone ───────────────────────────────
+function docDrop(e){
+  e.preventDefault();
+  document.getElementById('doc-drop-area').style.borderColor='var(--border2)';
+  const f=e.dataTransfer.files[0];
+  if(f)_docSetArquivo(f);
+}
+function docFileSelected(input){if(input.files[0])_docSetArquivo(input.files[0]);}
+function _docSetArquivo(f){
+  if(f.type!=='application/pdf'){notify('Apenas arquivos PDF são aceitos.','error');return;}
+  if(f.size>10*1024*1024){notify('Arquivo muito grande. Máximo 10 MB.','error');return;}
+  _docArquivo=f;
+  document.getElementById('doc-preview-nome').textContent=f.name;
+  document.getElementById('doc-preview-tam').textContent=fmtBytes(f.size);
+  document.getElementById('doc-preview').style.display='block';
+  document.getElementById('doc-drop-label').textContent='Arquivo selecionado ✓';
+  document.getElementById('doc-drop-area').style.borderColor='var(--accent)';
+}
+function docLimpar(){
+  _docArquivo=null;
+  document.getElementById('doc-preview').style.display='none';
+  document.getElementById('doc-drop-label').textContent='Clique ou arraste o PDF aqui';
+  document.getElementById('doc-drop-area').style.borderColor='var(--border2)';
+  document.getElementById('doc-file-input').value='';
+}
+
+// ── OAuth com Google Identity Services ──────
+function _getGisToken(){
+  return new Promise((resolve,reject)=>{
+    if(!DRIVE_CLIENT_ID){reject(new Error('Client ID não configurado. Acesse Configurações → Google OAuth.'));return;}
+    if(_driveToken&&_driveToken.expires_at>Date.now()+60000){resolve(_driveToken.access_token);return;}
+    if(!window.google?.accounts?.oauth2){reject(new Error('Biblioteca GIS não carregada.'));return;}
+    const client=google.accounts.oauth2.initTokenClient({
+      client_id:DRIVE_CLIENT_ID,
+      scope:'https://www.googleapis.com/auth/drive.file',
+      callback:(resp)=>{
+        if(resp.error){reject(new Error(resp.error));return;}
+        _driveToken={access_token:resp.access_token,expires_at:Date.now()+(resp.expires_in||3600)*1000};
+        resolve(resp.access_token);
+      }
+    });
+    client.requestAccessToken({prompt:''});
+  });
+}
+
+// ── Criar subpasta no Drive ──────────────────
+async function _obterOuCriarPasta(nome,parentId,token){
+  // Busca pasta existente
+  const q=encodeURIComponent(`name='${nome}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false`);
+  const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`,{headers:{Authorization:'Bearer '+token}});
+  const d=await r.json();
+  if(d.files&&d.files.length>0)return d.files[0].id;
+  // Cria se não existe
+  const cr=await fetch('https://www.googleapis.com/drive/v3/files',{
+    method:'POST',
+    headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({name:nome,mimeType:'application/vnd.google-apps.folder',parents:[parentId]})
+  });
+  const cd=await cr.json();
+  return cd.id;
+}
+
+// ── Upload binário multipart para Drive ──────
+async function _uploadDrive(arquivo,nomeArquivo,folderId,token){
+  const meta={name:nomeArquivo,mimeType:'application/pdf',parents:[folderId]};
+  const boundary='rh_explosao_'+Date.now();
+  const delim='--'+boundary;
+  const close=delim+'--';
+  const metaStr=JSON.stringify(meta);
+  // Monta multipart manualmente como ArrayBuffer (binário puro)
+  const encoder=new TextEncoder();
+  const p1=encoder.encode(delim+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+metaStr+'\r\n'+delim+'\r\nContent-Type: application/pdf\r\n\r\n');
+  const p3=encoder.encode('\r\n'+close);
+  const fileBuffer=await arquivo.arrayBuffer();
+  const body=new Uint8Array(p1.byteLength+fileBuffer.byteLength+p3.byteLength);
+  body.set(p1,0);body.set(new Uint8Array(fileBuffer),p1.byteLength);body.set(p3,p1.byteLength+fileBuffer.byteLength);
+  const resp=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink',{
+    method:'POST',
+    headers:{Authorization:'Bearer '+token,'Content-Type':'multipart/related; boundary='+boundary},
+    body:body
+  });
+  if(!resp.ok){const e=await resp.json();throw new Error(e.error?.message||'Erro no upload');}
+  return await resp.json(); // {id, webViewLink}
+}
+
+// ── Tornar arquivo público (leitura) ─────────
+async function _tornarPublico(fileId,token){
+  await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`,{
+    method:'POST',
+    headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({role:'reader',type:'anyone'})
+  });
+}
+
+// ── Abrir modal de upload ────────────────────
+function abrirUploadDoc(colabId){
+  docLimpar();
+  document.getElementById('doc-colab').value='';
+  document.getElementById('doc-tipo').value='';
+  document.getElementById('doc-desc').value='';
+  document.getElementById('doc-progresso').style.display='none';
+  document.getElementById('btn-doc-upload').disabled=false;
+  populateSelectColabs(['doc-colab','doc-filtro-colab']);
+  if(colabId)document.getElementById('doc-colab').value=colabId;
+  // Avisa se Client ID não configurado
+  document.getElementById('doc-aviso-config').style.display=DRIVE_CLIENT_ID?'none':'block';
+  abrirModal('modal-upload-doc');
+}
+function abrirDocsColab(colabId){
+  showPage('documentos');
+  setTimeout(()=>{
+    populateSelectColabs(['doc-filtro-colab','doc-colab']);
+    document.getElementById('doc-filtro-colab').value=colabId;
+    renderDocumentos();
+  },60);
+}
+
+// ── Confirmar e executar upload ───────────────
+async function confirmarUploadDoc(){
+  const colabId=document.getElementById('doc-colab').value;
+  const tipo=document.getElementById('doc-tipo').value;
+  const desc=document.getElementById('doc-desc').value.trim();
+  if(!colabId){notify('Selecione o colaborador.','error');return;}
+  if(!tipo){notify('Selecione o tipo de documento.','error');return;}
+  if(!_docArquivo){notify('Selecione um arquivo PDF.','error');return;}
+  const c=DB.colaboradores.find(x=>x.id==colabId);
+  const prog=document.getElementById('doc-progresso');
+  const bar=document.getElementById('doc-prog-bar');
+  const msg=document.getElementById('doc-prog-msg');
+  const btn=document.getElementById('btn-doc-upload');
+  prog.style.display='block'; btn.disabled=true;
+  const setP=(p,t)=>{bar.style.width=p+'%';msg.textContent=t;};
+  try{
+    setP(10,'Autenticando com o Google...');
+    const token=await _getGisToken();
+    setP(30,'Verificando pasta no Drive...');
+    // Pasta raiz: configurada ou 'root'
+    const pastaRaiz=DRIVE_FOLDER_ID||'root';
+    const pastaRH=await _obterOuCriarPasta('RH - Documentos',pastaRaiz,token);
+    const pastaColab=await _obterOuCriarPasta(c?.nome||'Colaborador_'+colabId,pastaRH,token);
+    setP(55,'Enviando PDF para o Drive...');
+    const nomeArquivo=`${tipo} — ${c?.nome||''} — ${hoje()}.pdf`;
+    const driveFile=await _uploadDrive(_docArquivo,nomeArquivo,pastaColab,token);
+    setP(80,'Configurando permissões...');
+    await _tornarPublico(driveFile.id,token);
+    setP(92,'Salvando metadados...');
+    const docObj={
+      id:String(gerarId()),
+      colaboradorId:String(colabId),
+      colaboradorNome:c?.nome||'',
+      empresa:c?.empresa||'Explosão Alimentos',
+      tipo, nome:nomeArquivo, descricao:desc,
+      tamanho:fmtBytes(_docArquivo.size),
+      dataUpload:hoje(),
+      driveFileId:driveFile.id,
+      driveUrl:driveFile.webViewLink||''
+    };
+    DB.documentos.push(docObj);
+    salvarDB();
+    // Registra na planilha via Apps Script
+    sincronizarScript('salvarDocumento',docObj);
+    setP(100,'Upload concluído! ✅');
+    notify('PDF enviado ao Drive com sucesso!');
+    setTimeout(()=>{fecharModal('modal-upload-doc');renderDocumentos();},800);
+  }catch(err){
+    bar.style.background='var(--danger)';
+    msg.textContent='Erro: '+err.message;
+    notify(err.message,'error');
+    btn.disabled=false;
+  }
+}
+
+// ── Renderizar tabela de documentos ──────────
+function renderDocumentos(){
+  const cF=document.getElementById('doc-filtro-colab')?.value||'';
+  const tF=document.getElementById('doc-filtro-tipo')?.value||'';
+  const bF=(document.getElementById('doc-busca')?.value||'').toLowerCase();
+  let lista=DB.documentos;
+  if(cF)lista=lista.filter(d=>d.colaboradorId==cF);
+  if(tF)lista=lista.filter(d=>d.tipo===tF);
+  if(bF)lista=lista.filter(d=>(d.nome+d.descricao+d.colaboradorNome).toLowerCase().includes(bF));
+  // KPIs
+  document.getElementById('doc-kpi-total').textContent=DB.documentos.length;
+  document.getElementById('doc-kpi-atestados').textContent=DB.documentos.filter(d=>d.tipo==='Atestado Médico').length;
+  document.getElementById('doc-kpi-adv').textContent=DB.documentos.filter(d=>d.tipo==='Advertência Assinada').length;
+  document.getElementById('doc-kpi-outros').textContent=DB.documentos.filter(d=>d.tipo!=='Atestado Médico'&&d.tipo!=='Advertência Assinada').length;
+  const tbody=document.getElementById('body-documentos');
+  if(!lista.length){tbody.innerHTML='<tr><td colspan="7" class="empty">Nenhum documento encontrado.</td></tr>';return;}
+  const tc={'Atestado Médico':'b-warn','Advertência Assinada':'b-danger','Exame ASO / PCMSO':'b-info','Contrato de Trabalho':'b-ok'};
+  tbody.innerHTML=[...lista].reverse().map(d=>`<tr>
+    <td style="font-size:12px;color:var(--text2)">${fmtData(d.dataUpload)}</td>
+    <td style="font-weight:600">${d.colaboradorNome||'—'}</td>
+    <td><span class="badge ${d.empresa==='AGS Distribuidora'?'b-info':'b-ok'}" style="font-size:10px">${d.empresa==='AGS Distribuidora'?'AGS':'EA'}</span></td>
+    <td><span class="badge ${tc[d.tipo]||'b-gray'}" style="font-size:10px">${d.tipo||'—'}</span></td>
+    <td style="font-weight:500;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${d.nome}">${d.nome}</td>
+    <td style="font-size:12px;color:var(--text2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${d.descricao||''}">${d.descricao||'—'}</td>
+    <td><div style="display:flex;gap:4px">
+      ${d.driveUrl?`<a href="${d.driveUrl}" target="_blank" class="btn btn-sm" data-tip="Abrir no Drive" style="text-decoration:none">🔗 Abrir</a>`:'<span class="btn btn-sm" style="opacity:.4;cursor:default">🔗</span>'}
+      <button class="btn btn-sm btn-danger" data-tip="Remover registro" onclick="removerDocumento('${d.id}')">🗑</button>
+    </div></td>
+  </tr>`).join('');
+}
+function removerDocumento(docId){
+  const d=DB.documentos.find(x=>x.id==docId);
+  if(!d)return;
+  if(!confirm(`Remover registro de "${d.nome}"?\n\nO arquivo no Drive NÃO será excluído.`))return;
+  DB.documentos=DB.documentos.filter(x=>x.id!=docId);
+  salvarDB();renderDocumentos();
+  sincronizarScript('removerDocumento',{id:docId});
+  notify('Registro removido. Arquivo no Drive preservado.','warn');
+}
 
 // ══════════════════════════════════════════
 // INIT
