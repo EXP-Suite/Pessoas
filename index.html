@@ -183,7 +183,132 @@ tbody tr:hover td{background:var(--bg)}
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 
-@media(max-width:600px){.main{padding:1rem};.nav{padding:0 1rem}}
+/* ══ BOTTOM NAV (mobile only — hidden on desktop) ══════════ */
+.bottom-nav{
+  display:none;position:fixed;bottom:0;left:0;right:0;
+  background:var(--surface);border-top:2px solid var(--border);
+  z-index:60;padding-bottom:env(safe-area-inset-bottom,0);
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+}
+.bottom-nav::-webkit-scrollbar{display:none}
+.bnav-btn{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:8px 10px 6px;font-size:10px;color:var(--text2);
+  background:none;border:none;cursor:pointer;font-family:inherit;
+  font-weight:600;white-space:nowrap;flex:1;min-width:56px;
+  letter-spacing:.2px;
+}
+.bnav-btn span:first-child{font-size:20px;line-height:1}
+.bnav-btn.active{color:var(--accent)}
+.bnav-btn.active span:first-child{filter:drop-shadow(0 0 4px rgba(26,92,56,.4))}
+
+/* ══ MOBILE ════════════════════════════════════════════════ */
+@media(max-width:680px){
+
+  /* ── Topbar ── */
+  .topbar{height:52px;padding:0 .875rem}
+  .topbar-sub{display:none}
+  #filtro-empresa-global{font-size:11px;padding:4px 6px;max-width:110px}
+  #sync-label{display:none}
+  .sync-info{gap:3px}
+
+  /* ── Nav superior → oculta, mostra bottom nav ── */
+  .nav{display:none}
+  .bottom-nav{display:flex}
+
+  /* ── Main: padding + espaço pro bottom nav ── */
+  .main{padding:.875rem .875rem 84px}
+
+  /* ── Stat grid: 2 colunas ── */
+  .summary-grid{grid-template-columns:1fr 1fr !important}
+  .stat-value{font-size:22px}
+
+  /* ── Grid 2 cols → 1 col ── */
+  .grid2{grid-template-columns:1fr !important}
+
+  /* ── Cards ── */
+  .card{padding:.875rem 1rem}
+
+  /* ── Toolbar: empilha ── */
+  .toolbar{gap:6px}
+  .toolbar select,.toolbar input{flex:1 1 calc(50% - 3px);min-width:0}
+
+  /* ══ TABELA → CARDS ═══════════════════════════ */
+  .table-wrap{border-radius:var(--radius);overflow:hidden}
+  .table-wrap table{display:block}
+  .table-wrap thead{display:none}
+  .table-wrap tbody{display:flex;flex-direction:column;gap:0}
+
+  /* Cada tr vira um card */
+  .table-wrap tbody tr{
+    display:block;
+    padding:12px 14px;
+    border-bottom:1px solid var(--border);
+    background:var(--surface);
+  }
+  .table-wrap tbody tr:last-child{border-bottom:none}
+
+  /* Cada td vira linha label:valor */
+  .table-wrap tbody td{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:4px 0;border:none;font-size:13px;gap:8px;min-height:26px;
+  }
+  /* Rótulo automático via data-label */
+  .table-wrap tbody td[data-label]::before{
+    content:attr(data-label);
+    font-size:10px;font-weight:700;color:var(--text3);
+    text-transform:uppercase;letter-spacing:.4px;
+    flex-shrink:0;min-width:80px;
+  }
+  /* Esconde células sem rótulo (ex: coluna #) */
+  .table-wrap tbody td:not([data-label]){display:none}
+
+  /* Linha "vazia" (colspan) não vira card */
+  .table-wrap tbody tr:has(td.empty),
+  .table-wrap tbody tr.tr-vazio{display:table-row;background:transparent}
+  .table-wrap tbody tr:has(td.empty) td,
+  .table-wrap tbody tr.tr-vazio td{display:table-cell;padding:28px;text-align:center;border:none}
+
+  /* Nome/título: destaque no topo do card */
+  .table-wrap tbody td.td-nome{
+    font-size:14px;font-weight:700;color:var(--text);
+    padding-bottom:8px;border-bottom:1px solid var(--border);
+    margin-bottom:4px;
+  }
+  .table-wrap tbody td.td-nome::before{display:none}
+
+  /* Célula de ações: alinha à direita */
+  .table-wrap tbody td[data-label="Ações"]{
+    justify-content:flex-end;padding-top:10px;margin-top:4px;
+    border-top:1px solid var(--border);
+  }
+  .table-wrap tbody td[data-label="Ações"]::before{display:none}
+
+  /* ── Modais: bottom sheet ── */
+  .modal-overlay{align-items:flex-end;padding:0}
+  .modal{
+    max-width:100% !important;width:100%;
+    max-height:92vh;
+    border-radius:20px 20px 0 0;
+    margin:0;
+  }
+  .modal-header{border-radius:20px 20px 0 0}
+
+  /* ── Formulários: 1 coluna ── */
+  .form-grid{grid-template-columns:1fr !important}
+
+  /* ── Botões no footer do modal: largura total ── */
+  .modal-footer{flex-direction:column-reverse;gap:8px}
+  .modal-footer .btn{width:100%;justify-content:center;padding:11px 14px;font-size:14px}
+
+  /* ── Section headers ── */
+  .section-header{flex-direction:column;align-items:flex-start}
+  .section-header .btn{width:100%;justify-content:center}
+
+  /* ── Esconde colunas menos importantes em férias ── */
+  .table-wrap tbody td[data-label="Início Período"],
+  .table-wrap tbody td[data-label="Fim Período"]{display:none}
+}
 </style>
 </head>
 <body>
@@ -928,10 +1053,13 @@ function setSyncStatus(st,msg){
 function showPage(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  // Se btn não foi passado (chamada via código), encontra o botão correto pelo onclick
   const activeBtn=btn||[...document.querySelectorAll('.nav-btn')].find(b=>b.getAttribute('onclick')&&b.getAttribute('onclick').includes("'"+id+"'"));
   if(activeBtn)activeBtn.classList.add('active');
+  // Sincroniza bottom nav
+  const bBtn=document.querySelector(`.bnav-btn[data-page="${id}"]`);
+  if(bBtn)bBtn.classList.add('active');
   const m={dashboard:renderDashboard,colaboradores:renderColabs,ferias:renderFerias,carreira:renderCarreira,advertencias:()=>{populateSelectColabs(['adv-colaborador']);renderAdvertencias();},aniversarios:renderAniversarios,desligamentos:()=>{populateSelectColabs(['desl-colaborador'],true);renderDesligamentos();},documentos:()=>{populateSelectColabs(['doc-filtro-colab','doc-colab']);renderDocumentos();},config:carregarConfig};
   if(m[id])m[id]();
 }
@@ -1008,16 +1136,14 @@ function renderColabs(lista){
     const empBadge=c.empresa==='AGS Distribuidora'?'b-info':'b-ok';
     const empAbrev=c.empresa==='AGS Distribuidora'?'AGS':'EA';
     return`<tr>
-    <td style="color:var(--text3)">${i+1}</td>
-    <td style="font-weight:600">${c.nome}</td>
-    <td><span class="badge ${empBadge}" style="font-size:10px">${empAbrev}</span></td>
-    <td>${c.cargo||'—'}</td>
-    <td>${c.setor||'—'}</td>
-    <td>${fmtData(c.admissao)}</td>
-    <td><span class="badge b-gray">${c.contrato||'—'}</span></td>
-    <td><span class="badge ${c.status==='Ativo'?'b-ok':c.status==='Afastado'?'b-warn':'b-danger'}">${c.status}</span></td>
-    <td><div style="display:flex;gap:4px">
-      <button class="btn btn-sm" data-tip="Ver ficha" onclick="verColab('${c.id}')">👁</button>
+    <td class="td-nome" data-label="">${c.nome} <span class="badge ${c.status==='Ativo'?'b-ok':c.status==='Afastado'?'b-warn':'b-danger'}" style="margin-left:6px;font-size:10px">${c.status}</span></td>
+    <td data-label="Empresa"><span class="badge ${empBadge}" style="font-size:10px">${empAbrev} — ${c.empresa}</span></td>
+    <td data-label="Cargo">${c.cargo||'—'}</td>
+    <td data-label="Setor">${c.setor||'—'}</td>
+    <td data-label="Admissão">${fmtData(c.admissao)}</td>
+    <td data-label="Contrato"><span class="badge b-gray">${c.contrato||'—'}</span></td>
+    <td data-label="Ações"><div style="display:flex;gap:4px">
+      <button class="btn btn-sm" data-tip="Ver ficha" onclick="verColab('${c.id}')">👁 Ver</button>
       <button class="btn btn-sm" data-tip="Editar" onclick="editarColab('${c.id}')">✏️</button>
       <button class="btn btn-sm" data-tip="Documentos" onclick="abrirDocsColab('${c.id}')">📁</button>
     </div></td>
@@ -1187,18 +1313,28 @@ function renderFerias(lista){
     const cls=f.diasRestantes<0?'b-venc':f.diasRestantes<=30?'b-urg':f.diasRestantes<=60?'b-warn':'b-ok';
     const lbl=f.diasRestantes<0?'Vencida':f.diasRestantes<=30?'Crítico':f.diasRestantes<=60?'Atenção':'Em dia';
     return`<tr>
-      <td style="font-weight:600">${f.nome}</td><td>${f.cargo||'—'}</td><td>${fmtData(f.admissao)}</td>
-      <td>${fmtData(f.inicioPeriodo)}</td><td>${fmtData(f.fimPeriodo)}</td><td>${fmtData(f.limiteGozo)}</td>
-      <td>${f.diasRestantes<0?'Vencida há '+Math.abs(f.diasRestantes)+'d':f.diasRestantes+'d'}</td>
-      <td><span class="badge ${cls}">${lbl}</span></td>
-      <td><button class="btn btn-sm" onclick="agendarFerias('${f.id}')">📅 Agendar</button></td>
+      <td class="td-nome" data-label="">${f.nome} <span class="badge ${cls}" style="margin-left:6px">${lbl}</span></td>
+      <td data-label="Cargo">${f.cargo||'—'}</td>
+      <td data-label="Admissão">${fmtData(f.admissao)}</td>
+      <td data-label="Início Período">${fmtData(f.inicioPeriodo)}</td>
+      <td data-label="Fim Período">${fmtData(f.fimPeriodo)}</td>
+      <td data-label="Limite Gozo">${fmtData(f.limiteGozo)}</td>
+      <td data-label="Dias Rest.">${f.diasRestantes<0?'Vencida há '+Math.abs(f.diasRestantes)+'d':f.diasRestantes+'d'}</td>
+      <td data-label="Ações"><button class="btn btn-sm" onclick="agendarFerias('${f.id}')">📅 Agendar</button></td>
     </tr>`;
   }).join(''):'<tr><td colspan="9" class="empty">Nenhum colaborador ativo.</td></tr>';
   const bh=document.getElementById('body-hist-ferias');
   bh.innerHTML=DB.ferias_gozo.length?DB.ferias_gozo.map(f=>{
     const c=DB.colaboradores.find(x=>x.id==f.colaboradorId);
-    return`<tr><td>${c?c.nome:'—'}</td><td>${fmtData(f.periodInicio)} – ${fmtData(f.periodFim)}</td><td>${fmtData(f.inicio)}</td><td>${fmtData(f.fim)}</td><td>${diasEntre(f.inicio,f.fim)+1}</td><td>${f.obs||'—'}</td>
-    <td><button class="btn btn-sm" data-tip="Editar registro" onclick="editarFerias('${f.id}')">✏️</button></td></tr>`;
+    return`<tr>
+      <td class="td-nome" data-label="">${c?c.nome:'—'}</td>
+      <td data-label="Período">${fmtData(f.periodInicio)} – ${fmtData(f.periodFim)}</td>
+      <td data-label="Início Gozo">${fmtData(f.inicio)}</td>
+      <td data-label="Fim Gozo">${fmtData(f.fim)}</td>
+      <td data-label="Dias">${diasEntre(f.inicio,f.fim)+1}</td>
+      <td data-label="Obs">${f.obs||'—'}</td>
+      <td data-label="Ações"><button class="btn btn-sm" data-tip="Editar registro" onclick="editarFerias('${f.id}')">✏️ Editar</button></td>
+    </tr>`;
   }).join(''):'<tr><td colspan="7" class="empty">Nenhum registro.</td></tr>';
 }
 function filtrarFerias(){
@@ -1269,11 +1405,14 @@ function salvarFerias(){
 function renderCarreira(){
   document.getElementById('body-cargos').innerHTML=DB.cargos.length?DB.cargos.map(c=>{
     const n=DB.colaboradores.filter(x=>x.cargo===c.nome&&x.status!=='Desligado').length;
-    return`<tr><td style="font-weight:600">${c.nome}</td><td>${c.setor}</td>
-      <td>${c.salBase?'R$ '+Number(c.salBase).toLocaleString('pt-BR',{minimumFractionDigits:2}):'—'}</td>
-      <td>${c.salMax?'R$ '+Number(c.salMax).toLocaleString('pt-BR',{minimumFractionDigits:2}):'—'}</td>
-      <td><span class="badge b-info">${n}</span></td>
-      <td><button class="btn btn-sm" onclick="editarCargo('${c.id}')">✏️</button></td></tr>`;
+    return`<tr>
+      <td class="td-nome" data-label="">${c.nome}</td>
+      <td data-label="Setor">${c.setor}</td>
+      <td data-label="Sal. Base">${c.salBase?'R$ '+Number(c.salBase).toLocaleString('pt-BR',{minimumFractionDigits:2}):'—'}</td>
+      <td data-label="Sal. Máx">${c.salMax?'R$ '+Number(c.salMax).toLocaleString('pt-BR',{minimumFractionDigits:2}):'—'}</td>
+      <td data-label="Colaboradores"><span class="badge b-info">${n}</span></td>
+      <td data-label="Ações"><button class="btn btn-sm" onclick="editarCargo('${c.id}')">✏️ Editar</button></td>
+    </tr>`;
   }).join(''):'<tr><td colspan="6" class="empty">Nenhum cargo cadastrado.</td></tr>';
   renderProgressao();
 }
@@ -1692,9 +1831,11 @@ function renderDesligamentos(){
   let lista=DB.desligamentos;
   if(emp)lista=lista.filter(d=>{const c=DB.colaboradores.find(x=>x.id==d.colaboradorId);return c&&c.empresa===emp;});
   document.getElementById('body-desligamentos').innerHTML=lista.length?[...lista].reverse().map(d=>`<tr>
-    <td style="font-weight:600">${d.nome}</td><td>${d.cargo||'—'}</td><td>${fmtData(d.data)}</td>
-    <td><span class="badge ${d.motivo==='Justa Causa'?'b-danger':'b-gray'}">${d.motivo}</span></td>
-    <td><button class="btn btn-sm" data-tip="Ver histórico" onclick="verColab('${d.colaboradorId}')">👁</button></td>
+    <td class="td-nome" data-label="">${d.nome} <span class="badge ${d.motivo==='Justa Causa'?'b-danger':'b-gray'}" style="margin-left:6px;font-size:10px">${d.motivo}</span></td>
+    <td data-label="Cargo">${d.cargo||'—'}</td>
+    <td data-label="Setor">${d.setor||'—'}</td>
+    <td data-label="Data">${fmtData(d.data)}</td>
+    <td data-label="Ações"><button class="btn btn-sm" data-tip="Ver histórico" onclick="verColab('${d.colaboradorId}')">👁 Ver ficha</button></td>
   </tr>`).join(''):'<tr><td colspan="5" class="empty">Nenhum registro.</td></tr>';
 }
 
@@ -1984,13 +2125,12 @@ function renderDocumentos(){
   if(!lista.length){tbody.innerHTML='<tr><td colspan="7" class="empty">Nenhum documento encontrado.</td></tr>';return;}
   const tc={'Atestado Médico':'b-warn','Advertência Assinada':'b-danger','Exame ASO / PCMSO':'b-info','Contrato de Trabalho':'b-ok'};
   tbody.innerHTML=[...lista].reverse().map(d=>`<tr>
-    <td style="font-size:12px;color:var(--text2)">${fmtData(d.dataUpload)}</td>
-    <td style="font-weight:600">${d.colaboradorNome||'—'}</td>
-    <td><span class="badge ${d.empresa==='AGS Distribuidora'?'b-info':'b-ok'}" style="font-size:10px">${d.empresa==='AGS Distribuidora'?'AGS':'EA'}</span></td>
-    <td><span class="badge ${tc[d.tipo]||'b-gray'}" style="font-size:10px">${d.tipo||'—'}</span></td>
-    <td style="font-weight:500;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${d.nome}">${d.nome}</td>
-    <td style="font-size:12px;color:var(--text2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${d.descricao||''}">${d.descricao||'—'}</td>
-    <td><div style="display:flex;gap:4px">
+    <td class="td-nome" data-label="">${d.colaboradorNome||'—'} <span class="badge ${tc[d.tipo]||'b-gray'}" style="margin-left:6px;font-size:10px">${d.tipo||'—'}</span></td>
+    <td data-label="Empresa"><span class="badge ${d.empresa==='AGS Distribuidora'?'b-info':'b-ok'}" style="font-size:10px">${d.empresa==='AGS Distribuidora'?'AGS':'EA'}</span></td>
+    <td data-label="Arquivo" style="font-weight:500">${d.nome}</td>
+    <td data-label="Descrição" style="font-size:12px;color:var(--text2)">${d.descricao||'—'}</td>
+    <td data-label="Data" style="font-size:12px;color:var(--text2)">${fmtData(d.dataUpload)}</td>
+    <td data-label="Ações"><div style="display:flex;gap:4px">
       ${d.driveUrl?`<a href="${d.driveUrl}" target="_blank" class="btn btn-sm" data-tip="Abrir no Drive" style="text-decoration:none">🔗 Abrir</a>`:'<span class="btn btn-sm" style="opacity:.4;cursor:default">🔗</span>'}
       <button class="btn btn-sm btn-danger" data-tip="Remover registro" onclick="removerDocumento('${d.id}')">🗑</button>
     </div></td>
@@ -2014,5 +2154,18 @@ window.addEventListener('DOMContentLoaded',()=>{
   if(SCRIPT_URL)setSyncStatus('online','Configurado');
 });
 </script>
+
+<!-- ═══ BOTTOM NAV (mobile) ══════════════════════════════ -->
+<nav class="bottom-nav" id="bottom-nav">
+  <button class="bnav-btn active" onclick="showPage('dashboard',this)" data-page="dashboard"><span>📊</span>Dashboard</button>
+  <button class="bnav-btn" onclick="showPage('colaboradores',this)" data-page="colaboradores"><span>👥</span>Pessoas</button>
+  <button class="bnav-btn" onclick="showPage('ferias',this)" data-page="ferias"><span>🏖️</span>Férias</button>
+  <button class="bnav-btn" onclick="showPage('advertencias',this)" data-page="advertencias"><span>⚠️</span>Advertências</button>
+  <button class="bnav-btn" onclick="showPage('documentos',this)" data-page="documentos"><span>📁</span>Docs</button>
+  <button class="bnav-btn" onclick="showPage('carreira',this)" data-page="carreira"><span>📈</span>Carreira</button>
+  <button class="bnav-btn" onclick="showPage('aniversarios',this)" data-page="aniversarios"><span>🎂</span>Aniv.</button>
+  <button class="bnav-btn" onclick="showPage('desligamentos',this)" data-page="desligamentos"><span>📋</span>Desl.</button>
+  <button class="bnav-btn" onclick="showPage('config',this)" data-page="config"><span>⚙️</span>Config</button>
+</nav>
 </body>
 </html>
