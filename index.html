@@ -696,18 +696,19 @@ tbody tr:hover td{background:var(--bg)}
 <div class="page" id="page-talentos">
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px">
     <div style="font-size:13px;font-weight:600;color:var(--text2)">Banco de Talentos</div>
-    <button class="btn btn-primary" onclick="abrirModalTalento()">＋ Cadastrar Candidato</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-sm" onclick="sincronizar().then(renderTalentos)">↻ Sincronizar</button>
+      <button class="btn btn-primary" onclick="abrirModalTalento()">＋ Cadastrar Candidato</button>
+    </div>
   </div>
 
-  <!-- KPIs -->
   <div class="summary-grid">
     <div class="stat-card"><div class="stat-label">Total de Candidatos</div><div class="stat-value" id="tal-kpi-total">—</div><div class="stat-sub">cadastrados</div></div>
     <div class="stat-card ok"><div class="stat-label">Masculino</div><div class="stat-value" id="tal-kpi-masc">—</div></div>
     <div class="stat-card"><div class="stat-label">Feminino</div><div class="stat-value" id="tal-kpi-fem">—</div></div>
-    <div class="stat-card info"><div class="stat-label">Com Currículo</div><div class="stat-value" id="tal-kpi-cv">—</div><div class="stat-sub">PDF no Drive</div></div>
+    <div class="stat-card warn"><div class="stat-label">Com Currículo</div><div class="stat-value" id="tal-kpi-cv">—</div><div class="stat-sub">PDF no Drive</div></div>
   </div>
 
-  <!-- Filtros -->
   <div class="card">
     <div class="toolbar" style="margin-bottom:0">
       <input type="text" id="tal-busca" placeholder="🔍 Buscar por nome..." oninput="renderTalentos()" style="min-width:160px">
@@ -715,7 +716,7 @@ tbody tr:hover td{background:var(--bg)}
         <option value="">Todos os sexos</option>
         <option value="Masculino">Masculino</option>
         <option value="Feminino">Feminino</option>
-        <option value="Outro">Outro / Não informado</option>
+        <option value="Outro">Outro</option>
       </select>
       <select id="tal-filtro-setor" onchange="renderTalentos()">
         <option value="">Todos os setores</option>
@@ -724,23 +725,12 @@ tbody tr:hover td{background:var(--bg)}
         <option>Manutenção</option><option>RH</option><option>Limpeza / Conservação</option>
         <option>Segurança</option><option>TI</option><option>Outro</option>
       </select>
-      <button class="btn btn-sm" onclick="limparFiltrosTalentos()">✕ Limpar</button>
+      <button class="btn btn-sm" onclick="document.getElementById('tal-busca').value='';document.getElementById('tal-filtro-sexo').value='';document.getElementById('tal-filtro-setor').value='';renderTalentos()">✕ Limpar</button>
     </div>
   </div>
 
-  <!-- Tabela -->
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Nome</th><th>Sexo</th><th>Telefone</th><th>E-mail</th>
-          <th>Setores de Interesse</th><th>Cadastrado em</th><th>Currículo</th><th>Ações</th>
-        </tr>
-      </thead>
-      <tbody id="body-talentos">
-        <tr><td colspan="8" class="empty">Nenhum candidato cadastrado.</td></tr>
-      </tbody>
-    </table>
+  <div id="tal-lista" style="display:flex;flex-direction:column;gap:10px">
+    <div style="text-align:center;padding:32px;color:var(--text3)">Nenhum candidato cadastrado.</div>
   </div>
 </div>
 
@@ -2081,6 +2071,16 @@ async function sincronizar(){
       setSyncStatus('online','Sincronizado '+hr);
       notify('Dados sincronizados!');
       renderDashboard();
+      // Re-renderiza a página ativa com os dados novos
+      const pAtiva=document.querySelector('.page.active');
+      if(pAtiva){
+        if(pAtiva.id==='page-talentos')renderTalentos();
+        else if(pAtiva.id==='page-colaboradores')renderColabs();
+        else if(pAtiva.id==='page-ferias')renderFerias();
+        else if(pAtiva.id==='page-advertencias')renderAdvertencias();
+        else if(pAtiva.id==='page-documentos')renderDocumentos();
+        else if(pAtiva.id==='page-desligamentos')renderDesligamentos();
+      }
     }else{setSyncStatus('offline','Erro: '+(d.error||'?'));notify(d.error||'Erro ao sincronizar','error');}
   }catch(e){setSyncStatus('offline','Erro de conexão');notify('Erro: '+e.message,'error');}
   finally{loading(false);}
@@ -2374,166 +2374,160 @@ function abrirModalTalento(id){
   abrirModal('modal-talento');
 }
 
-async function salvarTalento(editId){
-  const nome=document.getElementById('tal-nome').value.trim();
-  const tel=document.getElementById('tal-tel').value.trim();
-  const sexo=document.getElementById('tal-sexo').value;
-  const email=document.getElementById('tal-email').value.trim();
-  const obs=document.getElementById('tal-obs').value.trim();
-  const setoresSel=[...document.querySelectorAll('.tal-setor-cb:checked')].map(cb=>cb.value);
-  if(!nome){notify('Informe o nome do candidato.','error');return;}
+function salvarTalento(editId){
+  const nome=(document.getElementById('tal-nome').value||'').trim();
+  const tel=String((document.getElementById('tal-tel').value||'')).trim();
+  const sexo=document.getElementById('tal-sexo').value||'';
+  const email=(document.getElementById('tal-email').value||'').trim();
+  const obs=(document.getElementById('tal-obs').value||'').trim();
+  const setoresSel=[];
+  document.querySelectorAll('.tal-setor-cb').forEach(cb=>{if(cb.checked)setoresSel.push(cb.value);});
+  if(!nome){notify('Informe o nome.','error');return;}
   if(!tel){notify('Informe o telefone.','error');return;}
   if(!sexo){notify('Selecione o sexo.','error');return;}
-  if(!setoresSel.length){notify('Marque ao menos um setor de interesse.','error');return;}
-
-  const prog=document.getElementById('tal-progresso');
-  const bar=document.getElementById('tal-prog-bar');
-  const msg=document.getElementById('tal-prog-msg');
-  const btn=document.getElementById('btn-salvar-talento');
-  let driveFileId='', driveUrl='', nomeArquivo='';
-
-  // Upload do PDF se houver
-  if(_talArquivo){
-    if(!DRIVE_CLIENT_ID){notify('Client ID OAuth não configurado. Candidato será salvo sem currículo.','warn');}
-    else{
-      prog.style.display='block'; btn.disabled=true;
-      bar.style.background=''; // reset cor
-      try{
-        msg.textContent='Autenticando com o Google...'; bar.style.width='15%';
-        const token=await _getGisToken();
-        msg.textContent='Criando pasta no Drive...'; bar.style.width='35%';
-        const pastaRaiz=DRIVE_FOLDER_ID||'root';
-        const pastaRH=await _obterOuCriarPasta('RH - Banco de Talentos',pastaRaiz,token);
-        msg.textContent='Enviando currículo...'; bar.style.width='60%';
-        nomeArquivo=`CV — ${nome} — ${hoje()}.pdf`;
-        const driveFile=await _uploadDrive(_talArquivo,nomeArquivo,pastaRH,token);
-        msg.textContent='Configurando permissões...'; bar.style.width='85%';
-        await _tornarPublico(driveFile.id,token);
-        driveFileId=driveFile.id; driveUrl=driveFile.webViewLink||'';
-        bar.style.width='100%'; msg.textContent='Currículo salvo ✅';
-      }catch(err){
-        bar.style.background='var(--danger)';
-        msg.textContent='Erro no upload: '+err.message;
-        notify('Currículo não enviado: '+err.message,'error');
-        btn.disabled=false;
-        // Continua salvando o cadastro sem o PDF
-      }
-    }
-  }
-
+  if(!setoresSel.length){notify('Marque ao menos um setor.','error');return;}
   const obj={
-    id:editId||gerarId(),
-    nome, telefone:tel, sexo, email, obs,
+    id:editId!=null?editId:gerarId(),
+    nome,telefone:tel,sexo,email,obs,
     setores:setoresSel,
-    driveFileId, driveUrl, nomeArquivo,
+    driveFileId:'',driveUrl:'',nomeArquivo:'',
     dataRegistro:hoje()
   };
-
-  if(editId){
-    const idx=DB.talentos.findIndex(x=>x.id==editId);
+  if(editId!=null){
+    const idx=DB.talentos.findIndex(x=>String(x.id)===String(editId));
     if(idx>-1){
-      // Preserva currículo anterior se não enviou novo
-      if(!driveUrl&&DB.talentos[idx].driveUrl){obj.driveUrl=DB.talentos[idx].driveUrl;obj.driveFileId=DB.talentos[idx].driveFileId;obj.nomeArquivo=DB.talentos[idx].nomeArquivo;}
+      obj.driveUrl=DB.talentos[idx].driveUrl||'';
+      obj.driveFileId=DB.talentos[idx].driveFileId||'';
+      obj.nomeArquivo=DB.talentos[idx].nomeArquivo||'';
       DB.talentos[idx]=obj;
-    }
+    } else {DB.talentos.push(obj);}
   } else {
     DB.talentos.push(obj);
   }
   salvarDB();
-  sincronizarScript(editId?'editarTalento':'novoTalento', obj);
+  sincronizarScript(editId!=null?'editarTalento':'novoTalento',obj);
   fecharModal('modal-talento');
   renderTalentos();
-  notify(editId?`Candidato ${nome} atualizado!`:`${nome} cadastrado no Banco de Talentos!`);
+  notify(editId!=null?nome+' atualizado!':nome+' cadastrado no Banco de Talentos!');
+  if(_talArquivo)_uploadTalentoBackground(obj);
+}
+
+async function _uploadTalentoBackground(obj){
+  if(!DRIVE_CLIENT_ID){notify('Client ID nao configurado.','warn');return;}
+  try{
+    notify('Enviando curriculo...','warn');
+    const token=await _getGisToken();
+    const pastaRH=await _obterOuCriarPasta('RH - Banco de Talentos',DRIVE_FOLDER_ID||'root',token);
+    const nomeArquivo='CV - '+obj.nome+' - '+hoje()+'.pdf';
+    const driveFile=await _uploadDrive(_talArquivo,nomeArquivo,pastaRH,token);
+    await _tornarPublico(driveFile.id,token);
+    const idx=DB.talentos.findIndex(x=>String(x.id)===String(obj.id));
+    if(idx>-1){
+      DB.talentos[idx].driveUrl=driveFile.webViewLink||'';
+      DB.talentos[idx].driveFileId=driveFile.id;
+      DB.talentos[idx].nomeArquivo=nomeArquivo;
+      salvarDB();renderTalentos();
+    }
+    notify('Curriculo enviado! ');
+  }catch(err){notify('Candidato salvo, erro no curriculo: '+err.message,'error');}
 }
 
 function renderTalentos(){
   const busca=(document.getElementById('tal-busca')?.value||'').toLowerCase();
   const sexoF=document.getElementById('tal-filtro-sexo')?.value||'';
   const setorF=document.getElementById('tal-filtro-setor')?.value||'';
-  let lista=DB.talentos;
-  if(busca)lista=lista.filter(t=>t.nome?.toLowerCase().includes(busca)||t.email?.toLowerCase().includes(busca));
+  let lista=[...DB.talentos];
+  if(busca)lista=lista.filter(t=>(t.nome||'').toLowerCase().includes(busca)||(t.email||'').toLowerCase().includes(busca));
   if(sexoF)lista=lista.filter(t=>t.sexo===sexoF);
-  if(setorF)lista=lista.filter(t=>{const s=Array.isArray(t.setores)?t.setores:(t.setores?t.setores.split(','):[]);return s.includes(setorF);});
-  // KPIs (sempre do total, não filtrado)
+  if(setorF)lista=lista.filter(t=>{
+    let s=t.setores||[];
+    if(!Array.isArray(s))s=String(s).split(',').map(x=>x.trim());
+    return s.includes(setorF);
+  });
   const todos=DB.talentos;
-  document.getElementById('tal-kpi-total').textContent=todos.length;
-  document.getElementById('tal-kpi-masc').textContent=todos.filter(t=>t.sexo==='Masculino').length;
-  document.getElementById('tal-kpi-fem').textContent=todos.filter(t=>t.sexo==='Feminino').length;
-  document.getElementById('tal-kpi-cv').textContent=todos.filter(t=>t.driveUrl).length;
-  const tbody=document.getElementById('body-talentos');
-  if(!lista.length){tbody.innerHTML='<tr><td colspan="8" class="empty">Nenhum candidato encontrado.</td></tr>';return;}
-  const sexoCor={Masculino:'b-info',Feminino:'b-ok',Outro:'b-gray','Prefiro não informar':'b-gray'};
-  tbody.innerHTML=[...lista].reverse().map(t=>{
-    const setores=Array.isArray(t.setores)?t.setores:(t.setores?t.setores.split(','):[]);
-    const setoresBadges=setores.map(s=>`<span class="badge b-gray" style="font-size:10px;margin:1px">${s}</span>`).join(' ');
-    return`<tr>
-      <td class="td-nome" data-label="">${t.nome} <span class="badge ${sexoCor[t.sexo]||'b-gray'}" style="margin-left:6px;font-size:10px">${t.sexo}</span></td>
-      <td data-label="Sexo"><span class="badge ${sexoCor[t.sexo]||'b-gray'}" style="font-size:11px">${t.sexo||'—'}</span></td>
-      <td data-label="Telefone"><a href="https://wa.me/55${t.telefone?.replace(/\D/g,'')}" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:500">📱 ${t.telefone||'—'}</a></td>
-      <td data-label="E-mail" style="font-size:12px">${t.email||'—'}</td>
-      <td data-label="Setores"><div style="display:flex;flex-wrap:wrap;gap:2px">${setoresBadges}</div></td>
-      <td data-label="Cadastrado" style="font-size:12px;color:var(--text2)">${fmtData(t.dataRegistro)}</td>
-      <td data-label="Currículo">${t.driveUrl?`<a href="${t.driveUrl}" target="_blank" class="btn btn-sm" style="text-decoration:none;font-size:11px">📄 Ver CV</a>`:'<span style="font-size:11px;color:var(--text3)">Sem PDF</span>'}</td>
-      <td data-label="Ações"><div style="display:flex;gap:4px">
-        <button class="btn btn-sm" data-tip="Ver detalhes" onclick="verTalento('${t.id}')">👁</button>
-        <button class="btn btn-sm" data-tip="Editar" onclick="abrirModalTalento('${t.id}')">✏️</button>
-        <button class="btn btn-sm btn-danger" data-tip="Excluir" onclick="excluirTalento('${t.id}')">🗑</button>
-      </div></td>
-    </tr>`;
+  if(document.getElementById('tal-kpi-total'))document.getElementById('tal-kpi-total').textContent=todos.length;
+  if(document.getElementById('tal-kpi-masc'))document.getElementById('tal-kpi-masc').textContent=todos.filter(t=>t.sexo==='Masculino').length;
+  if(document.getElementById('tal-kpi-fem'))document.getElementById('tal-kpi-fem').textContent=todos.filter(t=>t.sexo==='Feminino').length;
+  if(document.getElementById('tal-kpi-cv'))document.getElementById('tal-kpi-cv').textContent=todos.filter(t=>t.driveUrl).length;
+  const el=document.getElementById('tal-lista');
+  if(!el)return;
+  if(!lista.length){
+    el.innerHTML='<div style="text-align:center;padding:32px;color:var(--text3)">Nenhum candidato encontrado.</div>';
+    return;
+  }
+  const sc={Masculino:'b-info',Feminino:'b-ok',Outro:'b-gray'};
+  el.innerHTML=lista.slice().reverse().map(t=>{
+    let s=t.setores||[];
+    if(!Array.isArray(s))s=String(s).split(',').map(x=>x.trim()).filter(Boolean);
+    const tel=String(t.telefone||'').replace(/\D/g,'');
+    const telFmt=String(t.telefone||'');
+    const id=String(t.id||'');
+    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px">'
+      +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px">'
+        +'<div><div style="font-size:15px;font-weight:700">'+t.nome+'</div>'
+        +'<div style="font-size:11px;color:var(--text3)">'+fmtData(t.dataRegistro)+'</div></div>'
+        +'<span class="badge '+(sc[t.sexo]||'b-gray')+'">'+t.sexo+'</span>'
+      +'</div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:10px;font-size:13px;margin-bottom:8px">'
+        +(tel?'<a href="https://wa.me/55'+tel+'" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600">📱 '+telFmt+'</a>':'<span>'+telFmt+'</span>')
+        +(t.email?'<span style="color:var(--text2)">✉️ '+t.email+'</span>':'')
+      +'</div>'
+      +(s.length?'<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">'+s.map(x=>'<span class="badge b-gray" style="font-size:11px">'+x+'</span>').join('')+'</div>':'')
+      +(t.obs?'<div style="font-size:12px;color:var(--text2);margin-bottom:8px;font-style:italic">'+t.obs+'</div>':'')
+      +'<div style="display:flex;gap:6px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:8px">'
+        +(t.driveUrl?'<a href="'+t.driveUrl+'" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none">📄 Currículo</a>':'')
+        +'<button class="btn btn-sm" onclick="verTalento('+JSON.stringify(id)+')">👁 Ver</button>'
+        +'<button class="btn btn-sm" onclick="abrirModalTalento('+JSON.stringify(id)+')">✏️ Editar</button>'
+        +'<button class="btn btn-sm btn-danger" onclick="excluirTalento('+JSON.stringify(id)+')">🗑 Excluir</button>'
+      +'</div>'
+    +'</div>';
   }).join('');
 }
 
 function verTalento(id){
-  const t=DB.talentos.find(x=>x.id==id);
+  const t=DB.talentos.find(x=>String(x.id)===String(id));
   if(!t)return;
-  document.getElementById('ver-tal-titulo').textContent='🎯 '+t.nome;
-  const setores=Array.isArray(t.setores)?t.setores:(t.setores?t.setores.split(','):[]);
-  document.getElementById('ver-tal-body').innerHTML=`
-    <div class="form-grid">
-      ${row2('Nome',t.nome)}
-      ${row2('Telefone',`<a href="https://wa.me/55${t.telefone?.replace(/\D/g,'')}" target="_blank" style="color:var(--accent);text-decoration:none">📱 ${t.telefone}</a>`)}
-      ${row2('Sexo',t.sexo)}
-      ${row2('E-mail',t.email||'—')}
-      <div class="form-group" style="grid-column:1/-1"><label>Setores de Interesse</label>
-        <div style="padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);border:1px solid var(--border);display:flex;flex-wrap:wrap;gap:4px">
-          ${setores.map(s=>`<span class="badge b-info" style="font-size:12px">${s}</span>`).join('')||'—'}
-        </div>
-      </div>
-      ${t.obs?row2('Observações',t.obs):''}
-      ${row2('Cadastrado em',fmtData(t.dataRegistro))}
-      <div class="form-group" style="grid-column:1/-1"><label>Currículo</label>
-        <div style="padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);border:1px solid var(--border)">
-          ${t.driveUrl?`<a href="${t.driveUrl}" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none">📄 Abrir PDF no Drive</a> <span style="font-size:11px;color:var(--text2);margin-left:8px">${t.nomeArquivo||''}</span>`:'<span style="font-size:13px;color:var(--text3)">Nenhum currículo anexado</span>'}
-        </div>
-      </div>
-    </div>`;
-  document.getElementById('btn-excluir-talento').onclick=()=>{if(confirm('Excluir cadastro de '+t.nome+'?')){fecharModal('modal-ver-talento');excluirTalento(id);}};
+  document.getElementById('ver-tal-titulo').textContent='Candidato: '+t.nome;
+  const setores=Array.isArray(t.setores)?t.setores:(t.setores?String(t.setores).split(','):[]);
+  const tel=String(t.telefone||'').replace(/\D/g,'');
+  document.getElementById('ver-tal-body').innerHTML=
+    '<div class="form-grid">'
+    +row2('Nome',t.nome)
+    +row2('Telefone','<a href="https://wa.me/55'+tel+'" target="_blank" style="color:var(--accent);text-decoration:none">'+t.telefone+'</a>')
+    +row2('Sexo',t.sexo)
+    +row2('E-mail',t.email||'\u2014')
+    +'<div class="form-group" style="grid-column:1/-1"><label>Setores de Interesse</label>'
+    +'<div style="padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);border:1px solid var(--border);display:flex;flex-wrap:wrap;gap:4px">'
+    +setores.map(s=>'<span class="badge b-info" style="font-size:12px">'+s+'</span>').join('')
+    +'</div></div>'
+    +(t.obs?row2('Obs',t.obs):'')
+    +row2('Cadastrado em',fmtData(t.dataRegistro))
+    +'<div class="form-group" style="grid-column:1/-1"><label>Curriculo</label>'
+    +'<div style="padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);border:1px solid var(--border)">'
+    +(t.driveUrl?'<a href="'+t.driveUrl+'" target="_blank" class="btn btn-sm btn-primary" style="text-decoration:none">Abrir PDF</a>':'<span style="color:var(--text3)">Nenhum curriculo</span>')
+    +'</div></div></div>';
+  document.getElementById('btn-excluir-talento').onclick=()=>{if(confirm('Excluir '+t.nome+'?')){fecharModal('modal-ver-talento');excluirTalento(id);}};
   abrirModal('modal-ver-talento');
 }
 
 function excluirTalento(id){
-  const t=DB.talentos.find(x=>x.id==id);
+  const t=DB.talentos.find(x=>String(x.id)===String(id));
   if(!t)return;
-  if(!confirm('Excluir '+t.nome+' do Banco de Talentos?\nO PDF no Drive não será removido.'))return;
-  DB.talentos=DB.talentos.filter(x=>x.id!=id);
-  salvarDB(); renderTalentos();
+  if(!confirm('Excluir '+t.nome+' do Banco de Talentos?'))return;
+  DB.talentos=DB.talentos.filter(x=>String(x.id)!==String(id));
+  salvarDB();renderTalentos();
   sincronizarScript('excluirTalento',{id});
   notify('Candidato removido.','warn');
 }
 
-function limparFiltrosTalentos(){
-  document.getElementById('tal-busca').value='';
-  document.getElementById('tal-filtro-sexo').value='';
-  document.getElementById('tal-filtro-setor').value='';
-  renderTalentos();
-}
-
-// ══════════════════════════════════════════
 // INIT
-// ══════════════════════════════════════════
 window.addEventListener('DOMContentLoaded',()=>{
   renderDashboard();
-  if(SCRIPT_URL)setSyncStatus('online','Configurado');
+  if(SCRIPT_URL){
+    setSyncStatus('online','Configurado');
+    // Auto-sincroniza ao abrir
+    sincronizar();
+  }
 });
 </script>
 
