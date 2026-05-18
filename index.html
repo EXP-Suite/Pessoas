@@ -204,8 +204,8 @@ tbody tr:hover td{background:var(--bg)}
 
 /* ══ MOBILE ════════════════════════════════════════════════ */
 @media(max-width:680px){
-
-  /* ── Topbar ── */
+  #kpi-grid{grid-template-columns:1fr 1fr !important}
+  #dash-main-grid{grid-template-columns:1fr !important}
   .topbar{height:52px;padding:0 .875rem}
   .topbar-sub{display:none}
   #filtro-empresa-global{font-size:11px;padding:4px 6px;max-width:110px}
@@ -350,41 +350,104 @@ tbody tr:hover td{background:var(--bg)}
 
 <!-- ═══ DASHBOARD ═══════════════════════════════════════ -->
 <div class="page active" id="page-dashboard">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px">
-    <div style="font-size:13px;font-weight:600;color:var(--text2)">Visão Geral</div>
-    <select id="filtro-empresa-dash" onchange="renderDashboard()" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit">
-      <option value="">Todas as Empresas</option>
+
+  <!-- Cabeçalho + filtro empresa -->
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+    <div>
+      <div style="font-size:20px;font-weight:800;color:var(--text);letter-spacing:-.3px">Visão Geral</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:2px" id="dash-data-hoje"></div>
+    </div>
+    <select id="filtro-empresa-dash" onchange="renderDashboard()" style="font-size:12px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-weight:600">
+      <option value="">🏢 Todas as Empresas</option>
       <option value="Explosão Alimentos">Explosão Alimentos</option>
       <option value="AGS Distribuidora">AGS Distribuidora</option>
     </select>
   </div>
+
+  <!-- Alertas críticos -->
   <div id="dash-alerts"></div>
-  <div class="summary-grid" id="kpi-grid">
-    <div class="stat-card"><div class="stat-label">Total de Colaboradores</div><div class="stat-value" id="kpi-total">—</div><div class="stat-sub">ativos + afastados</div></div>
-    <div class="stat-card ok"><div class="stat-label">Ativos</div><div class="stat-value" id="kpi-ativos">—</div><div class="stat-sub">em atividade</div></div>
-    <div class="stat-card warn"><div class="stat-label">Afastados</div><div class="stat-value" id="kpi-afastados">—</div><div class="stat-sub">temporariamente</div></div>
-    <div class="stat-card danger"><div class="stat-label">Desligados (mês)</div><div class="stat-value" id="kpi-desligados">—</div><div class="stat-sub">no mês atual</div></div>
+
+  <!-- KPI Cards -->
+  <div id="kpi-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+    <div style="background:linear-gradient(135deg,#1a5c38 0%,#2d8a57 100%);border-radius:14px;padding:20px 18px;color:#fff;cursor:pointer" onclick="showPage('colaboradores')">
+      <div style="font-size:28px;margin-bottom:4px">👥</div>
+      <div style="font-size:32px;font-weight:800;line-height:1" id="kpi-total">—</div>
+      <div style="font-size:12px;opacity:.8;margin-top:4px;font-weight:500">Colaboradores</div>
+      <div style="font-size:11px;opacity:.6;margin-top:2px">ativos + afastados</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#0f766e 0%,#14b8a6 100%);border-radius:14px;padding:20px 18px;color:#fff;cursor:pointer" onclick="showPage('colaboradores')">
+      <div style="font-size:28px;margin-bottom:4px">✅</div>
+      <div style="font-size:32px;font-weight:800;line-height:1" id="kpi-ativos">—</div>
+      <div style="font-size:12px;opacity:.8;margin-top:4px;font-weight:500">Ativos</div>
+      <div style="font-size:11px;opacity:.6;margin-top:2px">em atividade</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#b45309 0%,#f59e0b 100%);border-radius:14px;padding:20px 18px;color:#fff;cursor:pointer" onclick="showPage('colaboradores')">
+      <div style="font-size:28px;margin-bottom:4px">⏸️</div>
+      <div style="font-size:32px;font-weight:800;line-height:1" id="kpi-afastados">—</div>
+      <div style="font-size:12px;opacity:.8;margin-top:4px;font-weight:500">Afastados</div>
+      <div style="font-size:11px;opacity:.6;margin-top:2px">temporariamente</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#9f1239 0%,#e11d48 100%);border-radius:14px;padding:20px 18px;color:#fff;cursor:pointer" onclick="showPage('desligamentos')">
+      <div style="font-size:28px;margin-bottom:4px">📋</div>
+      <div style="font-size:32px;font-weight:800;line-height:1" id="kpi-desligados">—</div>
+      <div style="font-size:12px;opacity:.8;margin-top:4px;font-weight:500">Desligados</div>
+      <div style="font-size:11px;opacity:.6;margin-top:2px">no mês atual</div>
+    </div>
   </div>
-  <div class="grid2">
-    <div class="card">
-      <div class="card-title">🏖️ Férias a Vencer</div>
-      <div id="dash-ferias-list"><div class="empty">Carregando...</div></div>
+
+  <!-- Grid principal -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" id="dash-main-grid">
+
+    <!-- Férias a Vencer -->
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="padding:14px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:13px;font-weight:700;color:var(--text)">🏖️ Férias a Vencer</div>
+        <span class="alert-cta" onclick="showPage('ferias')" style="font-size:11px">Ver todas →</span>
+      </div>
+      <div id="dash-ferias-list" style="padding:8px 0"></div>
     </div>
-    <div class="card">
-      <div class="card-title">⚠️ Contratos de Experiência</div>
-      <div id="dash-contratos-list"><div class="empty">Carregando...</div></div>
+
+    <!-- Contratos de Experiência -->
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="padding:14px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:13px;font-weight:700;color:var(--text)">⚠️ Contratos de Experiência</div>
+        <span class="alert-cta" onclick="showPage('colaboradores')" style="font-size:11px">Ver todos →</span>
+      </div>
+      <div id="dash-contratos-list" style="padding:8px 0"></div>
+    </div>
+
+    <!-- Aniversariantes -->
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="padding:14px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:13px;font-weight:700;color:var(--text)">🎂 Aniversariantes do Mês</div>
+        <span class="alert-cta" onclick="showPage('aniversarios')" style="font-size:11px">Ver todos →</span>
+      </div>
+      <div id="dash-bday-list" style="padding:10px 16px"></div>
+    </div>
+
+    <!-- Headcount -->
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="padding:14px 16px 10px;border-bottom:1px solid var(--border)">
+        <div style="font-size:13px;font-weight:700;color:var(--text)">👥 Headcount por Setor</div>
+      </div>
+      <div id="dash-headcount" style="padding:12px 16px"></div>
+    </div>
+
+  </div>
+
+  <!-- Acesso Rápido -->
+  <div class="card" style="padding:14px 16px">
+    <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">⚡ Acesso Rápido</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+      <button class="btn" onclick="abrirModalColab()" style="font-size:12px;gap:6px">👤 Novo Colaborador</button>
+      <button class="btn" onclick="showPage('advertencias')" style="font-size:12px;gap:6px">⚠️ Advertências</button>
+      <button class="btn" onclick="showPage('ferias')" style="font-size:12px;gap:6px">🏖️ Férias</button>
+      <button class="btn" onclick="showPage('documentos')" style="font-size:12px;gap:6px">📁 Documentos</button>
+      <button class="btn" onclick="showPage('talentos')" style="font-size:12px;gap:6px">🎯 Banco de Talentos</button>
+      <button class="btn" onclick="showPage('carreira')" style="font-size:12px;gap:6px">📈 Carreira</button>
     </div>
   </div>
-  <div class="grid2">
-    <div class="card">
-      <div class="card-title">🎂 Aniversariantes do Mês</div>
-      <div id="dash-bday-list"><div class="empty">Carregando...</div></div>
-    </div>
-    <div class="card">
-      <div class="card-title">👥 Headcount por Setor</div>
-      <div id="dash-headcount"><div class="empty">Carregando...</div></div>
-    </div>
-  </div>
+
 </div>
 
 <!-- ═══ COLABORADORES ═══════════════════════════════════ -->
@@ -1234,53 +1297,84 @@ function renderDashboard(){
   const mes=new Date().getMonth()+1,ano=new Date().getFullYear();
   const deslFiltrados=empFiltro?DB.desligamentos.filter(d=>{const c=DB.colaboradores.find(x=>x.id==d.colaboradorId);return !empFiltro||(c&&c.empresa===empFiltro);}):DB.desligamentos;
   const deslMes=deslFiltrados.filter(d=>{const dt=new Date(d.data);return dt.getMonth()+1===mes&&dt.getFullYear()===ano;});
+
+  // Data atual
+  const dh=document.getElementById('dash-data-hoje');
+  if(dh)dh.textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  // KPIs
   document.getElementById('kpi-total').textContent=ativos.length+afastados.length;
   document.getElementById('kpi-ativos').textContent=ativos.length;
   document.getElementById('kpi-afastados').textContent=afastados.length;
   document.getElementById('kpi-desligados').textContent=deslMes.length;
 
-  // Alertas de férias vencidas
+  // Alertas
   const fvc=calcularFeriasColab(empFiltro);
   const venc=fvc.filter(f=>f.diasRestantes<0);
   const crit30=fvc.filter(f=>f.diasRestantes>=0&&f.diasRestantes<=30);
   const alerts=[];
-  if(venc.length)alerts.push(`<div class="alert-item danger"><div class="alert-icon danger">!</div><div class="alert-body"><div class="alert-name">${venc.length} colaborador(es) com férias VENCIDAS</div><div class="alert-desc">Ação imediata necessária</div></div><span class="alert-cta" onclick="showPage('ferias')">Ver →</span></div>`);
-  if(crit30.length)alerts.push(`<div class="alert-item warn"><div class="alert-icon warn">↓</div><div class="alert-body"><div class="alert-name">${crit30.length} colaborador(es) com férias vencendo em ≤30 dias</div></div><span class="alert-cta" onclick="showPage('ferias')">Ver →</span></div>`);
+  if(venc.length)alerts.push(`<div class="alert-item danger" style="border-radius:10px;padding:12px 14px"><div class="alert-icon danger" style="font-size:18px;width:36px;height:36px">🚨</div><div class="alert-body"><div class="alert-name">${venc.length} colaborador(es) com férias VENCIDAS</div><div class="alert-desc">Regularização imediata necessária</div></div><span class="alert-cta" onclick="showPage('ferias')">Ver →</span></div>`);
+  if(crit30.length)alerts.push(`<div class="alert-item warn" style="border-radius:10px;padding:12px 14px"><div class="alert-icon warn" style="font-size:18px;width:36px;height:36px">⏰</div><div class="alert-body"><div class="alert-name">${crit30.length} colaborador(es) com férias vencendo em até 30 dias</div></div><span class="alert-cta" onclick="showPage('ferias')">Ver →</span></div>`);
   document.getElementById('dash-alerts').innerHTML=alerts.join('');
 
   // Férias a vencer
   const fv=fvc.filter(f=>f.diasRestantes<=90).sort((a,b)=>a.diasRestantes-b.diasRestantes).slice(0,6);
   const fvEl=document.getElementById('dash-ferias-list');
-  fvEl.innerHTML=fv.length?fv.map(f=>`<div class="alert-item ${f.diasRestantes<0?'danger':f.diasRestantes<=30?'warn':'ok'}">
-    <div class="alert-icon ${f.diasRestantes<0?'danger':f.diasRestantes<=30?'warn':'ok'}">${f.diasRestantes<0?'!':'-'}</div>
-    <div class="alert-body"><div class="alert-name">${f.nome}</div><div class="alert-desc">${f.cargo||'—'} · ${f.setor||'—'}</div></div>
-    <span class="badge ${f.diasRestantes<0?'b-venc':f.diasRestantes<=30?'b-urg':'b-warn'}">${f.diasRestantes<0?'Vencido':f.diasRestantes+'d'}</span>
-  </div>`).join(''): '<div class="empty">Nenhuma férias crítica.</div>';
+  const fvCor=d=>d<0?'#e11d48':d<=30?'#f59e0b':'#1a5c38';
+  const fvBg=d=>d<0?'#fff1f2':d<=30?'#fffbeb':'#f0fdf4';
+  const fvTxt=d=>d<0?'Vencido':d+'d';
+  fvEl.innerHTML=fv.length?fv.map(f=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--border)">
+      <div style="width:36px;height:36px;border-radius:50%;background:${fvBg(f.diasRestantes)};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:${fvCor(f.diasRestantes)};flex-shrink:0">${f.nome[0]}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.nome}</div>
+        <div style="font-size:11px;color:var(--text3)">${f.cargo||'—'} · ${f.setor||'—'}</div>
+      </div>
+      <span style="background:${fvBg(f.diasRestantes)};color:${fvCor(f.diasRestantes)};font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap">${fvTxt(f.diasRestantes)}</span>
+    </div>`).join(''):'<div style="padding:24px 16px;text-align:center;color:var(--text3);font-size:13px">✅ Nenhuma férias crítica</div>';
 
   // Contratos de experiência
   const ce=colabsFiltrados.filter(c=>c.status==='Ativo'&&c.admissao&&(c.contrato==='Temporário'||c.contrato==='Estágio'||c.contrato==='Aprendiz')).map(c=>({...c,d45:diasEntre(hoje(),addDias(c.admissao,45)),d90:diasEntre(hoje(),addDias(c.admissao,90))})).filter(c=>c.d45<=30||c.d90<=30).slice(0,6);
   const ceEl=document.getElementById('dash-contratos-list');
-  ceEl.innerHTML=ce.length?ce.map(c=>`<div class="alert-item ${c.d45<=7?'danger':'warn'}">
-    <div class="alert-icon ${c.d45<=7?'danger':'warn'}">!</div>
-    <div class="alert-body"><div class="alert-name">${c.nome}</div><div class="alert-desc">${c.contrato} · Admissão: ${fmtData(c.admissao)}</div></div>
-    <span class="badge ${c.d45<=7?'b-venc':'b-warn'}">45d: ${c.d45<=0?'Venc.':c.d45+'d'}</span>
-  </div>`).join(''): '<div class="empty">Nenhum contrato próximo do vencimento.</div>';
+  ceEl.innerHTML=ce.length?ce.map(c=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--border)">
+      <div style="width:36px;height:36px;border-radius:50%;background:#fffbeb;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#b45309;flex-shrink:0">${c.nome[0]}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.nome}</div>
+        <div style="font-size:11px;color:var(--text3)">${c.contrato} · admitido ${fmtData(c.admissao)}</div>
+      </div>
+      <span style="background:${c.d45<=7?'#fff1f2':'#fffbeb'};color:${c.d45<=7?'#e11d48':'#b45309'};font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px">45d: ${c.d45<=0?'Venc.':c.d45+'d'}</span>
+    </div>`).join(''):'<div style="padding:24px 16px;text-align:center;color:var(--text3);font-size:13px">✅ Nenhum contrato crítico</div>';
 
   // Aniversariantes
   const bdays=getBdayMes(colabsFiltrados);
   const bdEl=document.getElementById('dash-bday-list');
-  bdEl.innerHTML=bdays.length?bdays.map(c=>`<div class="bday-card"><div class="bday-avatar">${c.nome[0]}</div><div><div class="bday-name">${c.nome}</div><div class="bday-info">${c.cargo||'—'} · dia ${new Date(c.nascimento+'T00:00').getDate()}</div></div></div>`).join(''): '<div class="empty">Nenhum aniversariante este mês.</div>';
+  const bdCores=['#1a5c38','#0f766e','#1d4ed8','#7c3aed','#b45309','#9f1239','#0369a1'];
+  bdEl.innerHTML=bdays.length?`<div style="display:flex;flex-wrap:wrap;gap:10px">${bdays.map((c,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border-radius:10px;min-width:160px;flex:1">
+      <div style="width:38px;height:38px;border-radius:50%;background:${bdCores[i%bdCores.length]};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;flex-shrink:0">${c.nome[0]}</div>
+      <div style="min-width:0">
+        <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.nome.split(' ')[0]}</div>
+        <div style="font-size:11px;color:var(--text3)">dia ${new Date(c.nascimento+'T00:00').getDate()} 🎂</div>
+      </div>
+    </div>`).join('')}</div>`:'<div style="text-align:center;color:var(--text3);font-size:13px;padding:16px 0">Nenhum aniversariante este mês</div>';
 
   // Headcount
   const hc={};
   colabsFiltrados.filter(c=>c.status!=='Desligado').forEach(c=>{hc[c.setor]=(hc[c.setor]||0)+1;});
   const total=Object.values(hc).reduce((a,b)=>a+b,0)||1;
   const hcEl=document.getElementById('dash-headcount');
-  hcEl.innerHTML=Object.keys(hc).length?Object.entries(hc).sort((a,b)=>b[1]-a[1]).map(([s,n])=>`
-    <div style="margin-bottom:10px">
-      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;color:var(--text2)"><span style="font-weight:600;color:var(--text)">${s}</span><span>${n}</span></div>
-      <div class="prog-bar" style="height:8px"><div class="prog-fill" style="width:${Math.round(n/total*100)}%"></div></div>
-    </div>`).join(''): '<div class="empty">Nenhum dado.</div>';
+  const hcCores=['#1a5c38','#0f766e','#0369a1','#7c3aed','#b45309','#9f1239','#374151'];
+  hcEl.innerHTML=Object.keys(hc).length?Object.entries(hc).sort((a,b)=>b[1]-a[1]).map(([s,n],i)=>`
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+        <span style="font-size:12px;font-weight:600;color:var(--text)">${s}</span>
+        <span style="font-size:12px;color:var(--text2);font-weight:700">${n} <span style="color:var(--text3);font-weight:400">(${Math.round(n/total*100)}%)</span></span>
+      </div>
+      <div style="background:var(--surface2);border-radius:99px;height:10px;overflow:hidden">
+        <div style="height:100%;border-radius:99px;background:${hcCores[i%hcCores.length]};width:${Math.round(n/total*100)}%;transition:width .6s ease"></div>
+      </div>
+    </div>`).join(''):'<div style="text-align:center;color:var(--text3);font-size:13px">Nenhum dado.</div>';
 }
 
 // ══════════════════════════════════════════
