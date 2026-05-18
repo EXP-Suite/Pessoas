@@ -1186,7 +1186,7 @@ tbody tr:hover td{background:var(--bg)}
 
 <div class="toast" id="toast"></div>
 <div id="wms-tooltip"></div>
-<div id="app-version">Rev 2.3</div>
+<div id="app-version">Rev 2.4</div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
@@ -2563,7 +2563,7 @@ function renderTalentos(){
         +'<span class="badge '+(sc[t.sexo]||'b-gray')+'">'+t.sexo+'</span>'
       +'</div>'
       +'<div style="display:flex;flex-wrap:wrap;gap:10px;font-size:13px;margin-bottom:8px">'
-        +(tel?'<a href="https://wa.me/55'+tel+'" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600">📱 '+telFmt+'</a>':'<span>'+telFmt+'</span>')
+        +(tel?'<a href="https://web.whatsapp.com/send?phone=55'+tel+'&text='+encodeURIComponent('Olá, {nome}! Encontrei seu cadastro em nosso Banco de Talentos e temos interesse em conversar sobre uma oportunidade. Poderia agendar um contato?'.replace('{nome}',t.nome))+'" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600">📱 '+telFmt+'</a>':'<span>'+telFmt+'</span>')
         +(t.email?'<span style="color:var(--text2)">✉️ '+t.email+'</span>':'')
       +'</div>'
       +(s.length?'<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">'+s.map(x=>'<span class="badge b-gray" style="font-size:11px">'+x+'</span>').join('')+'</div>':'')
@@ -2587,7 +2587,7 @@ function verTalento(id){
   document.getElementById('ver-tal-body').innerHTML=
     '<div class="form-grid">'
     +row2('Nome',t.nome)
-    +row2('Telefone','<a href="https://wa.me/55'+tel+'" target="_blank" style="color:var(--accent);text-decoration:none">'+t.telefone+'</a>')
+    +row2('Telefone','<a href="https://web.whatsapp.com/send?phone=55'+tel+'&text='+encodeURIComponent('Olá, {nome}! Encontrei seu cadastro em nosso Banco de Talentos e temos interesse em conversar sobre uma oportunidade. Poderia agendar um contato?'.replace('{nome}',t.nome))+'" target="_blank" style="color:var(--accent);text-decoration:none">📱 '+String(t.telefone||'')+'</a>')
     +row2('Sexo',t.sexo)
     +row2('E-mail',t.email||'\u2014')
     +'<div class="form-group" style="grid-column:1/-1"><label>Setores de Interesse</label>'
