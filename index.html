@@ -1186,7 +1186,7 @@ tbody tr:hover td{background:var(--bg)}
 
 <div class="toast" id="toast"></div>
 <div id="wms-tooltip"></div>
-<div id="app-version">Rev 2.4</div>
+<div id="app-version">Rev 2.5</div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
@@ -1234,10 +1234,20 @@ function salvarDB(){
 // UTILITÁRIOS
 // ══════════════════════════════════════════
 function gerarId(){ return Date.now()+Math.floor(Math.random()*1000); }
+function normalizarData(v){
+  if(!v)return '';
+  if(v instanceof Date)return v.toISOString().slice(0,10);
+  const s=String(v).trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+  if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){const[d,m,a]=s.split('/');return a+'-'+m+'-'+d;}
+  if(/^\d+(\.\d+)?$/.test(s)){const dt=new Date(Math.round((Number(s)-25569)*86400*1000));return dt.toISOString().slice(0,10);}
+  const dt=new Date(s);if(!isNaN(dt))return dt.toISOString().slice(0,10);
+  return '';
+}
 function hoje(){ return new Date().toISOString().slice(0,10); }
-function fmtData(s){ if(!s)return'—'; const p=s.slice(0,10); const[y,m,d]=p.split('-'); return`${d}/${m}/${y}`; }
-function diasEntre(d1,d2){ return Math.round((new Date(d2)-new Date(d1))/86400000); }
-function addDias(d,n){ const dt=new Date(d); dt.setDate(dt.getDate()+n); return dt.toISOString().slice(0,10); }
+function fmtData(s){ if(!s)return'—'; const nd=normalizarData(s); if(!nd)return'—'; const[y,m,d]=nd.split('-'); return`${d}/${m}/${y}`; }
+function diasEntre(d1,d2){ return Math.round((new Date(normalizarData(d2)||d2)-new Date(normalizarData(d1)||d1))/86400000); }
+function addDias(d,n){ const dt=new Date(normalizarData(d)||d); dt.setDate(dt.getDate()+n); return dt.toISOString().slice(0,10); }
 function mascaraCPF(el){ let v=el.value.replace(/\D/g,'').slice(0,11); v=v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3}\.\d{3})(\d)/,'$1.$2').replace(/(\.\d{3})(\d)/,'$1-$2'); el.value=v; }
 function loading(show){ document.getElementById('loading-overlay').classList.toggle('show',show); }
 
@@ -1355,7 +1365,7 @@ function renderDashboard(){
       <div style="width:38px;height:38px;border-radius:50%;background:${bdCores[i%bdCores.length]};display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;flex-shrink:0">${c.nome[0]}</div>
       <div style="min-width:0">
         <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.nome.split(' ')[0]}</div>
-        <div style="font-size:11px;color:var(--text3)">dia ${new Date(c.nascimento+'T00:00').getDate()} 🎂</div>
+        <div style="font-size:11px;color:var(--text3)">dia ${new Date(normalizarData(c.nascimento)+'T00:00').getDate()} 🎂</div>
       </div>
     </div>`).join('')}</div>`:'<div style="text-align:center;color:var(--text3);font-size:13px;padding:16px 0">Nenhum aniversariante este mês</div>';
 
@@ -2013,13 +2023,21 @@ function imprimirAdvertenciaById(){
 function getBdayMes(colabsParam,mes){
   const m=mes||new Date().getMonth()+1;
   const base=colabsParam||DB.colaboradores;
-  return base.filter(c=>c.status!=='Desligado'&&c.nascimento).filter(c=>new Date(c.nascimento+'T00:00').getMonth()+1===m).sort((a,b)=>new Date(a.nascimento).getDate()-new Date(b.nascimento).getDate());
+  return base.filter(c=>c.status!=='Desligado'&&c.nascimento).filter(c=>{
+    const nd=normalizarData(c.nascimento);
+    if(!nd)return false;
+    return new Date(nd+'T00:00').getMonth()+1===m;
+  }).sort((a,b)=>{
+    const da=normalizarData(a.nascimento),db=normalizarData(b.nascimento);
+    return new Date(da+'T00:00').getDate()-new Date(db+'T00:00').getDate();
+  });
 }
 function renderAniversarios(){
   const h=hoje(),hObj=new Date(h+'T00:00');
   const bdays=getBdayMes();
   document.getElementById('bday-mes').innerHTML=bdays.length?bdays.map(c=>{
-    const dt=new Date(c.nascimento+'T00:00'),dia=dt.getDate(),isHoje=dia===hObj.getDate();
+    const nd=normalizarData(c.nascimento);
+    const dt=new Date(nd+'T00:00'),dia=dt.getDate(),isHoje=dia===hObj.getDate();
     const tag=isHoje?'<span class="badge b-ok" style="margin-left:6px">🎂 Hoje!</span>':dia<=hObj.getDate()+7&&dia>=hObj.getDate()?'<span class="badge b-warn" style="margin-left:6px">Esta semana</span>':'';
     return`<div class="bday-card" style="${isHoje?'border-left-color:#2e7d32;background:#f0fff4':''}">
       <div class="bday-avatar" style="${isHoje?'background:#2e7d32':''}">  ${c.nome[0]}</div>
@@ -2143,7 +2161,7 @@ async function sincronizarScript(action,data){
   try{
     await fetch(SCRIPT_URL,{
       method:'POST',
-      mode:'no-cors',
+      headers:{'Content-Type':'text/plain'},
       body:JSON.stringify({action,data:data||{}})
     });
   }catch(e){console.warn('Sync:',e);}
@@ -2337,43 +2355,45 @@ async function confirmarUploadDoc(){
   if(!colabId){notify('Selecione o colaborador.','error');return;}
   if(!tipo){notify('Selecione o tipo de documento.','error');return;}
   if(!_docArquivo){notify('Selecione um arquivo PDF.','error');return;}
+  if(!SCRIPT_URL){notify('URL do script nao configurada.','error');return;}
   const c=DB.colaboradores.find(x=>x.id==colabId);
   const prog=document.getElementById('doc-progresso');
   const bar=document.getElementById('doc-prog-bar');
   const msg=document.getElementById('doc-prog-msg');
   const btn=document.getElementById('btn-doc-upload');
-  prog.style.display='block'; btn.disabled=true;
+  prog.style.display='block';btn.disabled=true;
   const setP=(p,t)=>{bar.style.width=p+'%';msg.textContent=t;};
   try{
-    setP(10,'Autenticando com o Google...');
-    const token=await _getGisToken();
-    setP(30,'Verificando pasta no Drive...');
-    // Pasta raiz: configurada ou 'root'
-    const pastaRaiz=DRIVE_FOLDER_ID||'root';
-    const pastaRH=await _obterOuCriarPasta('RH - Documentos',pastaRaiz,token);
-    const pastaColab=await _obterOuCriarPasta(c?.nome||'Colaborador_'+colabId,pastaRH,token);
-    setP(55,'Enviando PDF para o Drive...');
-    const nomeArquivo=`${tipo} — ${c?.nome||''} — ${hoje()}.pdf`;
-    const driveFile=await _uploadDrive(_docArquivo,nomeArquivo,pastaColab,token);
-    setP(80,'Configurando permissões...');
-    await _tornarPublico(driveFile.id,token);
-    setP(92,'Salvando metadados...');
-    const docObj={
-      id:String(gerarId()),
-      colaboradorId:String(colabId),
-      colaboradorNome:c?.nome||'',
-      empresa:c?.empresa||'Explosão Alimentos',
-      tipo, nome:nomeArquivo, descricao:desc,
-      tamanho:fmtBytes(_docArquivo.size),
-      dataUpload:hoje(),
-      driveFileId:driveFile.id,
-      driveUrl:driveFile.webViewLink||''
+    setP(20,'Lendo arquivo PDF...');
+    const base64=await new Promise((res,rej)=>{
+      const r=new FileReader();
+      r.onload=e=>res(e.target.result.split(',')[1]);
+      r.onerror=()=>rej(new Error('Erro ao ler arquivo'));
+      r.readAsDataURL(_docArquivo);
+    });
+    setP(50,'Enviando para o Drive via Apps Script...');
+    const nomeArquivo=tipo+' - '+(c?.nome||'')+' - '+hoje()+'.pdf';
+    const docId=String(gerarId());
+    const meta={
+      id:docId,colaboradorId:String(colabId),colaboradorNome:c?.nome||'',
+      empresa:c?.empresa||'Explosao Alimentos',tipo,nome:nomeArquivo,
+      descricao:desc,tamanho:fmtBytes(_docArquivo.size),
+      dataUpload:hoje(),driveFileId:'',driveUrl:''
     };
-    DB.documentos.push(docObj);
+    const respDoc=await fetch(SCRIPT_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({action:'uploadPDF',data:{base64,nome:nomeArquivo,subpasta:c?.nome||'Colaborador',modulo:'Documentos',meta}})
+    });
+    const resDocJson=await respDoc.json();
+    if(resDocJson.ok){
+      meta.driveUrl=resDocJson.url||'';
+      meta.driveFileId=resDocJson.fileId||'';
+    }
+    DB.documentos.push(meta);
     salvarDB();
-    // Registra na planilha via Apps Script
-    sincronizarScript('salvarDocumento',docObj);
-    setP(100,'Upload concluído! ✅');
+    setP(100,'Enviado! ✅');
+    msg.style.color='var(--accent)';
     notify('PDF enviado ao Drive com sucesso!');
     setTimeout(()=>{fecharModal('modal-upload-doc');renderDocumentos();},800);
   }catch(err){
@@ -2520,23 +2540,49 @@ function salvarTalento(editId){
 }
 
 async function _uploadTalentoBackground(obj){
-  if(!DRIVE_CLIENT_ID){notify('Client ID nao configurado.','warn');return;}
+  if(!SCRIPT_URL){notify('URL do script não configurada.','warn');return;}
   try{
-    notify('Enviando curriculo...','warn');
-    const token=await _getGisToken();
-    const pastaRH=await _obterOuCriarPasta('RH - Banco de Talentos',DRIVE_FOLDER_ID||'root',token);
+    notify('Enviando currículo para o Drive...','warn');
+    const base64=await new Promise((res,rej)=>{
+      const r=new FileReader();
+      r.onload=e=>res(e.target.result.split(',')[1]);
+      r.onerror=()=>rej(new Error('Erro ao ler arquivo'));
+      r.readAsDataURL(_talArquivo);
+    });
     const nomeArquivo='CV - '+obj.nome+' - '+hoje()+'.pdf';
-    const driveFile=await _uploadDrive(_talArquivo,nomeArquivo,pastaRH,token);
-    await _tornarPublico(driveFile.id,token);
-    const idx=DB.talentos.findIndex(x=>String(x.id)===String(obj.id));
-    if(idx>-1){
-      DB.talentos[idx].driveUrl=driveFile.webViewLink||'';
-      DB.talentos[idx].driveFileId=driveFile.id;
-      DB.talentos[idx].nomeArquivo=nomeArquivo;
-      salvarDB();renderTalentos();
+    const resp=await fetch(SCRIPT_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({
+        action:'uploadPDF',
+        data:{
+          base64,
+          nome:nomeArquivo,
+          subpasta:obj.nome,
+          modulo:'Curriculos',
+          meta:{talentoId:String(obj.id)}
+        }
+      })
+    });
+    const result=await resp.json();
+    if(result.ok){
+      const idx=DB.talentos.findIndex(x=>String(x.id)===String(obj.id));
+      if(idx>-1){
+        DB.talentos[idx].driveUrl=result.url||'';
+        DB.talentos[idx].driveFileId=result.fileId||'';
+        DB.talentos[idx].nomeArquivo=nomeArquivo;
+        salvarDB();
+        renderTalentos();
+        // Garante que o driveUrl seja salvo no Sheets independente da ordem de execução
+        sincronizarScript('editarTalento', DB.talentos[idx]);
+      }
+      notify('Currículo de '+obj.nome+' salvo no Drive! ✅');
+    }else{
+      notify('Erro no upload: '+(result.error||'falha'),'error');
     }
-    notify('Curriculo enviado! ');
-  }catch(err){notify('Candidato salvo, erro no curriculo: '+err.message,'error');}
+  }catch(err){
+    notify('Candidato salvo, mas erro no currículo: '+err.message,'error');
+  }
 }
 
 function renderTalentos(){
