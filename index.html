@@ -343,7 +343,6 @@ tbody tr:hover td{background:var(--bg)}
   <button class="nav-btn" onclick="showPage('desligamentos',this)"><span class="nav-icon">📋</span>Desligamentos</button>
   <button class="nav-btn" onclick="showPage('documentos',this)"><span class="nav-icon">📁</span>Documentos</button>
   <button class="nav-btn" onclick="showPage('talentos',this)"><span class="nav-icon">🎯</span>Banco de Talentos</button>
-  <button class="nav-btn" onclick="showPage('pagamentos',this)"><span class="nav-icon">💸</span>Pagamentos PIX</button>
   <button class="nav-btn" onclick="showPage('config',this)"><span class="nav-icon">⚙️</span>Configurações</button>
 </nav>
 
@@ -445,7 +444,6 @@ tbody tr:hover td{background:var(--bg)}
       <button class="btn" onclick="showPage('ferias')" style="font-size:12px;gap:6px">🏖️ Férias</button>
       <button class="btn" onclick="showPage('documentos')" style="font-size:12px;gap:6px">📁 Documentos</button>
       <button class="btn" onclick="showPage('talentos')" style="font-size:12px;gap:6px">🎯 Banco de Talentos</button>
-      <button class="btn" onclick="showPage('pagamentos')" style="font-size:12px;gap:6px">💸 Pagamentos PIX</button>
       <button class="btn" onclick="showPage('carreira')" style="font-size:12px;gap:6px">📈 Carreira</button>
     </div>
   </div>
@@ -799,52 +797,6 @@ tbody tr:hover td{background:var(--bg)}
   </div>
 </div>
 
-
-<!-- ═══ PAGAMENTOS PIX ════════════════════════════════════ -->
-<div class="page" id="page-pagamentos">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px">
-    <div>
-      <div style="font-size:13px;font-weight:600;color:var(--text2)">Pagamentos extraordinários via PIX</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:2px">Registre solicitações fora da folha de pagamento e acompanhe aprovação/pagamento.</div>
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-sm" onclick="sincronizar().then(renderPagamentosPix)">↻ Sincronizar</button>
-      <button class="btn btn-primary" onclick="abrirModalPagamentoPix()">＋ Nova Solicitação</button>
-    </div>
-  </div>
-
-  <div class="summary-grid">
-    <div class="stat-card"><div class="stat-label">Solicitações no Mês</div><div class="stat-value" id="pix-kpi-mes">—</div><div class="stat-sub">registradas</div></div>
-    <div class="stat-card warn"><div class="stat-label">Pendentes</div><div class="stat-value" id="pix-kpi-pendentes">—</div><div class="stat-sub">solicitadas/aprovadas</div></div>
-    <div class="stat-card ok"><div class="stat-label">Pagas no Mês</div><div class="stat-value" id="pix-kpi-pagas">—</div></div>
-    <div class="stat-card danger"><div class="stat-label">Valor Pendente</div><div class="stat-value" id="pix-kpi-valor" style="font-size:22px">—</div><div class="stat-sub">a pagar</div></div>
-  </div>
-
-  <div class="card">
-    <div class="toolbar" style="margin-bottom:0">
-      <input type="text" id="pix-busca" placeholder="🔍 Buscar colaborador, motivo ou PIX..." oninput="renderPagamentosPix()" style="flex:1;min-width:220px">
-      <select id="pix-filtro-status" onchange="renderPagamentosPix()">
-        <option value="">Todos os status</option>
-        <option>Solicitado</option><option>Aprovado</option><option>Pago</option><option>Cancelado</option>
-      </select>
-      <select id="pix-filtro-empresa" onchange="renderPagamentosPix()">
-        <option value="">Todas as Empresas</option>
-        <option value="Explosão Alimentos">Explosão Alimentos</option>
-        <option value="AGS Distribuidora">AGS Distribuidora</option>
-      </select>
-      <input type="date" id="pix-filtro-data" onchange="renderPagamentosPix()" title="Filtrar por data da solicitação">
-      <button class="btn btn-sm" onclick="limparFiltrosPix()">✕ Limpar</button>
-    </div>
-  </div>
-
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>Data</th><th>Colaborador</th><th>Empresa</th><th>Tipo</th><th>Valor</th><th>PIX</th><th>Status</th><th>Ações</th></tr></thead>
-      <tbody id="body-pagamentos-pix"><tr><td colspan="8" class="empty">Nenhuma solicitação cadastrada.</td></tr></tbody>
-    </table>
-  </div>
-</div>
-
 </div><!-- /main -->
 
 <!-- ═══ MODAL BANCO DE TALENTOS ══════════════════════════ -->
@@ -962,92 +914,6 @@ tbody tr:hover td{background:var(--bg)}
     </div>
   </div>
 </div>
-
-
-<!-- MODAL PAGAMENTO PIX -->
-<div class="modal-overlay hidden" id="modal-pagamento-pix">
-  <div class="modal" style="max-width:680px">
-    <div class="modal-header">
-      <h3 id="modal-pix-title">💸 Nova Solicitação de Pagamento PIX</h3>
-      <button class="modal-close" onclick="fecharModal('modal-pagamento-pix')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="pix-edit-id">
-      <div class="form-grid">
-        <div class="form-group" style="grid-column:1/-1">
-          <label>Colaborador *</label>
-          <select id="pix-colaborador" onchange="preencherPixColaborador()"><option value="">Selecione...</option></select>
-        </div>
-        <div class="form-group">
-          <label>Empresa</label>
-          <input type="text" id="pix-empresa" readonly placeholder="Preenchido automaticamente">
-        </div>
-        <div class="form-group">
-          <label>Chave PIX *</label>
-          <input type="text" id="pix-chave" placeholder="CPF, telefone, e-mail ou chave aleatória" oninput="atualizarTextoFinanceiroPix()">
-        </div>
-        <div class="form-group">
-          <label>Valor (R$) *</label>
-          <input type="number" id="pix-valor" min="0" step="0.01" placeholder="0,00">
-        </div>
-        <div class="form-group">
-          <label>Tipo do Pagamento *</label>
-          <select id="pix-tipo">
-            <option value="">Selecione...</option>
-            <option>Adiantamento extraordinário</option>
-            <option>Reembolso de despesa</option>
-            <option>Bônus / incentivo</option>
-            <option>Ajuda de custo</option>
-            <option>Acerto financeiro</option>
-            <option>Outro</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Data da Solicitação *</label>
-          <input type="date" id="pix-data-solicitacao">
-        </div>
-        <div class="form-group">
-          <label>Previsão de Pagamento</label>
-          <input type="date" id="pix-data-prevista">
-        </div>
-        <div class="form-group">
-          <label>Status</label>
-          <select id="pix-status">
-            <option>Solicitado</option>
-            <option>Aprovado</option>
-            <option>Pago</option>
-            <option>Cancelado</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Solicitado por</label>
-          <input type="text" id="pix-solicitado-por" placeholder="Ex: RH, Financeiro, Gestor">
-        </div>
-        <div class="form-group" style="grid-column:1/-1">
-          <label>Motivo / Descrição *</label>
-          <textarea id="pix-descricao" rows="3" placeholder="Ex: Reembolso de combustível aprovado pelo gestor..." oninput="atualizarTextoFinanceiroPix()"></textarea>
-        </div>
-        <div class="form-group" style="grid-column:1/-1">
-          <label>Texto para enviar ao financeiro</label>
-          <textarea id="pix-texto-financeiro" rows="4" readonly placeholder="Preencha colaborador, chave PIX e motivo para gerar a mensagem."></textarea>
-          <div style="display:flex;justify-content:flex-end;margin-top:6px">
-            <button type="button" class="btn btn-sm" onclick="copiarTextoFinanceiroPix()">📋 Copiar texto</button>
-          </div>
-        </div>
-        <div class="form-group" style="grid-column:1/-1">
-          <label>Observações internas</label>
-          <textarea id="pix-obs" rows="2" placeholder="Informações complementares, autorização, conferência, etc."></textarea>
-        </div>
-      </div>
-      <p class="form-note">Este módulo registra e formaliza a solicitação. A execução do PIX continua sendo realizada pelo banco/financeiro.</p>
-    </div>
-    <div class="modal-footer">
-      <button class="btn" onclick="fecharModal('modal-pagamento-pix')">Cancelar</button>
-      <button class="btn btn-primary" id="btn-salvar-pix" onclick="salvarPagamentoPix()">💾 Salvar Solicitação</button>
-    </div>
-  </div>
-</div>
-
 <div class="modal-overlay hidden" id="modal-upload-doc">
   <div class="modal" style="max-width:540px">
     <div class="modal-header">
@@ -1320,7 +1186,7 @@ tbody tr:hover td{background:var(--bg)}
 
 <div class="toast" id="toast"></div>
 <div id="wms-tooltip"></div>
-<div id="app-version">Rev 2.5 PIX</div>
+<div id="app-version">Rev 2.4</div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
@@ -1341,7 +1207,6 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxT9WoWdpJlejCsvA-tA
   historico_cargo: JSON.parse(localStorage.getItem('rh_historico_cargo')||'[]'),
   documentos:      JSON.parse(localStorage.getItem('rh_documentos')||'[]'),
   talentos:        JSON.parse(localStorage.getItem('rh_talentos')||'[]'),
-  pagamentos_pix:  JSON.parse(localStorage.getItem('rh_pagamentos_pix')||'[]'),
 };
 // Empresas cadastradas
 const EMPRESAS = [
@@ -1363,7 +1228,6 @@ function salvarDB(){
   localStorage.setItem('rh_historico_cargo',JSON.stringify(DB.historico_cargo));
   localStorage.setItem('rh_documentos',JSON.stringify(DB.documentos));
   localStorage.setItem('rh_talentos',JSON.stringify(DB.talentos));
-  localStorage.setItem('rh_pagamentos_pix',JSON.stringify(DB.pagamentos_pix||[]));
 }
 
 // ══════════════════════════════════════════
@@ -1418,7 +1282,7 @@ function showPage(id,btn){
   // Sincroniza bottom nav
   const bBtn=document.querySelector(`.bnav-btn[data-page="${id}"]`);
   if(bBtn)bBtn.classList.add('active');
-  const m={dashboard:renderDashboard,colaboradores:renderColabs,ferias:renderFerias,carreira:renderCarreira,advertencias:()=>{populateSelectColabs(['adv-colaborador']);renderAdvertencias();},aniversarios:renderAniversarios,desligamentos:()=>{populateSelectColabs(['desl-colaborador'],true);renderDesligamentos();},documentos:()=>{populateSelectColabs(['doc-filtro-colab','doc-colab']);renderDocumentos();},talentos:renderTalentos,pagamentos:()=>{populateSelectColabs(['pix-colaborador']);renderPagamentosPix();},config:carregarConfig};
+  const m={dashboard:renderDashboard,colaboradores:renderColabs,ferias:renderFerias,carreira:renderCarreira,advertencias:()=>{populateSelectColabs(['adv-colaborador']);renderAdvertencias();},aniversarios:renderAniversarios,desligamentos:()=>{populateSelectColabs(['desl-colaborador'],true);renderDesligamentos();},documentos:()=>{populateSelectColabs(['doc-filtro-colab','doc-colab']);renderDocumentos();},talentos:renderTalentos,config:carregarConfig};
   if(m[id])m[id]();
 }
 
@@ -2266,8 +2130,8 @@ function exportarJSON(){
 }
 function limparDadosLocais(){
   if(!confirm('Limpar todos os dados locais?'))return;
-  ['rh_colaboradores','rh_ferias_gozo','rh_advertencias','rh_cargos','rh_desligamentos','rh_historico_cargo','rh_documentos','rh_talentos','rh_pagamentos_pix'].forEach(k=>localStorage.removeItem(k));
-  DB={colaboradores:[],ferias_gozo:[],advertencias:[],cargos:[],desligamentos:[],historico_cargo:[],documentos:[],talentos:[],pagamentos_pix:[]};
+  ['rh_colaboradores','rh_ferias_gozo','rh_advertencias','rh_cargos','rh_desligamentos','rh_historico_cargo','rh_documentos','rh_talentos'].forEach(k=>localStorage.removeItem(k));
+  DB={colaboradores:[],ferias_gozo:[],advertencias:[],cargos:[],desligamentos:[],historico_cargo:[],documentos:[],talentos:[]};
   notify('Cache limpo.','warn');
 }
 
@@ -2277,9 +2141,12 @@ function limparDadosLocais(){
 async function sincronizarScript(action,data){
   if(!SCRIPT_URL)return;
   try{
-    const payload=encodeURIComponent(JSON.stringify(data||{}));
-    await fetch(`${SCRIPT_URL}?action=${action}&data=${payload}`);
-  }catch(e){console.warn('Sync falhou:',e);}
+    await fetch(SCRIPT_URL,{
+      method:'POST',
+      mode:'no-cors',
+      body:JSON.stringify({action,data:data||{}})
+    });
+  }catch(e){console.warn('Sync:',e);}
 }
 async function sincronizar(){
 
@@ -2295,8 +2162,17 @@ async function sincronizar(){
       if(d.result.desligamentos)DB.desligamentos=d.result.desligamentos;
       if(d.result.historico_cargo)DB.historico_cargo=d.result.historico_cargo;
       if(d.result.documentos)DB.documentos=d.result.documentos;
-      if(d.result.talentos)DB.talentos=d.result.talentos;
-      if(d.result.pagamentos_pix)DB.pagamentos_pix=d.result.pagamentos_pix;
+      if(d.result.talentos){
+        // Preserva driveUrl local se o Sheets ainda não tiver (upload pode ter demorado)
+        const locTal=DB.talentos;
+        DB.talentos=d.result.talentos.map(st=>{
+          const loc=locTal.find(l=>String(l.id)===String(st.id));
+          if(loc&&loc.driveUrl&&!String(st.driveUrl||'').trim()){
+            return Object.assign({},st,{driveUrl:loc.driveUrl,driveFileId:loc.driveFileId,nomeArquivo:loc.nomeArquivo});
+          }
+          return st;
+        });
+      }
       salvarDB();
       const hr=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
       setSyncStatus('online','Sincronizado '+hr);
@@ -2310,7 +2186,6 @@ async function sincronizar(){
         else if(pAtiva.id==='page-ferias')renderFerias();
         else if(pAtiva.id==='page-advertencias')renderAdvertencias();
         else if(pAtiva.id==='page-documentos')renderDocumentos();
-        else if(pAtiva.id==='page-pagamentos')renderPagamentosPix();
         else if(pAtiva.id==='page-desligamentos')renderDesligamentos();
       }
     }else{setSyncStatus('offline','Erro: '+(d.error||'?'));notify(d.error||'Erro ao sincronizar','error');}
@@ -2752,189 +2627,6 @@ function excluirTalento(id){
   notify('Candidato removido.','warn');
 }
 
-
-// ══════════════════════════════════════════
-// PAGAMENTOS EXTRAORDINÁRIOS VIA PIX
-// ══════════════════════════════════════════
-function money(v){return 'R$ '+(Number(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function getPagamentosPix(){ if(!Array.isArray(DB.pagamentos_pix))DB.pagamentos_pix=[]; return DB.pagamentos_pix; }
-function statusPixClass(st){return st==='Pago'?'b-ok':st==='Aprovado'?'b-info':st==='Cancelado'?'b-danger':'b-warn';}
-function limparFiltrosPix(){
-  ['pix-busca','pix-filtro-status','pix-filtro-empresa','pix-filtro-data'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  renderPagamentosPix();
-}
-function preencherPixColaborador(){
-  const id=document.getElementById('pix-colaborador')?.value;
-  const c=DB.colaboradores.find(x=>String(x.id)===String(id));
-  document.getElementById('pix-empresa').value=c?.empresa||'';
-  document.getElementById('pix-chave').value=c?.pix||'';
-  atualizarTextoFinanceiroPix();
-}
-function abrirModalPagamentoPix(id){
-  populateSelectColabs(['pix-colaborador']);
-  document.getElementById('pix-edit-id').value=id||'';
-  document.getElementById('modal-pix-title').textContent=id?'✏️ Editar Solicitação PIX':'💸 Nova Solicitação de Pagamento PIX';
-  ['pix-colaborador','pix-empresa','pix-chave','pix-valor','pix-tipo','pix-data-prevista','pix-solicitado-por','pix-descricao','pix-obs'].forEach(k=>{const el=document.getElementById(k);if(el)el.value='';});
-  document.getElementById('pix-data-solicitacao').value=hoje();
-  document.getElementById('pix-status').value='Solicitado';
-  if(id){
-    const p=getPagamentosPix().find(x=>String(x.id)===String(id));
-    if(p){
-      document.getElementById('pix-colaborador').value=p.colaboradorId||'';
-      document.getElementById('pix-empresa').value=p.empresa||'';
-      document.getElementById('pix-chave').value=p.pix||'';
-      document.getElementById('pix-valor').value=p.valor||'';
-      document.getElementById('pix-tipo').value=p.tipo||'';
-      document.getElementById('pix-data-solicitacao').value=(p.dataSolicitacao||hoje()).slice(0,10);
-      document.getElementById('pix-data-prevista').value=(p.dataPrevista||'').slice(0,10);
-      document.getElementById('pix-status').value=p.status||'Solicitado';
-      document.getElementById('pix-solicitado-por').value=p.solicitadoPor||'';
-      document.getElementById('pix-descricao').value=p.descricao||'';
-      document.getElementById('pix-obs').value=p.obs||'';
-    }
-  }
-  atualizarTextoFinanceiroPix();
-  document.getElementById('btn-salvar-pix').onclick=()=>salvarPagamentoPix(id);
-  abrirModal('modal-pagamento-pix');
-}
-function gerarTextoFinanceiroPix(){
-  const colaboradorId=document.getElementById('pix-colaborador')?.value;
-  const c=DB.colaboradores.find(x=>String(x.id)===String(colaboradorId));
-  const nome=c?.nome||'';
-  const pix=document.getElementById('pix-chave')?.value.trim()||'';
-  const descricao=document.getElementById('pix-descricao')?.value.trim()||'';
-  if(!nome&&!pix&&!descricao)return '';
-  return `Pagamento PIX extraordinário\nFuncionário: ${nome||'—'}\nPIX: ${pix||'—'}\nMotivo: ${descricao||'—'}`;
-}
-function atualizarTextoFinanceiroPix(){
-  const el=document.getElementById('pix-texto-financeiro');
-  if(el)el.value=gerarTextoFinanceiroPix();
-}
-function copiarTextoFinanceiroPix(){
-  const texto=gerarTextoFinanceiroPix();
-  if(!texto){notify('Preencha colaborador, chave PIX e motivo primeiro.','warn');return;}
-  if(navigator.clipboard?.writeText){
-    navigator.clipboard.writeText(texto)
-      .then(()=>notify('Texto para o financeiro copiado!'))
-      .catch(()=>{prompt('Copie o texto para o financeiro:',texto);});
-  }else{
-    prompt('Copie o texto para o financeiro:',texto);
-  }
-}
-function salvarPagamentoPix(editId){
-  const colaboradorId=document.getElementById('pix-colaborador').value;
-  const c=DB.colaboradores.find(x=>String(x.id)===String(colaboradorId));
-  const valor=parseFloat(document.getElementById('pix-valor').value)||0;
-  const pix=document.getElementById('pix-chave').value.trim();
-  const tipo=document.getElementById('pix-tipo').value;
-  const dataSolicitacao=document.getElementById('pix-data-solicitacao').value;
-  const descricao=document.getElementById('pix-descricao').value.trim();
-  if(!colaboradorId){notify('Selecione o colaborador.','error');return;}
-  if(!pix){notify('Informe a chave PIX.','error');return;}
-  if(valor<=0){notify('Informe um valor válido.','error');return;}
-  if(!tipo){notify('Selecione o tipo do pagamento.','error');return;}
-  if(!dataSolicitacao){notify('Informe a data da solicitação.','error');return;}
-  if(!descricao){notify('Informe o motivo/descrição.','error');return;}
-  const obj={
-    id:editId||gerarId(),
-    colaboradorId:String(colaboradorId),
-    colaboradorNome:c?.nome||'',
-    empresa:c?.empresa||document.getElementById('pix-empresa').value||'Explosão Alimentos',
-    pix,
-    valor,
-    tipo,
-    dataSolicitacao,
-    dataPrevista:document.getElementById('pix-data-prevista').value,
-    status:document.getElementById('pix-status').value||'Solicitado',
-    solicitadoPor:document.getElementById('pix-solicitado-por').value.trim(),
-    descricao,
-    obs:document.getElementById('pix-obs').value.trim(),
-    criadoEm:editId?(getPagamentosPix().find(x=>String(x.id)===String(editId))?.criadoEm||hoje()):hoje(),
-    atualizadoEm:hoje()
-  };
-  if(editId){
-    const idx=getPagamentosPix().findIndex(x=>String(x.id)===String(editId));
-    if(idx>-1)DB.pagamentos_pix[idx]=obj; else DB.pagamentos_pix.push(obj);
-  }else DB.pagamentos_pix.push(obj);
-  salvarDB();fecharModal('modal-pagamento-pix');renderPagamentosPix();
-  sincronizarScript(editId?'editarPagamentoPix':'novoPagamentoPix',obj);
-  notify(editId?'Solicitação PIX atualizada!':'Solicitação PIX registrada!');
-}
-function alterarStatusPagamentoPix(id,status){
-  const p=getPagamentosPix().find(x=>String(x.id)===String(id));
-  if(!p)return;
-  p.status=status;p.atualizadoEm=hoje();
-  salvarDB();renderPagamentosPix();
-  sincronizarScript('statusPagamentoPix',{id,status,atualizadoEm:p.atualizadoEm});
-  notify('Status atualizado para '+status+'.');
-}
-function copiarSolicitacaoPix(id){
-  const p=getPagamentosPix().find(x=>String(x.id)===String(id));
-  if(!p)return;
-  const texto=`SOLICITAÇÃO DE PAGAMENTO PIX\n\nColaborador: ${p.colaboradorNome}\nEmpresa: ${p.empresa}\nTipo: ${p.tipo}\nValor: ${money(p.valor)}\nChave PIX: ${p.pix}\nData da solicitação: ${fmtData(p.dataSolicitacao)}\nPrevisão de pagamento: ${fmtData(p.dataPrevista)}\nMotivo: ${p.descricao}\nStatus: ${p.status}\nSolicitado por: ${p.solicitadoPor||'—'}\nObs.: ${p.obs||'—'}`;
-  if(navigator.clipboard?.writeText){
-    navigator.clipboard.writeText(texto)
-      .then(()=>notify('Solicitação copiada para a área de transferência!'))
-      .catch(()=>{prompt('Copie a solicitação:',texto);});
-  }else{
-    prompt('Copie a solicitação:',texto);
-  }
-}
-function excluirPagamentoPix(id){
-  const p=getPagamentosPix().find(x=>String(x.id)===String(id));
-  if(!p)return;
-  if(!confirm('Excluir a solicitação PIX de '+p.colaboradorNome+'?'))return;
-  DB.pagamentos_pix=getPagamentosPix().filter(x=>String(x.id)!==String(id));
-  salvarDB();renderPagamentosPix();
-  sincronizarScript('excluirPagamentoPix',{id});
-  notify('Solicitação removida.','warn');
-}
-function renderPagamentosPix(){
-  const listaBase=getPagamentosPix();
-  const busca=(document.getElementById('pix-busca')?.value||'').toLowerCase();
-  const st=document.getElementById('pix-filtro-status')?.value||'';
-  const emp=document.getElementById('pix-filtro-empresa')?.value||'';
-  const data=document.getElementById('pix-filtro-data')?.value||'';
-  let lista=[...listaBase];
-  if(busca)lista=lista.filter(p=>((p.colaboradorNome||'')+' '+(p.descricao||'')+' '+(p.pix||'')+' '+(p.tipo||'')).toLowerCase().includes(busca));
-  if(st)lista=lista.filter(p=>p.status===st);
-  if(emp)lista=lista.filter(p=>p.empresa===emp);
-  if(data)lista=lista.filter(p=>(p.dataSolicitacao||'').slice(0,10)===data);
-  const now=new Date();
-  const mes=now.getMonth()+1,ano=now.getFullYear();
-  const noMes=listaBase.filter(p=>{const d=new Date((p.dataSolicitacao||'')+'T00:00');return d.getMonth()+1===mes&&d.getFullYear()===ano;});
-  const pendentes=listaBase.filter(p=>p.status==='Solicitado'||p.status==='Aprovado');
-  const pagasMes=noMes.filter(p=>p.status==='Pago');
-  const valorPend=pendentes.reduce((s,p)=>s+(Number(p.valor)||0),0);
-  if(document.getElementById('pix-kpi-mes'))document.getElementById('pix-kpi-mes').textContent=noMes.length;
-  if(document.getElementById('pix-kpi-pendentes'))document.getElementById('pix-kpi-pendentes').textContent=pendentes.length;
-  if(document.getElementById('pix-kpi-pagas'))document.getElementById('pix-kpi-pagas').textContent=pagasMes.length;
-  if(document.getElementById('pix-kpi-valor'))document.getElementById('pix-kpi-valor').textContent=money(valorPend);
-  const tbody=document.getElementById('body-pagamentos-pix');
-  if(!tbody)return;
-  if(!lista.length){tbody.innerHTML='<tr><td colspan="8" class="empty">Nenhuma solicitação encontrada.</td></tr>';return;}
-  tbody.innerHTML=lista.slice().reverse().map(p=>{
-    const cls=statusPixClass(p.status);
-    return `<tr>
-      <td class="td-nome" data-label="">${fmtData(p.dataSolicitacao)} <span class="badge ${cls}" style="margin-left:6px;font-size:10px">${p.status||'Solicitado'}</span></td>
-      <td data-label="Colaborador"><strong>${p.colaboradorNome||'—'}</strong><div style="font-size:11px;color:var(--text3)">${p.descricao||''}</div></td>
-      <td data-label="Empresa"><span class="badge ${p.empresa==='AGS Distribuidora'?'b-info':'b-ok'}" style="font-size:10px">${p.empresa==='AGS Distribuidora'?'AGS':'EA'}</span></td>
-      <td data-label="Tipo">${p.tipo||'—'}</td>
-      <td data-label="Valor" style="font-weight:700;color:var(--accent)">${money(p.valor)}</td>
-      <td data-label="PIX" style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.pix||'—'}</td>
-      <td data-label="Status"><span class="badge ${cls}">${p.status||'Solicitado'}</span>${p.dataPrevista?`<div style="font-size:11px;color:var(--text3);margin-top:3px">Prev.: ${fmtData(p.dataPrevista)}</div>`:''}</td>
-      <td data-label="Ações"><div style="display:flex;gap:4px;flex-wrap:wrap">
-        <button class="btn btn-sm" onclick="abrirModalPagamentoPix('${p.id}')" data-tip="Editar solicitação">✏️</button>
-        <button class="btn btn-sm" onclick="copiarSolicitacaoPix('${p.id}')" data-tip="Copiar solicitação para WhatsApp/e-mail">📋</button>
-        ${p.status!=='Aprovado'&&p.status!=='Pago'&&p.status!=='Cancelado'?`<button class="btn btn-sm" onclick="alterarStatusPagamentoPix('${p.id}','Aprovado')" data-tip="Aprovar">✅</button>`:''}
-        ${p.status!=='Pago'&&p.status!=='Cancelado'?`<button class="btn btn-sm btn-primary" onclick="alterarStatusPagamentoPix('${p.id}','Pago')" data-tip="Marcar como pago">💰</button>`:''}
-        ${p.status!=='Cancelado'?`<button class="btn btn-sm btn-danger" onclick="alterarStatusPagamentoPix('${p.id}','Cancelado')" data-tip="Cancelar">✕</button>`:''}
-        <button class="btn btn-sm btn-danger" onclick="excluirPagamentoPix('${p.id}')" data-tip="Excluir registro">🗑</button>
-      </div></td>
-    </tr>`;
-  }).join('');
-}
-
 // INIT
 window.addEventListener('DOMContentLoaded',()=>{
   renderDashboard();
@@ -2954,7 +2646,6 @@ window.addEventListener('DOMContentLoaded',()=>{
   <button class="bnav-btn" onclick="showPage('advertencias',this)" data-page="advertencias"><span>⚠️</span>Advertências</button>
   <button class="bnav-btn" onclick="showPage('documentos',this)" data-page="documentos"><span>📁</span>Docs</button>
   <button class="bnav-btn" onclick="showPage('talentos',this)" data-page="talentos"><span>🎯</span>Talentos</button>
-  <button class="bnav-btn" onclick="showPage('pagamentos',this)" data-page="pagamentos"><span>💸</span>PIX</button>
   <button class="bnav-btn" onclick="showPage('carreira',this)" data-page="carreira"><span>📈</span>Carreira</button>
   <button class="bnav-btn" onclick="showPage('aniversarios',this)" data-page="aniversarios"><span>🎂</span>Aniv.</button>
   <button class="bnav-btn" onclick="showPage('desligamentos',this)" data-page="desligamentos"><span>📋</span>Desl.</button>
