@@ -853,9 +853,7 @@ tbody tr:hover td{background:var(--bg)}
           <label>Tipo *</label>
           <select id="pix-tipo">
             <option value="">Selecione...</option>
-            <option>Adiantamento</option><option>Vale</option><option>Benefício</option>
-            <option>13º Salário</option><option>Rescisão</option><option>Outros</option>
-          </select>
+            <option>Salário</option><option>Vale Alimentação</option><option>Vale Transporte</option><option>Vale</option><option>Férias</option><option>Ajuda de Custo</option><option>Benefício</option><option>Hora Extra</option><option>Comissão</option><option>Gratificação</option><option>13º Salário</option><option>Rescisão</option><option>Outros</option>    </select>
         </div>
         <div class="form-group">
           <label>Valor (R$) *</label>
@@ -870,12 +868,16 @@ tbody tr:hover td{background:var(--bg)}
           <input type="date" id="pix-data-prev">
         </div>
         <div class="form-group" style="grid-column:1/-1">
-          <label>Descrição</label>
-          <input type="text" id="pix-desc" placeholder="Ex: Adiantamento quinzena maio/2026">
+          <label>Motivo *<span style="color:var(--text3);font-weight:400"> — aparece no Pix do recebedor (máx. 72 chars)</span></label>
+          <input type="text" id="pix-motivo" placeholder="Ex: VALE, ADIANTAMENTO, BENEFICIO" maxlength="72">
         </div>
         <div class="form-group" style="grid-column:1/-1">
-          <label>Observações</label>
-          <input type="text" id="pix-obs" placeholder="Informações adicionais...">
+          <label>Descrição <span style="color:var(--text3);font-weight:400">— opcional · uso interno do RH</span></label>
+          <input type="text" id="pix-desc" placeholder="Ex: Adiantamento quinzena maio/2026 — visível apenas para o RH">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Observações <span style="color:var(--text3);font-weight:400">— opcional · uso interno do RH</span></label>
+          <input type="text" id="pix-obs" placeholder="Anotações internas, aprovações, pendências...">
         </div>
       </div>
     </div>
@@ -888,15 +890,14 @@ tbody tr:hover td{background:var(--bg)}
 
 <!-- ═══ MODAL COMPARTILHAR PIX ═══════════════════════════ -->
 <div class="modal-overlay hidden" id="modal-pix-share">
-  <div class="modal" style="max-width:480px">
+  <div class="modal" style="max-width:520px">
     <div class="modal-header" style="background:linear-gradient(135deg,#1a5c38,#2d8a57);color:#fff">
       <h3 style="color:#fff">✅ Pagamento registrado!</h3>
       <button class="modal-close" onclick="fecharModal('modal-pix-share')" style="color:#fff">✕</button>
     </div>
     <div class="modal-body">
-      <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Copie o texto abaixo e envie ao financeiro via WhatsApp:</p>
 
-      <!-- Chave PIX em destaque para copiar fácil -->
+      <!-- Chave PIX -->
       <div style="background:var(--accent-bg);border:2px solid var(--accent);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px">
         <div>
           <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">Chave PIX</div>
@@ -905,7 +906,22 @@ tbody tr:hover td{background:var(--bg)}
         <button class="btn btn-sm btn-primary" onclick="copiarTexto('pix-share-chave',this)" style="flex-shrink:0;white-space:nowrap">📋 Copiar</button>
       </div>
 
-      <!-- Mensagem completa -->
+      <!-- PIX COPIA E COLA -->
+      <div id="pix-copia-cola-section" style="display:none;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📲 Pix Copia e Cola (EMV/BR Code)</div>
+        <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:10px">
+          <div id="pix-emv-payload" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:11px;font-family:monospace;word-break:break-all;line-height:1.5;max-height:80px;overflow:auto"></div>
+          <button class="btn btn-sm btn-primary" onclick="copiarPayloadPix(this)" style="flex-shrink:0;white-space:nowrap;align-self:flex-start">📋 Copiar Pix</button>
+        </div>
+        <!-- QR Code -->
+        <div id="pix-qr-wrap" style="text-align:center">
+          <canvas id="pix-qr-canvas" style="border:1px solid var(--border);border-radius:var(--radius-sm);display:none"></canvas>
+          <div id="pix-qr-loading" style="font-size:12px;color:var(--text3)">Gerando QR Code...</div>
+        </div>
+      </div>
+
+      <!-- Mensagem WhatsApp -->
+      <div style="font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:600">📋 Mensagem para WhatsApp</div>
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px;white-space:pre-wrap;font-size:13px;line-height:1.6;font-family:inherit" id="pix-share-msg"></div>
 
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -2799,6 +2815,103 @@ function excluirTalento(id){
 }
 
 // ══════════════════════════════════════════
+// PIX EMV / BR Code — Gerador Copia e Cola
+// ══════════════════════════════════════════
+
+function removerAcentos(str){
+  return (str||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7E]/g,'');
+}
+
+function normalizarChavePix(chave){
+  if(!chave)return'';
+  const s=chave.trim();
+  const digits=s.replace(/\D/g,'');
+
+  // Verifica se parece telefone (começa com DDD válido 11-99, sem letras especiais de e-mail/CPF)
+  const pareceTelefone=!s.includes('@')&&!s.includes('.')&&/^\+?[\d\s\-().]+$/.test(s);
+  if(!pareceTelefone)return s;
+
+  // Remove prefixo 55 ou +55 para trabalhar só com DDD+número
+  let num=digits;
+  if(num.startsWith('55')&&num.length>=12) num=num.slice(2);
+
+  // num agora deve ter 10 (celular sem 9) ou 11 dígitos (celular com 9 ou fixo)
+  if(num.length===10){
+    const ddd=num.slice(0,2);
+    const numero=num.slice(2); // 8 dígitos
+    // Celular: primeiro dígito 6,7,8,9 → insere o 9
+    if(/^[6-9]/.test(numero)){
+      num=ddd+'9'+numero; // vira 11 dígitos
+    }
+    // Fixo (começa com 2,3,4,5) → mantém 10 dígitos (não adiciona 9)
+  }
+
+  return'+55'+num;
+}
+
+function emvField(id,val){
+  const v=String(val);
+  const len=String(v.length).padStart(2,'0');
+  return id+len+v;
+}
+
+function crc16ccitt(str){
+  let crc=0xFFFF;
+  for(let i=0;i<str.length;i++){
+    crc^=(str.charCodeAt(i)<<8);
+    for(let j=0;j<8;j++){
+      if(crc&0x8000) crc=(crc<<1)^0x1021;
+      else crc<<=1;
+      crc&=0xFFFF;
+    }
+  }
+  return crc.toString(16).toUpperCase().padStart(4,'0');
+}
+
+function gerarPixEMV(chave,valor,nome,cidade,motivo,txid){
+  // Campo 26 — Merchant Account Information
+  const mai=emvField('00','br.gov.bcb.pix')
+           +emvField('01',chave)
+           +(motivo?emvField('02',removerAcentos(motivo).substring(0,72)):'');
+  // Campo 62 — Additional Data Field
+  const txidClean=(txid||'').replace(/[^A-Za-z0-9]/g,'').substring(0,25)||'***';
+  const adf=emvField('05',txidClean);
+  // Valor
+  const valorStr=parseFloat(valor).toFixed(2);
+  // Nome e cidade sem acento, tamanho máximo
+  const nomeLim=removerAcentos(nome).substring(0,25);
+  const cidadeLim=removerAcentos(cidade).substring(0,15);
+
+  let payload=
+    emvField('00','01')+
+    emvField('26',mai)+
+    emvField('52','0000')+
+    emvField('53','986')+
+    emvField('54',valorStr)+
+    emvField('58','BR')+
+    emvField('59',nomeLim)+
+    emvField('60',cidadeLim)+
+    emvField('62',adf)+
+    '6304'; // CRC placeholder
+
+  const crc=crc16ccitt(payload);
+  return payload+crc;
+}
+
+function copiarPixDireto(id){
+  const p=DB.pagamentos_pix.find(x=>String(x.id)===String(id));
+  if(!p||!p.pixCopiaECola){notify('Pix Copia e Cola não disponível.','warn');return;}
+  navigator.clipboard.writeText(p.pixCopiaECola).then(()=>{
+    notify('📲 Pix Copia e Cola copiado!');
+  }).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=p.pixCopiaECola;document.body.appendChild(ta);ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);
+    notify('📲 Pix Copia e Cola copiado!');
+  });
+}
+
+// ══════════════════════════════════════════
 // PAGAMENTOS PIX
 // ══════════════════════════════════════════
 const PIX_STATUS_COR={Solicitado:'b-warn',Aprovado:'b-info',Pago:'b-ok',Cancelado:'b-danger'};
@@ -2832,11 +2945,80 @@ function compartilharPix(id){
 
 function abrirSharePix(obj){
   _pixShareMsg=montarMsgPix(obj);
+  _pixPayload=obj.pixCopiaECola||'';
   document.getElementById('pix-share-chave').textContent=obj.pix||'—';
   document.getElementById('pix-share-msg').textContent=_pixShareMsg;
   const tel=(obj.pix||'').replace(/\D/g,'');
-  document.getElementById('pix-share-wpp').style.display=tel?'':'none';
+  document.getElementById('pix-share-wpp').style.display=tel.length>8?'':'none';
+
+  // Pix Copia e Cola
+  const section=document.getElementById('pix-copia-cola-section');
+  const payloadEl=document.getElementById('pix-emv-payload');
+  if(obj.pixCopiaECola){
+    payloadEl.textContent=obj.pixCopiaECola;
+    section.style.display='block';
+    gerarQRCodePix(obj.pixCopiaECola);
+  } else {
+    section.style.display='none';
+  }
   abrirModal('modal-pix-share');
+}
+
+let _pixPayload='';
+function copiarPayloadPix(btn){
+  const txt=document.getElementById('pix-emv-payload').textContent||'';
+  _pixPayload=txt;
+  navigator.clipboard.writeText(txt).then(()=>{
+    const orig=btn.textContent;btn.textContent='✅ Copiado!';
+    setTimeout(()=>btn.textContent=orig,2000);
+  }).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=txt;document.body.appendChild(ta);ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);
+    const orig=btn.textContent;btn.textContent='✅ Copiado!';
+    setTimeout(()=>btn.textContent=orig,2000);
+  });
+}
+
+function gerarQRCodePix(payload){
+  const canvas=document.getElementById('pix-qr-canvas');
+  const loading=document.getElementById('pix-qr-loading');
+  canvas.style.display='none';
+  loading.style.display='block';
+  loading.textContent='Gerando QR Code...';
+
+  // Usa QRCode.js via CDN
+  if(typeof QRCode==='undefined'){
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    s.onload=()=>_desenharQR(payload,canvas,loading);
+    s.onerror=()=>{loading.textContent='QR Code indisponível offline.';};
+    document.head.appendChild(s);
+  } else {
+    _desenharQR(payload,canvas,loading);
+  }
+}
+
+function _desenharQR(payload,canvas,loading){
+  try{
+    const size=220;
+    canvas.width=size;canvas.height=size;
+    const tmp=document.createElement('div');
+    new QRCode(tmp,{text:payload,width:size,height:size,correctLevel:QRCode.CorrectLevel.M});
+    setTimeout(()=>{
+      const img=tmp.querySelector('img')||tmp.querySelector('canvas');
+      if(!img){loading.textContent='Erro ao gerar QR.';return;}
+      const ctx=canvas.getContext('2d');
+      if(img.tagName==='IMG'){
+        const i=new Image();
+        i.onload=()=>{ctx.drawImage(i,0,0,size,size);canvas.style.display='block';loading.style.display='none';};
+        i.src=img.src;
+      } else {
+        ctx.drawImage(img,0,0,size,size);
+        canvas.style.display='block';loading.style.display='none';
+      }
+    },200);
+  }catch(e){loading.textContent='Erro ao gerar QR Code.';}
 }
 
 function copiarTexto(elId,btn){
@@ -2854,12 +3036,13 @@ function copiarTexto(elId,btn){
 }
 
 function copiarMsgPix(btn){
-  navigator.clipboard.writeText(_pixShareMsg).then(()=>{
+  const texto=_pixShareMsg+(_pixPayload?'\n\n📲 *Pix Copia e Cola:*\n'+_pixPayload:'');
+  navigator.clipboard.writeText(texto).then(()=>{
     const orig=btn.textContent;btn.textContent='✅ Mensagem copiada!';
     setTimeout(()=>btn.textContent=orig,2000);
   }).catch(()=>{
     const ta=document.createElement('textarea');
-    ta.value=_pixShareMsg;document.body.appendChild(ta);ta.select();
+    ta.value=texto;document.body.appendChild(ta);ta.select();
     document.execCommand('copy');document.body.removeChild(ta);
     const orig=btn.textContent;btn.textContent='✅ Mensagem copiada!';
     setTimeout(()=>btn.textContent=orig,2000);
@@ -2881,7 +3064,7 @@ function abrirModalPix(editId){
   if(!DB.pagamentos_pix)DB.pagamentos_pix=[];
   document.getElementById('modal-pix-title').textContent=editId?'✏️ Editar Pagamento PIX':'💸 Novo Pagamento PIX';
   ['pix-colab','pix-tipo'].forEach(id=>document.getElementById(id).value='');
-  ['pix-chave','pix-valor','pix-data-prev','pix-desc','pix-obs'].forEach(id=>document.getElementById(id).value='');
+  ['pix-chave','pix-valor','pix-data-prev','pix-desc','pix-obs','pix-motivo'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('pix-data-sol').value=hoje();
   document.getElementById('btn-salvar-pix').onclick=()=>salvarPix(editId||null);
   populateSelectColabs(['pix-colab','pix-filtro-colab']);
@@ -2896,6 +3079,7 @@ function abrirModalPix(editId){
       document.getElementById('pix-data-prev').value=normalizarData(p.dataPrevista)||'';
       document.getElementById('pix-desc').value=p.descricao||'';
       document.getElementById('pix-obs').value=p.obs||'';
+      document.getElementById('pix-motivo').value=p.motivo||'';
     }
   }
   abrirModal('modal-pix');
@@ -2908,15 +3092,24 @@ function salvarPix(editId){
   if(!colabId){notify('Selecione o colaborador.','error');return;}
   if(!tipo){notify('Selecione o tipo.','error');return;}
   if(!valor){notify('Informe o valor.','error');return;}
+  if(!document.getElementById('pix-motivo').value.trim()){notify('Informe o motivo do pagamento.','error');return;}
   const c=DB.colaboradores.find(x=>String(x.id)===String(colabId));
   const agora=new Date().toISOString();
+  const motivo=document.getElementById('pix-motivo').value.trim()||document.getElementById('pix-tipo').value||'PIX';
+  const chaveRaw=document.getElementById('pix-chave').value.trim();
+  const chavePix=normalizarChavePix(chaveRaw);
   const statusAtual=editId!=null?(DB.pagamentos_pix.find(x=>String(x.id)===String(editId))?.status||'Solicitado'):'Solicitado';
   const criadoEm=editId!=null?(DB.pagamentos_pix.find(x=>String(x.id)===String(editId))?.criadoEm||agora):agora;
+  const txid='RH'+String(gerarId()).toUpperCase().replace(/[^A-Z0-9]/g,'').substring(0,21);
+  const localStr=localStorage.getItem('rh_empresa_cidade')||'Trindade - GO';
+  const cidade=removerAcentos(localStr.split('-')[0]||localStr).trim().substring(0,15).toUpperCase();
+  const nomeRecebedor=removerAcentos(c?.nome||'FUNCIONARIO').substring(0,25).toUpperCase();
+  const pixCopiaECola=chavePix?gerarPixEMV(chavePix,valor,nomeRecebedor,cidade,motivo,txid):'';
   const obj={
     id:editId!=null?editId:gerarId(),
     colaboradorId:String(colabId),colaboradorNome:c?.nome||'',empresa:c?.empresa||'',
-    pix:document.getElementById('pix-chave').value.trim(),
-    valor,tipo,
+    pix:chavePix,
+    valor,tipo,motivo,txid,pixCopiaECola,
     dataSolicitacao:document.getElementById('pix-data-sol').value||hoje(),
     dataPrevista:document.getElementById('pix-data-prev').value||'',
     status:statusAtual,solicitadoPor:'RH',
@@ -3004,6 +3197,7 @@ function renderPix(){
       +'<div style="display:flex;gap:6px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:8px">'
         +(bts[p.status]||'')
         +'<button class="btn btn-sm" onclick="abrirModalPix(\''+id+'\')">✏️ Editar</button>'
+        +(p.pixCopiaECola?'<button class="btn btn-sm" onclick="copiarPixDireto(\''+id+'\')" style="background:#0070f3;color:#fff;border-color:#0070f3">📲 Copiar Pix</button>':'')
         +'<button class="btn btn-sm" onclick="compartilharPix(\''+id+'\')" style="background:#25D366;color:#fff;border-color:#25D366">📱 Enviar</button>'
         +'<button class="btn btn-sm btn-danger" onclick="excluirPagamentoPix(\''+id+'\')">🗑</button>'
       +'</div>'
