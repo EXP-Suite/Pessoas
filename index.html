@@ -478,9 +478,6 @@ tbody tr:hover td{background:var(--bg)}
       </select>
       <select id="filtro-setor-colab" onchange="filtrarColabs()">
         <option value="">Todos os Setores</option>
-        <option>Produção</option><option>Logística</option><option>Administrativo</option>
-        <option>Financeiro</option><option>Compras</option><option>Engenharia</option>
-        <option>RH</option><option>Comercial</option>
       </select>
       <button class="btn btn-primary" onclick="abrirModalColab()">＋ Novo Colaborador</button>
     </div>
@@ -1544,8 +1541,15 @@ function renderDashboard(){
 function renderColabs(lista){
   const src=lista||getColaboradoresFiltrados();
   document.getElementById('list-cargos').innerHTML=DB.cargos.map(c=>`<option value="${c.nome}">`).join('');
+
+  // Popular filtro de setores dinamicamente com os setores reais cadastrados
+  const sel=document.getElementById('filtro-setor-colab');
+  const valorAtual=sel.value;
+  const setoresUnicos=[...new Set(DB.colaboradores.filter(c=>c.setor).map(c=>c.setor))].sort();
+  sel.innerHTML='<option value="">Todos os Setores</option>'+setoresUnicos.map(s=>`<option value="${s}"${s===valorAtual?'selected':''}>${s}</option>`).join('');
+
   const tbody=document.getElementById('body-colabs');
-  if(!src.length){tbody.innerHTML='<tr><td colspan="9" class="empty">Nenhum colaborador encontrado.</td></tr>';return;}
+  if(!src.length){tbody.innerHTML='<tr><td colspan="7" class="empty">Nenhum colaborador encontrado.</td></tr>';return;}
   tbody.innerHTML=src.map((c,i)=>{
     const empBadge=c.empresa==='AGS Distribuidora'?'b-info':'b-ok';
     const empAbrev=c.empresa==='AGS Distribuidora'?'AGS':'EA';
