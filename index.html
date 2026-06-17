@@ -1738,7 +1738,9 @@ function verColab(id){
 }
 function row2(l,v){return`<div class="form-group"><label>${l}</label><div style="padding:7px 10px;background:var(--surface2);border-radius:var(--radius-sm);font-size:13px;border:1px solid var(--border)">${v||'—'}</div></div>`;}
 function populateSelectColabs(ids,apenasAtivos=false){
-  const lista=DB.colaboradores.filter(c=>apenasAtivos?c.status!=='Desligado':c.status!=='Desligado');
+  const lista=DB.colaboradores
+    .filter(c=>apenasAtivos?c.status!=='Desligado':c.status!=='Desligado')
+    .sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
   ids.forEach(id=>{const el=document.getElementById(id);if(!el)return;const cur=el.value;el.innerHTML='<option value="">Selecione...</option>'+lista.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');if(cur)el.value=cur;});
 }
 
@@ -2884,50 +2886,60 @@ function normalizarChavePix(chave){
   if(!chave)return'';
   const s=chave.trim();
 
-  // E-mail
+  // E-mail — retorna como está
   if(s.includes('@'))return s;
 
-  // Chave aleatória (UUID)
+  // Chave aleatória UUID — retorna como está
   if(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s))return s;
 
-  // CPF formatado XXX.XXX.XXX-XX — retorna como está
-  if(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(s))return s;
+  // CPF formatado XXX.XXX.XXX-XX → retorna só os dígitos (sem máscara, para o EMV)
+  if(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(s))return s.replace(/\D/g,'');
 
-  const digits=s.replace(/\D/g,'');
-
-  // CNPJ — 14 dígitos
-  if(digits.length===14)return s;
-
-  // CPF sem máscara:
-  // - 11 dígitos começando com 0 → CPF com zero à esquerda preservado
-  // - 10 dígitos começando com 0-2 (DDDs nunca começam com 0,1 ou 2 no Brasil)
-  //   → CPF que perdeu o zero à esquerda, restaura
-  if(digits.length===11&&digits.startsWith('0'))return digits; // CPF OK
-  if(digits.length===10&&/^[012]/.test(digits))return'0'+digits; // CPF sem o zero, restaura
-
-  // Telefone: 11 dígitos (com 9), 10 dígitos (sem 9), ou com prefixo 55
-  let num=digits;
-  if(num.startsWith('55')&&num.length>=12)num=num.slice(2);
-
-  // Só trata como telefone se DDD for 62, 63 ou 64
-  const dddTel=num.slice(0,2);
-  if(!['62','63','64'].includes(dddTel)) return digits; // CPF sem máscara
-
-  function fmtTel(n){
-    const d=n.slice(0,2),r=n.slice(2);
-    if(r.length===9)return'('+d+') '+r.slice(0,5)+'-'+r.slice(5);
-    return'('+d+') '+r.slice(0,4)+'-'+r.slice(4);
+  // Telefone formatado (XX) XXXXX-XXXX ou (XX) XXXX-XXXX → normaliza para +55...
+  if(/^\(\d{2}\)\s?\d{4,5}-\d{4}$/.test(s)){
+    const digits=s.replace(/\D/g,'');
+    return'+55'+digits;
   }
 
-  if(num.length===11)return fmtTel(num);
-  if(num.length===10){
-    const numero=num.slice(2);
-    if(/^[6-8]/.test(numero))return fmtTel(dddTel+'9'+numero);
-    return fmtTel(num);
+  // A partir daqui trabalha com dígitos puros
+  let digits=s.replace(/\D/g,'');
+
+  // Remove prefixo 55 se resultar em DDD válido
+  if(digits.startsWith('55')&&digits.length>=12){
+    const sem55=digits.slice(2);
+    const ddd=parseInt(sem55.slice(0,2));
+    if(DDDs_VALIDOS.has(ddd))digits=sem55;
+  }
+
+  // CNPJ — 14 dígitos
+  if(digits.length===14)return digits;
+
+  // CPF: 11 dígitos começando com 0, ou DDD inválido
+  if(digits.length===11){
+    const ddd=parseInt(digits.slice(0,2));
+    if(digits.startsWith('0')||!DDDs_VALIDOS.has(ddd))return digits;
+    // Telefone com 9: +55XXXXXXXXXXX
+    return'+55'+digits;
+  }
+
+  // 10 dígitos
+  if(digits.length===10){
+    const ddd=parseInt(digits.slice(0,2));
+    if(!DDDs_VALIDOS.has(ddd)){
+      // DDD inválido → CPF perdeu zero
+      return'0'+digits;
+    }
+    const numero=digits.slice(2);
+    // Celular sem 9 → insere
+    if(/^[6-9]/.test(numero))return'+55'+digits.slice(0,2)+'9'+numero;
+    return'+55'+digits;
   }
 
   return s;
 }
+
+// DDDs válidos no Brasil
+const DDDs_VALIDOS=new Set([11,12,13,14,15,16,17,18,19,21,22,24,27,28,31,32,33,34,35,37,38,41,42,43,44,45,46,47,48,49,51,53,54,55,61,62,63,64,65,66,67,68,69,71,73,74,75,77,79,81,82,83,84,85,86,87,88,89,91,92,93,94,95,96,97,98,99]);
 
 function emvField(id,val){
   const v=String(val);
@@ -3062,22 +3074,44 @@ function mascaraCNPJPix(v){
   return v;
 }
 
-// Detecta tipo da chave e preenche o seletor automaticamente
-function detectarEPreencherTipo(selectId, inputId, valor){
+// Detecta tipo da chave e preenche o seletor + campo automaticamente
+function detectarEPreencherTipo(selectId,inputId,valor){
   if(!valor)return;
+  const s=valor.trim();
   const sel=document.getElementById(selectId);
   const inp=document.getElementById(inputId);
+  if(!sel||!inp)return;
+
   let tipo='';
-  const digits=valor.replace(/\D/g,'');
-  if(valor.includes('@'))tipo='email';
-  else if(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(valor))tipo='aleatoria';
-  else if(digits.length===14)tipo='cnpj';
-  else if(digits.length===11&&(valor.includes('.')||valor.includes('-')||digits.startsWith('0')))tipo='cpf';
-  else if(digits.length>=10&&digits.length<=11)tipo='celular';
+
+  if(s.includes('@')){
+    tipo='email';
+  } else if(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)){
+    tipo='aleatoria';
+  } else if(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(s)){
+    // CPF formatado XXX.XXX.XXX-XX
+    tipo='cpf';
+  } else if(/^\(\d{2}\)\s?\d{4,5}-\d{4}$/.test(s)){
+    // Telefone formatado (XX) XXXXX-XXXX
+    tipo='celular';
+  } else {
+    // Detecta pelos dígitos
+    const digits=s.replace(/\D/g,'');
+    if(digits.length===14){
+      tipo='cnpj';
+    } else if(digits.length===11){
+      const ddd=parseInt(digits.slice(0,2));
+      tipo=(digits.startsWith('0')||!DDDs_VALIDOS.has(ddd))?'cpf':'celular';
+    } else if(digits.length===10){
+      const ddd=parseInt(digits.slice(0,2));
+      tipo=DDDs_VALIDOS.has(ddd)?'celular':'cpf';
+    }
+  }
+
   if(tipo){
     sel.value=tipo;
     trocarTipoChavePix(selectId,inputId);
-    inp.value=valor;
+    inp.value=s;
   }
 }
 // ══════════════════════════════════════════
