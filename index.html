@@ -852,8 +852,17 @@ tbody tr:hover td{background:var(--bg)}
           <select id="pix-colab" onchange="preencherPix()"><option value="">Selecione...</option></select>
         </div>
         <div class="form-group" style="grid-column:1/-1">
-          <label>Chave PIX <span style="color:var(--text3);font-weight:400">(preenchida automaticamente)</span></label>
-          <input type="text" id="pix-chave" placeholder="Chave PIX do colaborador">
+          <label>Chave PIX <span style="color:var(--text3);font-weight:400">(preenchida automaticamente ou informe manualmente)</span></label>
+          <select id="pix-chave-tipo" onchange="trocarTipoChavePix('pix-chave-tipo','pix-chave')" style="width:100%;margin-bottom:6px">
+            <option value="">Selecione o tipo da chave...</option>
+            <option value="cpf">CPF</option>
+            <option value="celular">Celular</option>
+            <option value="email">E-mail</option>
+            <option value="cnpj">CNPJ</option>
+            <option value="aleatoria">Chave Aleatória</option>
+          </select>
+          <input type="text" id="pix-chave" placeholder="Selecione o tipo acima" style="width:100%">
+          <div id="pix-chave-hint" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
         </div>
         <div class="form-group">
           <label>Tipo *</label>
@@ -1182,7 +1191,19 @@ tbody tr:hover td{background:var(--bg)}
         <div class="form-group"><label>Conta</label><input type="text" id="f-conta" placeholder="00000-0"></div>
         <div class="form-group"><label>Tipo de Conta</label>
           <select id="f-tipo-conta"><option>Corrente</option><option>Poupança</option><option>Salário</option></select></div>
-        <div class="form-group"><label>Chave PIX</label><input type="text" id="f-pix" placeholder="CPF, telefone ou e-mail"></div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Chave PIX</label>
+          <select id="f-pix-tipo" onchange="trocarTipoChavePix('f-pix-tipo','f-pix')" style="width:100%;margin-bottom:6px">
+            <option value="">Selecione o tipo da chave...</option>
+            <option value="cpf">CPF</option>
+            <option value="celular">Celular</option>
+            <option value="email">E-mail</option>
+            <option value="cnpj">CNPJ</option>
+            <option value="aleatoria">Chave Aleatória</option>
+          </select>
+          <input type="text" id="f-pix" placeholder="Selecione o tipo acima" style="width:100%">
+          <div id="f-pix-hint" style="font-size:11px;color:var(--text3);margin-top:4px"></div>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -1587,14 +1608,19 @@ function filtrarColabs(){
 function abrirModalColab(id){
   document.getElementById('modal-colab-title').textContent=id?'Editar Colaborador':'Novo Colaborador';
   ['nome','cpf','rg','telefone','email','endereco','emerg-nome','emerg-tel','cargo','salario','ctps','banco','agencia','conta','pix'].forEach(f=>{const el=document.getElementById('f-'+f);if(el)el.value='';});
+  document.getElementById('f-pix-tipo').value='';
+  document.getElementById('f-pix').placeholder='Selecione o tipo ao lado';
+  const fph=document.getElementById('f-pix-hint');if(fph)fph.textContent='';
   document.getElementById('f-empresa').value='Explosão Alimentos';
   ['nascimento','admissao','aso'].forEach(f=>{const el=document.getElementById('f-'+f);if(el)el.value='';});
   if(id){
     const c=DB.colaboradores.find(x=>x.id==id);
     if(c){
-      const fs={'nome':c.nome,'cpf':c.cpf,'rg':c.rg,'nascimento':normalizarData(c.nascimento),'telefone':c.telefone,'email':c.email,'endereco':c.endereco,'emerg-nome':c.emergNome,'emerg-tel':c.emergTel,'admissao':normalizarData(c.admissao),'cargo':c.cargo,'salario':c.salario,'ctps':c.ctps,'aso':normalizarData(c.aso),'banco':c.banco,'agencia':c.agencia,'conta':c.conta,'pix':c.pix};
+      const fs={'nome':c.nome,'cpf':c.cpf,'rg':c.rg,'nascimento':normalizarData(c.nascimento),'telefone':c.telefone,'email':c.email,'endereco':c.endereco,'emerg-nome':c.emergNome,'emerg-tel':c.emergTel,'admissao':normalizarData(c.admissao),'cargo':c.cargo,'salario':c.salario,'ctps':c.ctps,'aso':normalizarData(c.aso),'banco':c.banco,'agencia':c.agencia,'conta':c.conta};
       if(c.empresa)document.getElementById('f-empresa').value=c.empresa;
       Object.entries(fs).forEach(([k,v])=>{const el=document.getElementById('f-'+k);if(el&&v!=null&&v!=='')el.value=v;});
+      document.getElementById('f-pix-tipo').value='';
+      if(c.pix)detectarEPreencherTipo('f-pix-tipo','f-pix',c.pix);
       if(c.estadoCivil)document.getElementById('f-estado-civil').value=c.estadoCivil;
       if(c.setor)document.getElementById('f-setor').value=c.setor;
       if(c.turno)document.getElementById('f-turno').value=c.turno;
@@ -2318,10 +2344,12 @@ function limparDadosLocais(){
 async function sincronizarScript(action,data){
   if(!SCRIPT_URL)return;
   try{
+    // Garante que campo pix seja enviado como string (evita Sheets remover zeros à esquerda)
+    const payload=data&&data.pix!==undefined?{...data,pix:String(data.pix||'')}:data;
     await fetch(SCRIPT_URL,{
       method:'POST',
       headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify({action,data:data||{}})
+      body:JSON.stringify({action,data:payload||{}})
     });
   }catch(e){console.warn('Sync:',e);}
 }
@@ -2332,7 +2360,7 @@ async function sincronizar(){
     const r=await fetch(SCRIPT_URL+'?action=listarTodos');
     const d=await r.json();
     if(d.ok&&d.result){
-      if(d.result.colaboradores && Array.isArray(d.result.colaboradores))DB.colaboradores=d.result.colaboradores;
+      if(d.result.colaboradores && Array.isArray(d.result.colaboradores))DB.colaboradores=d.result.colaboradores.map(c=>({...c,pix:preservarChavePix(String(c.pix||''))}));
       if(d.result.ferias_gozo && Array.isArray(d.result.ferias_gozo))DB.ferias_gozo=d.result.ferias_gozo;
       if(d.result.advertencias && Array.isArray(d.result.advertencias))DB.advertencias=d.result.advertencias;
       if(d.result.cargos && Array.isArray(d.result.cargos))DB.cargos=d.result.cargos;
@@ -2881,11 +2909,21 @@ function normalizarChavePix(chave){
   let num=digits;
   if(num.startsWith('55')&&num.length>=12)num=num.slice(2);
 
-  if(num.length===11)return'+55'+num;
+  // Só trata como telefone se DDD for 62, 63 ou 64
+  const dddTel=num.slice(0,2);
+  if(!['62','63','64'].includes(dddTel)) return digits; // CPF sem máscara
+
+  function fmtTel(n){
+    const d=n.slice(0,2),r=n.slice(2);
+    if(r.length===9)return'('+d+') '+r.slice(0,5)+'-'+r.slice(5);
+    return'('+d+') '+r.slice(0,4)+'-'+r.slice(4);
+  }
+
+  if(num.length===11)return fmtTel(num);
   if(num.length===10){
     const numero=num.slice(2);
-    if(/^[6-9]/.test(numero))return'+55'+num.slice(0,2)+'9'+numero;
-    return'+55'+num;
+    if(/^[6-8]/.test(numero))return fmtTel(dddTel+'9'+numero);
+    return fmtTel(num);
   }
 
   return s;
@@ -2954,7 +2992,94 @@ function copiarPixDireto(id){
 }
 
 // ══════════════════════════════════════════
-// PAGAMENTOS PIX
+// TIPO E MÁSCARA DA CHAVE PIX
+// ══════════════════════════════════════════
+function trocarTipoChavePix(selectId, inputId){
+  const tipo=document.getElementById(selectId).value;
+  const inp=document.getElementById(inputId);
+  const hint=document.getElementById(inputId+'-hint')||document.getElementById(selectId.replace('tipo','hint'));
+  inp.value='';
+  inp.removeAttribute('maxlength');
+  inp.oninput=null;
+  switch(tipo){
+    case'cpf':
+      inp.placeholder='000.000.000-00';
+      inp.maxLength=14;
+      inp.oninput=()=>{ inp.value=mascaraCPFPix(inp.value); };
+      if(hint)hint.textContent='Digite apenas os números — a máscara é aplicada automaticamente.';
+      break;
+    case'celular':
+      inp.placeholder='(62) 98569-6373';
+      inp.maxLength=15;
+      inp.oninput=()=>{ inp.value=mascaraTelPix(inp.value); };
+      if(hint)hint.textContent='Digite DDD + número. O 9 será adicionado se necessário.';
+      break;
+    case'email':
+      inp.placeholder='exemplo@email.com';
+      inp.maxLength=100;
+      if(hint)hint.textContent='Digite o e-mail completo.';
+      break;
+    case'cnpj':
+      inp.placeholder='00.000.000/0000-00';
+      inp.maxLength=18;
+      inp.oninput=()=>{ inp.value=mascaraCNPJPix(inp.value); };
+      if(hint)hint.textContent='Digite apenas os números — a máscara é aplicada automaticamente.';
+      break;
+    case'aleatoria':
+      inp.placeholder='xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
+      inp.maxLength=36;
+      if(hint)hint.textContent='Cole a chave aleatória fornecida pelo banco.';
+      break;
+    default:
+      inp.placeholder='Selecione o tipo ao lado';
+      if(hint)hint.textContent='';
+  }
+  inp.focus();
+}
+
+function mascaraCPFPix(v){
+  v=v.replace(/\D/g,'').slice(0,11);
+  if(v.length>9)return v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/,'$1.$2.$3-$4');
+  if(v.length>6)return v.replace(/(\d{3})(\d{3})(\d{0,3})/,'$1.$2.$3');
+  if(v.length>3)return v.replace(/(\d{3})(\d{0,3})/,'$1.$2');
+  return v;
+}
+
+function mascaraTelPix(v){
+  v=v.replace(/\D/g,'').slice(0,11);
+  if(v.length>10)return v.replace(/(\d{2})(\d{5})(\d{4})/,'($1) $2-$3');
+  if(v.length>6) return v.replace(/(\d{2})(\d{4,5})(\d{0,4})/,'($1) $2-$3');
+  if(v.length>2) return v.replace(/(\d{2})(\d+)/,'($1) $2');
+  return v;
+}
+
+function mascaraCNPJPix(v){
+  v=v.replace(/\D/g,'').slice(0,14);
+  if(v.length>12)return v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})/,'$1.$2.$3/$4-$5');
+  if(v.length>8) return v.replace(/(\d{2})(\d{3})(\d{3})(\d{0,4})/,'$1.$2.$3/$4');
+  if(v.length>5) return v.replace(/(\d{2})(\d{3})(\d{0,3})/,'$1.$2.$3');
+  if(v.length>2) return v.replace(/(\d{2})(\d+)/,'$1.$2');
+  return v;
+}
+
+// Detecta tipo da chave e preenche o seletor automaticamente
+function detectarEPreencherTipo(selectId, inputId, valor){
+  if(!valor)return;
+  const sel=document.getElementById(selectId);
+  const inp=document.getElementById(inputId);
+  let tipo='';
+  const digits=valor.replace(/\D/g,'');
+  if(valor.includes('@'))tipo='email';
+  else if(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(valor))tipo='aleatoria';
+  else if(digits.length===14)tipo='cnpj';
+  else if(digits.length===11&&(valor.includes('.')||valor.includes('-')||digits.startsWith('0')))tipo='cpf';
+  else if(digits.length>=10&&digits.length<=11)tipo='celular';
+  if(tipo){
+    sel.value=tipo;
+    trocarTipoChavePix(selectId,inputId);
+    inp.value=valor;
+  }
+}
 // ══════════════════════════════════════════
 const PIX_STATUS_COR={Solicitado:'b-warn',Aprovado:'b-info',Pago:'b-ok',Cancelado:'b-danger'};
 const PIX_STATUS_ICON={Solicitado:'⏳',Aprovado:'✅',Pago:'💸',Cancelado:'❌'};
@@ -5383,14 +5508,17 @@ function abrirWhatsAppPix(){
 function preencherPix(){
   const id=document.getElementById('pix-colab').value;
   const c=DB.colaboradores.find(x=>String(x.id)===String(id));
-  document.getElementById('pix-chave').value=c?.pix||c?.telefone||'';
+  const chave=c?.pix||c?.telefone||'';
+  detectarEPreencherTipo('pix-chave-tipo','pix-chave',chave);
 }
 
 function abrirModalPix(editId){
   if(!DB.pagamentos_pix)DB.pagamentos_pix=[];
   document.getElementById('modal-pix-title').textContent=editId?'✏️ Editar Pagamento PIX':'💸 Novo Pagamento PIX';
-  ['pix-colab','pix-tipo'].forEach(id=>document.getElementById(id).value='');
+  ['pix-colab','pix-tipo','pix-chave-tipo'].forEach(id=>document.getElementById(id).value='');
   ['pix-chave','pix-valor','pix-data-prev','pix-desc','pix-obs','pix-motivo'].forEach(id=>document.getElementById(id).value='');
+  const hint=document.getElementById('pix-chave-hint');if(hint)hint.textContent='';
+  document.getElementById('pix-chave').placeholder='Selecione o tipo ao lado';
   document.getElementById('pix-data-sol').value=hoje();
   document.getElementById('btn-salvar-pix').onclick=()=>salvarPix(editId||null);
   populateSelectColabs(['pix-colab','pix-filtro-colab']);
@@ -5398,7 +5526,8 @@ function abrirModalPix(editId){
     const p=DB.pagamentos_pix.find(x=>String(x.id)===String(editId));
     if(p){
       document.getElementById('pix-colab').value=p.colaboradorId;
-      document.getElementById('pix-chave').value=p.pix||'';
+      document.getElementById('pix-chave-tipo').value='';
+      detectarEPreencherTipo('pix-chave-tipo','pix-chave',p.pix||'');
       document.getElementById('pix-tipo').value=p.tipo||'';
       document.getElementById('pix-valor').value=p.valor||'';
       document.getElementById('pix-data-sol').value=normalizarData(p.dataSolicitacao)||'';
