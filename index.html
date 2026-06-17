@@ -1588,9 +1588,9 @@ function abrirModalColab(id){
   if(id){
     const c=DB.colaboradores.find(x=>x.id==id);
     if(c){
-      const fs={'nome':c.nome,'cpf':c.cpf,'rg':c.rg,'nascimento':c.nascimento,'telefone':c.telefone,'email':c.email,'endereco':c.endereco,'emerg-nome':c.emergNome,'emerg-tel':c.emergTel,'admissao':c.admissao,'cargo':c.cargo,'salario':c.salario,'ctps':c.ctps,'aso':c.aso,'banco':c.banco,'agencia':c.agencia,'conta':c.conta,'pix':c.pix};
+      const fs={'nome':c.nome,'cpf':c.cpf,'rg':c.rg,'nascimento':normalizarData(c.nascimento),'telefone':c.telefone,'email':c.email,'endereco':c.endereco,'emerg-nome':c.emergNome,'emerg-tel':c.emergTel,'admissao':normalizarData(c.admissao),'cargo':c.cargo,'salario':c.salario,'ctps':c.ctps,'aso':normalizarData(c.aso),'banco':c.banco,'agencia':c.agencia,'conta':c.conta,'pix':c.pix};
       if(c.empresa)document.getElementById('f-empresa').value=c.empresa;
-      Object.entries(fs).forEach(([k,v])=>{const el=document.getElementById('f-'+k);if(el&&v)el.value=v;});
+      Object.entries(fs).forEach(([k,v])=>{const el=document.getElementById('f-'+k);if(el&&v!=null&&v!=='')el.value=v;});
       if(c.estadoCivil)document.getElementById('f-estado-civil').value=c.estadoCivil;
       if(c.setor)document.getElementById('f-setor').value=c.setor;
       if(c.turno)document.getElementById('f-turno').value=c.turno;
@@ -2840,28 +2840,44 @@ function removerAcentos(str){
 function normalizarChavePix(chave){
   if(!chave)return'';
   const s=chave.trim();
+
+  // E-mail
+  if(s.includes('@'))return s;
+
+  // Chave aleatória (UUID) — 32 hex + hífens
+  if(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s))return s;
+
   const digits=s.replace(/\D/g,'');
 
-  // Verifica se parece telefone (começa com DDD válido 11-99, sem letras especiais de e-mail/CPF)
-  const pareceTelefone=!s.includes('@')&&!s.includes('.')&&/^\+?[\d\s\-().]+$/.test(s);
-  if(!pareceTelefone)return s;
+  // CPF — formatado XXX.XXX.XXX-XX
+  if(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(s))return s;
 
-  // Remove prefixo 55 ou +55 para trabalhar só com DDD+número
+  // CNPJ — 14 dígitos
+  if(digits.length===14)return s;
+
+  // CPF sem máscara — 11 dígitos, mas DDD válido começa com 1x ou 2x...9x (nunca 0x)
+  // Se os 2 primeiros dígitos formarem um DDD inválido (começa com 0), é CPF
+  if(digits.length===11&&digits.startsWith('0'))return s;
+
+  // Telefone celular — 10 ou 11 dígitos (sem prefixo 55)
+  // ou 12/13 dígitos começando com 55
   let num=digits;
-  if(num.startsWith('55')&&num.length>=12) num=num.slice(2);
+  if(num.startsWith('55')&&num.length>=12)num=num.slice(2);
 
-  // num agora deve ter 10 (celular sem 9) ou 11 dígitos (celular com 9 ou fixo)
+  if(num.length===11){
+    // Já tem o 9 — retorna formatado
+    return'+55'+num;
+  }
   if(num.length===10){
-    const ddd=num.slice(0,2);
-    const numero=num.slice(2); // 8 dígitos
-    // Celular: primeiro dígito 6,7,8,9 → insere o 9
-    if(/^[6-9]/.test(numero)){
-      num=ddd+'9'+numero; // vira 11 dígitos
-    }
-    // Fixo (começa com 2,3,4,5) → mantém 10 dígitos (não adiciona 9)
+    const numero=num.slice(2);
+    // Celular: começa com 6,7,8,9 → insere o 9
+    if(/^[6-9]/.test(numero))return'+55'+num.slice(0,2)+'9'+numero;
+    // Fixo — mantém sem o 9
+    return'+55'+num;
   }
 
-  return'+55'+num;
+  // Qualquer outro formato (CPF sem máscara com 11 dígitos não detectado acima, etc.) → retorna como está
+  return s;
 }
 
 function emvField(id,val){
