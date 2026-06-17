@@ -1652,7 +1652,7 @@ function salvarColaborador(editId){
   const telNorm=normalizarTel(telRaw);
   if(telRaw && !telNorm){notify('Telefone inválido. Use o formato (xx) 9xxxxxxxx','error');document.getElementById('f-telefone-hint').style.display='block';return;}
   document.getElementById('f-telefone-hint').style.display='none';
-  const obj={id:editId||gerarId(),nome,cpf,empresa:document.getElementById('f-empresa').value,rg:document.getElementById('f-rg').value.trim(),nascimento:document.getElementById('f-nascimento').value,estadoCivil:document.getElementById('f-estado-civil').value,telefone:normalizarTel(document.getElementById('f-telefone').value.trim())||document.getElementById('f-telefone').value.trim(),email:document.getElementById('f-email').value.trim(),endereco:document.getElementById('f-endereco').value.trim(),emergNome:document.getElementById('f-emerg-nome').value.trim(),emergTel:document.getElementById('f-emerg-tel').value.trim(),admissao,cargo:document.getElementById('f-cargo').value.trim(),setor:document.getElementById('f-setor').value,turno:document.getElementById('f-turno').value,contrato:document.getElementById('f-contrato').value,salario:parseFloat(document.getElementById('f-salario').value)||0,ctps:document.getElementById('f-ctps').value.trim(),status:document.getElementById('f-status').value,aso:document.getElementById('f-aso').value,banco:document.getElementById('f-banco').value.trim(),agencia:document.getElementById('f-agencia').value.trim(),conta:document.getElementById('f-conta').value.trim(),tipoConta:document.getElementById('f-tipo-conta').value,pix:document.getElementById('f-pix').value.trim()};
+  const obj={id:editId||gerarId(),nome,cpf,empresa:document.getElementById('f-empresa').value,rg:document.getElementById('f-rg').value.trim(),nascimento:document.getElementById('f-nascimento').value,estadoCivil:document.getElementById('f-estado-civil').value,telefone:normalizarTel(document.getElementById('f-telefone').value.trim())||document.getElementById('f-telefone').value.trim(),email:document.getElementById('f-email').value.trim(),endereco:document.getElementById('f-endereco').value.trim(),emergNome:document.getElementById('f-emerg-nome').value.trim(),emergTel:document.getElementById('f-emerg-tel').value.trim(),admissao,cargo:document.getElementById('f-cargo').value.trim(),setor:document.getElementById('f-setor').value,turno:document.getElementById('f-turno').value,contrato:document.getElementById('f-contrato').value,salario:parseFloat(document.getElementById('f-salario').value)||0,ctps:document.getElementById('f-ctps').value.trim(),status:document.getElementById('f-status').value,aso:document.getElementById('f-aso').value,banco:document.getElementById('f-banco').value.trim(),agencia:document.getElementById('f-agencia').value.trim(),conta:document.getElementById('f-conta').value.trim(),tipoConta:document.getElementById('f-tipo-conta').value,pix:preservarChavePix(document.getElementById('f-pix').value.trim())};
   if(editId){const idx=DB.colaboradores.findIndex(c=>c.id==editId);DB.colaboradores[idx]=obj;notify('Colaborador atualizado!');}
   else{if(DB.colaboradores.find(c=>c.cpf===cpf)){notify('CPF já cadastrado!','error');return;}DB.colaboradores.push(obj);notify('Colaborador cadastrado!');}
   salvarDB();fecharModal('modal-colab');renderColabs();
@@ -2841,6 +2841,17 @@ function removerAcentos(str){
   return (str||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x20-\x7E]/g,'');
 }
 
+// Garante que CPF sem máscara não perca o zero à esquerda ao salvar
+function preservarChavePix(chave){
+  if(!chave)return'';
+  const s=chave.trim();
+  if(s.includes('@')||s.includes('-')||s.includes('+'))return s;
+  const digits=s.replace(/\D/g,'');
+  // CPF de 10 dígitos começando com 0,1,2 → perdeu o zero, restaura
+  if(digits.length===10&&/^[012]/.test(digits))return'0'+digits;
+  return s;
+}
+
 function normalizarChavePix(chave){
   if(!chave)return'';
   const s=chave.trim();
@@ -2848,39 +2859,35 @@ function normalizarChavePix(chave){
   // E-mail
   if(s.includes('@'))return s;
 
-  // Chave aleatória (UUID) — 32 hex + hífens
+  // Chave aleatória (UUID)
   if(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s))return s;
 
-  const digits=s.replace(/\D/g,'');
-
-  // CPF — formatado XXX.XXX.XXX-XX
+  // CPF formatado XXX.XXX.XXX-XX — retorna como está
   if(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(s))return s;
+
+  const digits=s.replace(/\D/g,'');
 
   // CNPJ — 14 dígitos
   if(digits.length===14)return s;
 
-  // CPF sem máscara — 11 dígitos, mas DDD válido começa com 1x ou 2x...9x (nunca 0x)
-  // Se os 2 primeiros dígitos formarem um DDD inválido (começa com 0), é CPF
-  if(digits.length===11&&digits.startsWith('0'))return s;
+  // CPF sem máscara:
+  // - 11 dígitos começando com 0 → CPF com zero à esquerda preservado
+  // - 10 dígitos começando com 0-2 (DDDs nunca começam com 0,1 ou 2 no Brasil)
+  //   → CPF que perdeu o zero à esquerda, restaura
+  if(digits.length===11&&digits.startsWith('0'))return digits; // CPF OK
+  if(digits.length===10&&/^[012]/.test(digits))return'0'+digits; // CPF sem o zero, restaura
 
-  // Telefone celular — 10 ou 11 dígitos (sem prefixo 55)
-  // ou 12/13 dígitos começando com 55
+  // Telefone: 11 dígitos (com 9), 10 dígitos (sem 9), ou com prefixo 55
   let num=digits;
   if(num.startsWith('55')&&num.length>=12)num=num.slice(2);
 
-  if(num.length===11){
-    // Já tem o 9 — retorna formatado
-    return'+55'+num;
-  }
+  if(num.length===11)return'+55'+num;
   if(num.length===10){
     const numero=num.slice(2);
-    // Celular: começa com 6,7,8,9 → insere o 9
     if(/^[6-9]/.test(numero))return'+55'+num.slice(0,2)+'9'+numero;
-    // Fixo — mantém sem o 9
     return'+55'+num;
   }
 
-  // Qualquer outro formato (CPF sem máscara com 11 dígitos não detectado acima, etc.) → retorna como está
   return s;
 }
 
