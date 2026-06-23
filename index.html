@@ -189,16 +189,17 @@ tbody tr:hover td{background:var(--bg)}
   background:var(--surface);border-top:2px solid var(--border);
   z-index:60;padding-bottom:env(safe-area-inset-bottom,0);
   overflow-x:auto;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
 }
 .bottom-nav::-webkit-scrollbar{display:none}
 .bnav-btn{
   display:flex;flex-direction:column;align-items:center;gap:2px;
-  padding:8px 10px 6px;font-size:10px;color:var(--text2);
+  padding:8px 10px 6px;font-size:9px;color:var(--text2);
   background:none;border:none;cursor:pointer;font-family:inherit;
-  font-weight:600;white-space:nowrap;flex:1;min-width:56px;
+  font-weight:600;white-space:nowrap;flex-shrink:0;min-width:52px;
   letter-spacing:.2px;
 }
-.bnav-btn span:first-child{font-size:20px;line-height:1}
+.bnav-btn span:first-child{font-size:18px;line-height:1}
 .bnav-btn.active{color:var(--accent)}
 .bnav-btn.active span:first-child{filter:drop-shadow(0 0 4px rgba(26,92,56,.4))}
 
@@ -206,109 +207,88 @@ tbody tr:hover td{background:var(--bg)}
 @media(max-width:680px){
   #kpi-grid{grid-template-columns:1fr 1fr !important}
   #dash-main-grid{grid-template-columns:1fr !important}
-  .topbar{height:52px;padding:0 .875rem}
+
+  /* Topbar compacto */
+  .topbar{height:52px;padding:0 .75rem}
   .topbar-sub{display:none}
-  #filtro-empresa-global{font-size:11px;padding:4px 6px;max-width:110px}
+  .topbar-title img{height:30px}
+  .topbar-title>div>span:first-child{font-size:13px}
+  .topbar-title>div>span:last-child{display:none}
+  #topbar-usuario-info>span:last-of-type{display:none} /* esconde badge MASTER no mobile */
+  #filtro-empresa-global{font-size:11px;padding:3px 5px;max-width:95px}
   #sync-label{display:none}
   .sync-info{gap:3px}
+  .topbar-right{gap:4px}
 
-  /* ── Nav superior → oculta, mostra bottom nav ── */
+  /* Nav superior → oculta, mostra bottom nav */
   .nav{display:none}
   .bottom-nav{display:flex}
 
-  /* ── Main: padding + espaço pro bottom nav ── */
-  .main{padding:.875rem .875rem 84px}
+  /* Main: padding + espaço pro bottom nav */
+  .main{padding:.75rem .75rem 80px}
 
-  /* ── Stat grid: 2 colunas ── */
-  .summary-grid{grid-template-columns:1fr 1fr !important}
-  .stat-value{font-size:22px}
+  /* Cards */
+  .card{padding:12px}
 
-  /* ── Grid 2 cols → 1 col ── */
-  .grid2{grid-template-columns:1fr !important}
+  /* Grids */
+  .summary-grid{grid-template-columns:1fr 1fr}
+  .grid2,.grid3{grid-template-columns:1fr !important}
 
-  /* ── Cards ── */
-  .card{padding:.875rem 1rem}
-
-  /* ── Toolbar: empilha ── */
-  .toolbar{gap:6px}
-  .toolbar select,.toolbar input{flex:1 1 calc(50% - 3px);min-width:0}
-
-  /* ══ TABELA → CARDS ═══════════════════════════ */
-  .table-wrap{border-radius:var(--radius);overflow:hidden}
+  /* Tabelas → cards */
+  .table-wrap{overflow:visible}
   .table-wrap table{display:block}
   .table-wrap thead{display:none}
   .table-wrap tbody{display:flex;flex-direction:column;gap:0}
-
-  /* Cada tr vira um card */
   .table-wrap tbody tr{
-    display:block;
-    padding:12px 14px;
-    border-bottom:1px solid var(--border);
-    background:var(--surface);
+    display:block;padding:12px 14px;
+    border-bottom:1px solid var(--border);background:var(--surface);
   }
   .table-wrap tbody tr:last-child{border-bottom:none}
-
-  /* Cada td vira linha label:valor */
   .table-wrap tbody td{
     display:flex;justify-content:space-between;align-items:center;
     padding:4px 0;border:none;font-size:13px;gap:8px;min-height:26px;
   }
-  /* Rótulo automático via data-label */
   .table-wrap tbody td[data-label]::before{
-    content:attr(data-label);
-    font-size:10px;font-weight:700;color:var(--text3);
-    text-transform:uppercase;letter-spacing:.4px;
-    flex-shrink:0;min-width:80px;
+    content:attr(data-label);font-size:10px;font-weight:700;color:var(--text3);
+    text-transform:uppercase;letter-spacing:.4px;flex-shrink:0;min-width:80px;
   }
-  /* Esconde células sem rótulo (ex: coluna #) */
   .table-wrap tbody td:not([data-label]){display:none}
-
-  /* Linha "vazia" (colspan) não vira card */
-  .table-wrap tbody tr:has(td.empty),
-  .table-wrap tbody tr.tr-vazio{display:table-row;background:transparent}
-  .table-wrap tbody tr:has(td.empty) td,
-  .table-wrap tbody tr.tr-vazio td{display:table-cell;padding:28px;text-align:center;border:none}
-
-  /* Nome/título: destaque no topo do card */
-  .table-wrap tbody td.td-nome{
-    font-size:14px;font-weight:700;color:var(--text);
-    padding-bottom:8px;border-bottom:1px solid var(--border);
-    margin-bottom:4px;
-  }
+  .table-wrap tbody tr:has(td.empty),.table-wrap tbody tr.tr-vazio{display:table-row;background:transparent}
+  .table-wrap tbody tr:has(td.empty) td,.table-wrap tbody tr.tr-vazio td{display:table-cell;padding:28px;text-align:center;border:none}
+  .table-wrap tbody td.td-nome{font-size:14px;font-weight:700;color:var(--text);padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:4px;}
   .table-wrap tbody td.td-nome::before{display:none}
-
-  /* Célula de ações: alinha à direita */
-  .table-wrap tbody td[data-label="Ações"]{
-    justify-content:flex-end;padding-top:10px;margin-top:4px;
-    border-top:1px solid var(--border);
-  }
+  .table-wrap tbody td[data-label="Ações"]{justify-content:flex-end;padding-top:10px;margin-top:4px;border-top:1px solid var(--border);}
   .table-wrap tbody td[data-label="Ações"]::before{display:none}
+  .table-wrap tbody td[data-label="Início Período"],.table-wrap tbody td[data-label="Fim Período"]{display:none}
 
-  /* ── Modais: bottom sheet ── */
+  /* Modais → bottom sheet */
   .modal-overlay{align-items:flex-end;padding:0}
-  .modal{
-    max-width:100% !important;width:100%;
-    max-height:92vh;
-    border-radius:20px 20px 0 0;
-    margin:0;
-  }
+  .modal{max-width:100% !important;width:100%;max-height:92vh;border-radius:20px 20px 0 0;margin:0;}
   .modal-header{border-radius:20px 20px 0 0}
 
-  /* ── Formulários: 1 coluna ── */
+  /* Formulários → 1 coluna */
   .form-grid{grid-template-columns:1fr !important}
 
-  /* ── Botões no footer do modal: largura total ── */
+  /* Botões footer modal */
   .modal-footer{flex-direction:column-reverse;gap:8px}
   .modal-footer .btn{width:100%;justify-content:center;padding:11px 14px;font-size:14px}
 
-  /* ── Section headers ── */
+  /* Section headers */
   .section-header{flex-direction:column;align-items:flex-start}
   .section-header .btn{width:100%;justify-content:center}
 
-  /* ── Esconde colunas menos importantes em férias ── */
-  .table-wrap tbody td[data-label="Início Período"],
-  .table-wrap tbody td[data-label="Fim Período"]{display:none}
+  /* Inputs maiores para toque */
+  input,select,textarea{font-size:16px !important} /* evita zoom no iOS */
+  .btn{min-height:40px}
+
+  /* Dashboard grids lado a lado */
+  #dash-bday-list,#dash-bday-prox-list{display:flex;flex-direction:column;gap:8px}
+
+  /* Headcount + ASO: empilha em mobile */
+  #dash-main-grid>div:last-child{grid-template-columns:1fr !important}
 }
+
+
 </style>
 </head>
 <body>
@@ -7193,14 +7173,15 @@ function excluirUsuario(id){
 
 <!-- ═══ BOTTOM NAV (mobile) ══════════════════════════════ -->
 <nav class="bottom-nav" id="bottom-nav">
-  <button class="bnav-btn active" onclick="showPage('dashboard',this)" data-page="dashboard"><span>📊</span>Dashboard</button>
+  <button class="bnav-btn active" onclick="showPage('dashboard',this)" data-page="dashboard"><span>📊</span>Início</button>
   <button class="bnav-btn" onclick="showPage('colaboradores',this)" data-page="colaboradores"><span>👥</span>Pessoas</button>
   <button class="bnav-btn" onclick="showPage('ferias',this)" data-page="ferias"><span>🏖️</span>Férias</button>
-  <button class="bnav-btn" onclick="showPage('advertencias',this)" data-page="advertencias"><span>⚠️</span>Advertências</button>
-  <button class="bnav-btn" onclick="showPage('documentos',this)" data-page="documentos"><span>📁</span>Docs</button>
-  <button class="bnav-btn" onclick="showPage('talentos',this)" data-page="talentos"><span>🎯</span>Talentos</button>
+  <button class="bnav-btn" onclick="showPage('advertencias',this)" data-page="advertencias"><span>⚠️</span>Advert.</button>
+  <button class="bnav-btn" onclick="showPage('pagamentos',this)" data-page="pagamentos"><span>💰</span>Pgtos</button>
   <button class="bnav-btn" onclick="showPage('pix',this)" data-page="pix"><span>💸</span>PIX</button>
+  <button class="bnav-btn" onclick="showPage('documentos',this)" data-page="documentos"><span>📁</span>Docs</button>
   <button class="bnav-btn" onclick="showPage('carreira',this)" data-page="carreira"><span>📈</span>Carreira</button>
+  <button class="bnav-btn" onclick="showPage('talentos',this)" data-page="talentos"><span>🎯</span>Talentos</button>
   <button class="bnav-btn" onclick="showPage('aniversarios',this)" data-page="aniversarios"><span>🎂</span>Aniv.</button>
   <button class="bnav-btn" onclick="showPage('desligamentos',this)" data-page="desligamentos"><span>📋</span>Desl.</button>
   <button class="bnav-btn" onclick="showPage('config',this)" data-page="config"><span>⚙️</span>Config</button>
