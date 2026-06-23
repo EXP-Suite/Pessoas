@@ -41,12 +41,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-siz
 .sync-dot.offline{background:#e74c3c}
 
 /* NAV — padrão WMS */
-.nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;gap:2px;overflow-x:auto;position:sticky;top:64px;z-index:49}
+.nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 .5rem;display:flex;gap:0px;overflow-x:auto;position:sticky;top:64px;z-index:49}
 .nav::-webkit-scrollbar{height:3px}
-.nav-btn{padding:11px 14px;font-size:13px;color:var(--text2);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-family:inherit;font-weight:500;transition:all .15s;display:flex;align-items:center;gap:6px}
+.nav-btn{padding:10px 10px;font-size:12px;color:var(--text2);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-family:inherit;font-weight:500;transition:all .15s;display:flex;align-items:center;gap:4px}
 .nav-btn:hover{color:var(--text)}
 .nav-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
-.nav-icon{font-size:15px}
+.nav-icon{font-size:14px}
 
 /* MAIN */
 .main{max-width:1400px;margin:0 auto;padding:1.5rem 2rem}
@@ -316,6 +316,50 @@ tbody tr:hover td{background:var(--bg)}
 <div class="loading-overlay" id="loading-overlay"><div class="spinner"></div><div style="font-size:13px;color:var(--text2);font-weight:500">Carregando...</div></div>
 
 <!-- TOPBAR — padrão WMS -->
+<!-- ═══ TELA DE LOGIN ════════════════════════════════════ -->
+<div id="login-overlay" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#0d3320 0%,#1a5c38 50%,#0d3320 100%);display:flex;align-items:center;justify-content:center;flex-direction:column">
+  <div style="text-align:center;margin-bottom:32px">
+    <img src="https://explosaoalimentos.com.br/wp-content/uploads/2024/11/logo-menor-e1731554322568.png" style="height:56px;margin-bottom:12px">
+    <div style="font-size:24px;font-weight:800;color:#fff;letter-spacing:-.5px;text-shadow:-1px -1px 0 #28589B,1px -1px 0 #28589B,-1px 1px 0 #28589B,1px 1px 0 #28589B">Exp Pessoas</div>
+    <div style="font-size:13px;color:rgba(255,255,255,.6);margin-top:4px">Sistema de Gestão de Pessoas</div>
+  </div>
+
+  <div style="background:#fff;border-radius:16px;padding:32px 36px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.4)">
+    <div id="login-saudacao" style="font-size:14px;font-weight:600;color:#1a5c38;margin-bottom:20px;text-align:center;min-height:22px"></div>
+
+    <div class="form-group" style="margin-bottom:14px">
+      <label style="font-size:12px;font-weight:600;color:#555">Usuário</label>
+      <input type="text" id="login-usuario" placeholder="Seu usuário" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('login-senha').focus()" style="width:100%;font-size:14px">
+    </div>
+    <div class="form-group" style="margin-bottom:20px">
+      <label style="font-size:12px;font-weight:600;color:#555">Senha</label>
+      <div style="position:relative">
+        <input type="password" id="login-senha" placeholder="Sua senha" autocomplete="current-password" onkeydown="if(event.key==='Enter')fazerLogin()" style="width:100%;font-size:14px;padding-right:40px">
+        <button onclick="toggleSenhaLogin()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:#888" title="Mostrar/ocultar">👁</button>
+      </div>
+    </div>
+
+    <button onclick="fazerLogin()" style="width:100%;padding:13px;background:linear-gradient(135deg,#1a5c38,#2d8a57);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.3px">Entrar →</button>
+    <div id="login-erro" style="color:#b91c1c;font-size:12px;text-align:center;margin-top:12px;min-height:18px"></div>
+  </div>
+
+  <div style="color:rgba(255,255,255,.3);font-size:11px;margin-top:24px">Exp Pessoas · Explosão Alimentos</div>
+</div>
+
+<!-- ═══ MODAL BOAS-VINDAS ════════════════════════════════ -->
+<div id="modal-boasvindas" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);align-items:center;justify-content:center">
+  <div id="modal-boasvindas-box" style="background:#fff;border-radius:20px;padding:40px 44px;max-width:400px;width:90%;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.3);transform:scale(.85);opacity:0;transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .3s">
+    <div style="font-size:52px;margin-bottom:12px" id="bv-emoji">👋</div>
+    <div style="font-size:14px;font-weight:600;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px" id="bv-saudacao">Bom dia</div>
+    <div style="font-size:28px;font-weight:800;color:#1a1a1a;margin-bottom:6px;letter-spacing:-.5px" id="bv-nome">João</div>
+    <div style="font-size:14px;color:#666;margin-bottom:6px" id="bv-cargo"></div>
+    <div style="font-size:13px;color:#888;margin-bottom:28px" id="bv-data"></div>
+    <div style="width:48px;height:3px;background:linear-gradient(90deg,#1a5c38,#2d8a57);border-radius:99px;margin:0 auto 24px"></div>
+    <div style="font-size:13px;color:#555;margin-bottom:24px">Bem-vindo(a) ao <b style="color:#1a5c38">Exp Pessoas</b></div>
+    <button onclick="fecharBoasVindas()" style="background:linear-gradient(135deg,#1a5c38,#2d8a57);color:#fff;border:none;border-radius:10px;padding:12px 32px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.3px">Entrar no sistema →</button>
+  </div>
+</div>
+
 <div class="topbar">
   <div class="topbar-title">
     <img src="https://explosaoalimentos.com.br/wp-content/uploads/2024/11/logo-menor-e1731554322568.png" alt="Explosão Alimentos" style="height:38px;width:auto;object-fit:contain">
@@ -346,6 +390,7 @@ tbody tr:hover td{background:var(--bg)}
   <button class="nav-btn" onclick="showPage('desligamentos',this)"><span class="nav-icon">📋</span>Desligamentos</button>
   <button class="nav-btn" onclick="showPage('documentos',this)"><span class="nav-icon">📁</span>Documentos</button>
   <button class="nav-btn" onclick="showPage('talentos',this)"><span class="nav-icon">🎯</span>Banco de Talentos</button>
+  <button class="nav-btn" onclick="showPage('pagamentos',this)"><span class="nav-icon">💰</span>Pagamentos</button>
   <button class="nav-btn" onclick="showPage('pix',this)"><span class="nav-icon">💸</span>Pagamentos PIX</button>
   <button class="nav-btn" onclick="showPage('config',this)"><span class="nav-icon">⚙️</span>Configurações</button>
 </nav>
@@ -699,8 +744,225 @@ tbody tr:hover td{background:var(--bg)}
 </div>
 
 <!-- ═══ CONFIGURAÇÕES ════════════════════════════════════ -->
+<!-- ═══ PAGAMENTOS ════════════════════════════════════════ -->
+<div class="page" id="page-pagamentos">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+    <div>
+      <div style="font-size:20px;font-weight:800;color:var(--text);letter-spacing:-.3px">💰 Pagamentos</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:2px">Registro de vales e geração de arquivos bancários</div>
+    </div>
+  </div>
+
+  <!-- Abas -->
+  <div style="display:flex;gap:4px;border-bottom:2px solid var(--border);margin-bottom:20px;flex-wrap:wrap">
+    <button id="tab-btn-vales" class="tab-btn-pag active-tab-pag" onclick="switchTabPag('vales')" style="padding:9px 14px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid var(--accent);color:var(--accent);margin-bottom:-2px">📝 Registro de Vales</button>
+    <button id="tab-btn-itau" class="tab-btn-pag" onclick="switchTabPag('itau')" style="padding:9px 14px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:var(--text2);margin-bottom:-2px">🏦 Itaú Dia 15</button>
+    <button id="tab-btn-dia30" class="tab-btn-pag" onclick="switchTabPag('dia30')" style="padding:9px 14px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:var(--text2);margin-bottom:-2px">📄 Itaú Dia 30 (PDF)</button>
+    <button id="tab-btn-conferencia" class="tab-btn-pag" onclick="switchTabPag('conferencia')" style="padding:9px 14px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:var(--text2);margin-bottom:-2px">📋 Conferência de Vales</button>
+  </div>
+
+  <!-- ABA VALES -->
+  <div id="tab-vales">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+
+      <!-- Formulário lote -->
+      <div class="card">
+        <div style="font-size:14px;font-weight:700;margin-bottom:14px">➕ Lançar Vales</div>
+
+        <div class="form-group" style="margin-bottom:12px">
+          <label>Colaborador *</label>
+          <select id="vale-colab" onchange="selecionarColabVale()">
+            <option value="">Selecione...</option>
+          </select>
+        </div>
+
+        <div id="vale-lote-container">
+          <!-- itens dinâmicos -->
+        </div>
+
+        <button class="btn" style="width:100%;margin-bottom:8px;border-style:dashed" onclick="adicionarLinhaVale()">+ Adicionar outro vale</button>
+
+        <div class="form-group" style="margin-bottom:12px">
+          <label>Observação <span style="color:var(--text3);font-weight:400">— opcional</span></label>
+          <input type="text" id="vale-obs" placeholder="Ex: Vales referentes à semana de 09/06">
+        </div>
+
+        <div style="display:flex;gap:8px">
+          <button class="btn" onclick="limparFormVale()" style="flex:1">✕ Limpar</button>
+          <button class="btn btn-primary" onclick="salvarLoteVales()" style="flex:1">💾 Salvar todos</button>
+        </div>
+      </div>
+
+      <!-- Lista de vales do mês -->
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="padding:14px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:13px;font-weight:700">📋 Vales lançados</div>
+          <select id="vale-filtro-mes" onchange="renderVales()" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text)"></select>
+        </div>
+        <div id="vale-lista" style="padding:10px 16px;max-height:480px;overflow-y:auto"></div>
+        <div id="vale-total-rodape" style="padding:10px 16px;border-top:1px solid var(--border);font-size:13px;font-weight:700;color:var(--accent)"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ABA ITAÚ DIA 15 -->
+  <div id="tab-itau" style="display:none">
+    <div class="card" style="max-width:640px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px">🏦 Gerar Arquivo — Pagamento Dia 15</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:16px">40% do salário bruto, descontando vales do período 01 a 15 do mês selecionado.</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div class="form-group">
+          <label>Mês de referência *</label>
+          <select id="itau-mes">
+            <option value="">Selecione...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Empresa *</label>
+          <select id="itau-empresa">
+            <option value="">Selecione...</option>
+            <option value="Explosão Alimentos">Explosão Alimentos</option>
+            <option value="AGS Distribuidora">AGS Distribuidora</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:16px">
+          <label>Finalidade do pagamento (Coluna F) *</label>
+          <select id="itau-finalidade">
+            <option value="">Selecione...</option>
+            <option value="1">1 — Pagamento de Salário</option>
+            <option value="2">2 — Pagamento de Férias</option>
+            <option value="3">3 — Vale Transporte</option>
+            <option value="4">4 — Vale Alimentação</option>
+            <option value="5">5 — Comissão</option>
+            <option value="6">6 — Décimo Terceiro</option>
+            <option value="7">7 — Bolsa Estágio</option>
+            <option value="8">8 — Bônus</option>
+            <option value="9" selected>9 — Adiantamento Salarial</option>
+            <option value="10">10 — Rescisão Contratual</option>
+            <option value="11">11 — Bolsa Auxílio</option>
+            <option value="12">12 — Pensão Alimentícia</option>
+            <option value="13">13 — Pagamento em Conta Corrente</option>
+            <option value="14">14 — Remuneração</option>
+          </select>
+        </div>
+
+      <button class="btn btn-primary" style="width:100%;margin-bottom:12px" onclick="previewItau()">🔍 Visualizar prévia</button>
+
+      <!-- Prévia -->
+      <div id="itau-preview" style="display:none">
+        <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Prévia do arquivo</div>
+        <div id="itau-preview-tabela" style="overflow-x:auto;margin-bottom:14px;max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm)"></div>
+        <div id="itau-preview-resumo" style="font-size:12px;color:var(--text2);margin-bottom:14px"></div>
+        <button class="btn btn-primary" style="width:100%" onclick="downloadItau()">⬇️ Baixar arquivo Excel (.xlsx)</button>      </div>
+    </div>
+  </div>
+
+  <!-- ABA CONFERÊNCIA DE VALES -->
+  <div id="tab-conferencia" style="display:none">
+    <div class="card" style="max-width:700px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px">📋 Conferência de Vales</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Relatório resumido por colaborador para conferência e envio à contabilidade.</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
+        <div class="form-group">
+          <label>Empresa *</label>
+          <select id="conf-empresa">
+            <option value="">Selecione...</option>
+            <option value="Explosão Alimentos">Explosão Alimentos</option>
+            <option value="AGS Distribuidora">AGS Distribuidora</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Mês *</label>
+          <select id="conf-mes"></select>
+        </div>
+        <div class="form-group">
+          <label>Período *</label>
+          <select id="conf-periodo" onchange="atualizarPeriodoConf()">
+            <option value="1">1ª quinzena (01 a 15)</option>
+            <option value="2">2ª quinzena (16 ao último dia)</option>
+            <option value="3">Mês completo</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="btn btn-primary" style="flex:1" onclick="gerarConferencia()">🔍 Gerar relatório</button>
+        <button class="btn" style="flex:1" onclick="imprimirConferencia()">🖨️ Imprimir / PDF</button>
+      </div>
+
+      <div id="conf-resultado" style="display:none">
+        <div id="conf-tabela"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABA DIA 30 — PDF CONTRACHEQUE -->
+  <div id="tab-dia30" style="display:none">
+    <div class="card" style="max-width:640px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px">📄 Gerar Arquivo — Pagamento Dia 30 (via PDF)</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Faça upload do PDF do contracheque da contabilidade. O sistema extrai automaticamente o nome e o valor líquido de cada funcionário.</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div class="form-group">
+          <label>Empresa *</label>
+          <select id="dia30-empresa">
+            <option value="">Selecione...</option>
+            <option value="Explosão Alimentos">Explosão Alimentos</option>
+            <option value="AGS Distribuidora">AGS Distribuidora</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Finalidade (Coluna F) *</label>
+          <select id="dia30-finalidade">
+            <option value="">Selecione...</option>
+            <option value="1" selected>1 — Pagamento de Salário</option>
+            <option value="2">2 — Férias</option>
+            <option value="5">5 — Comissão</option>
+            <option value="6">6 — Décimo Terceiro</option>
+            <option value="10">10 — Rescisão Contratual</option>
+            <option value="13">13 — Pagamento em Conta Corrente</option>
+            <option value="14">14 — Remuneração</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Upload PDF -->
+      <div style="border:2px dashed var(--border);border-radius:var(--radius);padding:24px;text-align:center;margin-bottom:14px;cursor:pointer;transition:border-color .2s" id="dia30-dropzone" onclick="document.getElementById('dia30-pdf-input').click()">
+        <div style="font-size:28px;margin-bottom:8px">📂</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text)">Clique para selecionar o PDF</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px">Contracheque gerado pela contabilidade (todos os funcionários em um único arquivo)</div>
+        <input type="file" id="dia30-pdf-input" accept=".pdf" style="display:none" onchange="carregarPDFDia30(this)">
+      </div>
+
+      <div id="dia30-status" style="display:none;font-size:12px;color:var(--text2);margin-bottom:10px;padding:8px 12px;background:var(--surface2);border-radius:var(--radius-sm)"></div>
+
+      <!-- Prévia -->
+      <div id="dia30-preview" style="display:none">
+        <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Prévia extraída do PDF</div>
+        <div id="dia30-preview-tabela" style="overflow-x:auto;margin-bottom:14px;max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm)"></div>
+        <div id="dia30-preview-resumo" style="font-size:12px;color:var(--text2);margin-bottom:14px"></div>
+        <button class="btn btn-primary" style="width:100%" onclick="downloadDia30()">⬇️ Baixar arquivo Excel (.xlsx)</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
 <div class="page" id="page-config">
   <div style="max-width:640px;display:flex;flex-direction:column;gap:14px">
+    <div class="card">
+      <div class="card-title">👥 Usuários do Sistema</div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Gerencie os usuários e defina quais menus cada um pode acessar. O usuário <b>master</b> tem acesso total.</p>
+      <div id="cfg-usuarios-lista" style="margin-bottom:12px"></div>
+      <button class="btn btn-primary" onclick="abrirModalUsuario()">＋ Novo Usuário</button>
+    </div>
+
     <div class="card">
       <div class="card-title">⚙️ Conexão com Google Sheets</div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -921,6 +1183,93 @@ tbody tr:hover td{background:var(--bg)}
 </div>
 
 <!-- ═══ MODAL COMPARTILHAR PIX ═══════════════════════════ -->
+<!-- ═══ MODAL EXCEDENTES DE VALE ════════════════════════════ -->
+<div class="modal-overlay hidden" id="modal-excedentes">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header" style="background:#b45309;color:#fff">
+      <h3 style="color:#fff">⚠️ Vales excedem o adiantamento</h3>
+      <button class="modal-close" onclick="fecharModal('modal-excedentes')" style="color:#fff">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text2);margin-bottom:12px">
+        Os colaboradores abaixo possuem vales que superam o valor do adiantamento (40% do salário). O sistema pode criar automaticamente um <b>vale complementar</b> para cobrir o excedente.
+      </p>
+      <div id="excedentes-lista" style="margin-bottom:14px"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div class="form-group" style="margin:0">
+          <label style="font-size:12px;font-weight:600">Data do vale complementar *</label>
+          <input type="date" id="excedente-data">
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">Ex: dia 16 (após adiant. do 15) ou dia 01 do próximo mês (após adiant. do 30)</div>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label style="font-size:12px;font-weight:600">Observação</label>
+          <input type="text" id="excedente-obs" value="Vale complementar — excedente do adiantamento anterior">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex;gap:8px">
+      <button class="btn" onclick="fecharModal('modal-excedentes')" style="flex:1">Ignorar</button>
+      <button class="btn btn-primary" onclick="criarValesComplementares()" style="flex:1;background:#b45309;border-color:#b45309">✅ Criar vales complementares</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL USUÁRIO ════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modal-usuario">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h3 id="modal-usuario-title">Novo Usuário</h3>
+      <button class="modal-close" onclick="fecharModal('modal-usuario')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="usr-id">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div class="form-group">
+          <label>Nome completo *</label>
+          <input type="text" id="usr-nome" placeholder="Ex: João Silva">
+        </div>
+        <div class="form-group">
+          <label>Usuário (login) *</label>
+          <input type="text" id="usr-login" placeholder="Ex: joao.silva">
+        </div>
+        <div class="form-group">
+          <label>Senha *</label>
+          <input type="password" id="usr-senha" placeholder="Mínimo 4 caracteres">
+        </div>
+        <div class="form-group">
+          <label>Perfil</label>
+          <select id="usr-perfil" onchange="toggleMenusUsuario()">
+            <option value="usuario">Usuário comum</option>
+            <option value="master">Master (acesso total)</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="usr-menus-bloco">
+        <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Menus permitidos</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="usr-menus-checkboxes">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" value="dashboard"> 📊 Dashboard</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" value="colaboradores"> 👥 Colaboradores</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" value="ferias"> 🏖️ Férias</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" value="carreira"> 📈 Carreira</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" value="advertencias"> ⚠️ Advertências</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" value="aniversarios"> 🎂 Aniversários</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" value="desligamentos"> 📋 Desligamentos</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" value="documentos"> 📁 Documentos</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" value="talentos"> 🎯 Talentos</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" value="pix"> 💸 Pagamentos PIX</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" value="pagamentos"> 💰 Pagamentos</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" value="config"> ⚙️ Configurações</label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal('modal-usuario')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarUsuario()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay hidden" id="modal-pix-share">
   <div class="modal" style="max-width:520px">
     <div class="modal-header" style="background:linear-gradient(135deg,#1a5c38,#2d8a57);color:#fff">
@@ -1473,7 +1822,7 @@ function showPage(id,btn){
   // Sincroniza bottom nav
   const bBtn=document.querySelector(`.bnav-btn[data-page="${id}"]`);
   if(bBtn)bBtn.classList.add('active');
-  const m={dashboard:renderDashboard,colaboradores:renderColabs,ferias:renderFerias,carreira:renderCarreira,advertencias:()=>{populateSelectColabs(['adv-colaborador']);renderAdvertencias();},aniversarios:renderAniversarios,desligamentos:()=>{populateSelectColabs(['desl-colaborador'],true);renderDesligamentos();},documentos:()=>{populateSelectColabs(['doc-filtro-colab','doc-colab']);renderDocumentos();},talentos:renderTalentos,pix:()=>{populateSelectColabs(['pix-colab','pix-filtro-colab']);renderPix();},config:carregarConfig};
+  const m={dashboard:renderDashboard,colaboradores:renderColabs,ferias:renderFerias,carreira:renderCarreira,advertencias:()=>{populateSelectColabs(['adv-colaborador']);renderAdvertencias();},aniversarios:renderAniversarios,desligamentos:()=>{populateSelectColabs(['desl-colaborador'],true);renderDesligamentos();},documentos:()=>{populateSelectColabs(['doc-filtro-colab','doc-colab']);renderDocumentos();},talentos:renderTalentos,pix:()=>{populateSelectColabs(['pix-colab','pix-filtro-colab']);renderPix();},pagamentos:renderPagePagamentos,config:carregarConfig};
   if(m[id])m[id]();
 }
 
@@ -2359,6 +2708,7 @@ function carregarConfig(){
   document.getElementById('cfg-empresa').value=localStorage.getItem('rh_empresa')||'Explosão Alimentos';
   document.getElementById('cfg-client-id').value=localStorage.getItem('rh_client_id')||'1053419492913-vgsl79l0nlmc600as1q32rs22q55bv44.apps.googleusercontent.com';
   document.getElementById('cfg-drive-folder').value=localStorage.getItem('rh_drive_folder')||'1UB2oxM5PYzb01RxBFxo5yi2-e6ysQmGk';
+  renderUsuariosConfig();
 }
 function salvarConfig(){
   const empresa=document.getElementById('cfg-empresa').value.trim()||'Explosão Alimentos';
@@ -2435,6 +2785,7 @@ async function sincronizar(){
         });
       }
       if(d.result.pagamentos_pix && Array.isArray(d.result.pagamentos_pix))DB.pagamentos_pix=d.result.pagamentos_pix;
+      if(d.result.vales && Array.isArray(d.result.vales))DB.vales=d.result.vales;
       salvarDB();
       const hr=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
       setSyncStatus('online','Sincronizado '+hr);
@@ -2450,6 +2801,7 @@ async function sincronizar(){
         else if(pAtiva.id==='page-documentos')renderDocumentos();
         else if(pAtiva.id==='page-desligamentos')renderDesligamentos();
         else if(pAtiva.id==='page-pix')renderPix();
+        else if(pAtiva.id==='page-pagamentos')renderPagePagamentos();
       }
     }else{setSyncStatus('offline','Erro: '+(d.error||'?'));notify(d.error||'Erro ao sincronizar','error');}
   }catch(e){setSyncStatus('offline','Erro de conexão');notify('Erro: '+e.message,'error');}
@@ -5751,13 +6103,1001 @@ function renderPix(){
 
 // INIT
 window.addEventListener('DOMContentLoaded',()=>{
-  renderDashboard();
+  inicializarLogin();
   if(SCRIPT_URL){
     setSyncStatus('online','Configurado');
-    // Auto-sincroniza ao abrir
     sincronizar();
   }
 });
+
+// ══════════════════════════════════════════════════════════
+// PAGAMENTOS — VALES & ARQUIVO ITAÚ
+// ══════════════════════════════════════════════════════════
+
+// Inicializa DB de vales
+function initVales(){ if(!DB.vales)DB.vales=[]; }
+
+function renderPagePagamentos(){
+  initVales();
+  // Popula lista de colaboradores ordenada alfabeticamente
+  const sel=document.getElementById('vale-colab');
+  if(sel){
+    const ativos=DB.colaboradores
+      .filter(c=>c.status!=='Desligado')
+      .sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
+    sel.innerHTML='<option value="">Selecione o colaborador...</option>'+
+      ativos.map(c=>`<option value="${c.id}">${c.nome}${c.empresa?' — '+c.empresa:''}</option>`).join('');
+  }
+  popularMesesVale();
+  popularMesesItau();
+  selecionarColabVale();
+  renderVales();
+}
+
+// ── Abas ────────────────────────────────────────────────
+function switchTabPag(tab){
+  ['vales','itau','dia30','conferencia'].forEach(function(t){
+    var el=document.getElementById('tab-'+t);
+    if(el)el.style.display=t===tab?'block':'none';
+    var btn=document.getElementById('tab-btn-'+t);
+    if(btn){btn.style.borderBottomColor=t===tab?'var(--accent)':'transparent';btn.style.color=t===tab?'var(--accent)':'var(--text2)';}
+  });
+  if(tab==='conferencia')initConferencia();
+}
+
+// ── Meses ────────────────────────────────────────────────
+function popularMesesVale(){
+  const sel=document.getElementById('vale-filtro-mes');
+  const hoje=new Date();
+  let opts='';
+  for(let i=0;i<12;i++){
+    const d=new Date(hoje.getFullYear(),hoje.getMonth()-i,1);
+    const val=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const label=d.toLocaleString('pt-BR',{month:'long',year:'numeric'});
+    opts+=`<option value="${val}"${i===0?' selected':''}>${label.charAt(0).toUpperCase()+label.slice(1)}</option>`;
+  }
+  sel.innerHTML=opts;
+}
+
+function popularMesesItau(){
+  const sel=document.getElementById('itau-mes');
+  const hoje=new Date();
+  let opts='<option value="">Selecione...</option>';
+  for(let i=0;i<6;i++){
+    const d=new Date(hoje.getFullYear(),hoje.getMonth()-i,1);
+    const val=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const label=d.toLocaleString('pt-BR',{month:'long',year:'numeric'});
+    opts+=`<option value="${val}"${i===0?' selected':''}>${label.charAt(0).toUpperCase()+label.slice(1)}</option>`;
+  }
+  sel.innerHTML=opts;
+}
+
+// ── Formulário de lote de vales ──────────────────────────
+let _valeLinhas=1;
+
+function selecionarColabVale(){
+  const container=document.getElementById('vale-lote-container');
+  _valeLinhas=1;
+  container.innerHTML=criarLinhaVale(0);
+}
+
+function criarLinhaVale(idx){
+  const hoje=new Date().toISOString().split('T')[0];
+  return `<div class="vale-linha" id="vale-linha-${idx}" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;position:relative">
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end">
+      <div class="form-group" style="margin:0">
+        <label style="font-size:11px">Data do vale *</label>
+        <input type="date" id="vale-data-${idx}" value="${hoje}">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label style="font-size:11px">Valor (R$) *</label>
+        <input type="number" id="vale-valor-${idx}" placeholder="0,00" step="0.01" min="0.01">
+      </div>
+      ${idx>0?`<button onclick="removerLinhaVale(${idx})" style="background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;border-radius:var(--radius-sm);padding:8px 10px;cursor:pointer;font-size:14px;height:38px;align-self:end">✕</button>`:'<div></div>'}
+    </div>
+  </div>`;
+}
+
+function adicionarLinhaVale(){
+  const id=document.getElementById('vale-colab').value;
+  if(!id){notify('Selecione o colaborador primeiro','warn');return;}
+  const container=document.getElementById('vale-lote-container');
+  const idx=_valeLinhas++;
+  const div=document.createElement('div');
+  div.innerHTML=criarLinhaVale(idx);
+  container.appendChild(div.firstElementChild);
+}
+
+function removerLinhaVale(idx){
+  const el=document.getElementById('vale-linha-'+idx);
+  if(el)el.remove();
+}
+
+function limparFormVale(){
+  document.getElementById('vale-colab').value='';
+  document.getElementById('vale-obs').value='';
+  selecionarColabVale();
+}
+
+function salvarLoteVales(){
+  initVales();
+  const colabId=document.getElementById('vale-colab').value;
+  if(!colabId){notify('Selecione o colaborador','error');return;}
+  const colab=DB.colaboradores.find(c=>String(c.id)===String(colabId));
+  const obs=document.getElementById('vale-obs').value.trim();
+  const lancamento=new Date().toISOString().split('T')[0];
+  const linhas=[...document.getElementById('vale-lote-container').querySelectorAll('.vale-linha')];
+  const novos=[];
+  for(const linha of linhas){
+    const idx=linha.id.replace('vale-linha-','');
+    const data=document.getElementById('vale-data-'+idx)?.value;
+    const valorRaw=document.getElementById('vale-valor-'+idx)?.value;
+    const valor=parseFloat(valorRaw);
+    if(!data||!valor||valor<=0){notify('Preencha data e valor em todas as linhas','error');return;}
+    novos.push({id:gerarId(),colaboradorId:String(colabId),colaboradorNome:colab?.nome||'',empresa:colab?.empresa||'',data,lancamento,valor,obs,criadoEm:new Date().toISOString()});
+  }
+  DB.vales.push(...novos);
+  salvarDB();
+  sincronizarScript('salvar_vales',novos);
+  notify(`✅ ${novos.length} vale(s) salvo(s) com sucesso!`);
+  limparFormVale();
+  renderVales();
+}
+
+// ── Lista de vales ───────────────────────────────────────
+function renderVales(){
+  initVales();
+  const mes=document.getElementById('vale-filtro-mes')?.value||'';
+  const lista=DB.vales.filter(v=>{
+    if(!mes)return true;
+    return v.data&&v.data.startsWith(mes);
+  }).sort((a,b)=>b.data.localeCompare(a.data));
+
+  const el=document.getElementById('vale-lista');
+  const rodape=document.getElementById('vale-total-rodape');
+  if(!lista.length){
+    el.innerHTML='<div style="text-align:center;color:var(--text3);font-size:13px;padding:20px 0">Nenhum vale lançado neste período.</div>';
+    rodape.textContent='';return;
+  }
+
+  el.innerHTML=lista.map(v=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);gap:8px">
+      <div style="min-width:0">
+        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${v.colaboradorNome}</div>
+        <div style="font-size:11px;color:var(--text3)">${fmtData(v.data)}${v.obs?' · '+v.obs:''}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <span style="font-size:13px;font-weight:700;color:var(--accent)">${fmtMoeda(v.valor)}</span>
+        <button onclick="excluirVale('${v.id}')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px 4px" title="Excluir">🗑</button>
+      </div>
+    </div>`).join('');
+
+  const total=lista.reduce((s,v)=>s+v.valor,0);
+  rodape.innerHTML=`Total do período: <span style="color:var(--accent)">${fmtMoeda(total)}</span> em ${lista.length} vale(s)`;
+}
+
+function excluirVale(id){
+  if(!confirm('Excluir este vale?'))return;
+  DB.vales=DB.vales.filter(v=>String(v.id)!==String(id));
+  salvarDB();
+  renderVales();
+  notify('Vale excluído');
+}
+
+// ── Arquivo Itaú — Dia 15 ───────────────────────────────
+const ITAU_FINALIDADE={
+  'Salário':1,'Férias':2,'Vale Transporte':3,'Vale Alimentação':4,
+  'Comissão':5,'13º Salário':6,'Adiantamento':9,'Rescisão':10,'Outros':13
+};
+
+function calcularAdiantamento15(colab, mesAno, salarioJaParsed){
+  const salario=salarioJaParsed!==undefined?salarioJaParsed:parseSalario(colab.salario);
+  const bruto40=Math.round(salario*0.40*100)/100;
+  const [ano,mes]=mesAno.split('-');
+  const inicio=ano+'-'+mes+'-01';
+  const fim=ano+'-'+mes+'-15';
+  const totalVales=(DB.vales||[])
+    .filter(v=>{
+      if(String(v.colaboradorId)!==String(colab.id))return false;
+      const d=String(v.data||'').trim();
+      return d>=inicio&&d<=fim;
+    })
+    .reduce((s,v)=>s+parseSalario(v.valor),0);
+  const liquido=Math.max(0,Math.round((bruto40-totalVales)*100)/100);
+  return{bruto40,totalVales,liquido};
+}
+
+var _itauExcedentes=[];
+var _itauMesAno='';
+
+function abrirModalExcedentes(){
+  // Pré-preenche data com o dia seguinte ao pagamento (dia 15 → dia 16)
+  var partes=_itauMesAno.split('-');
+  var ano=Number(partes[0]),mes=Number(partes[1]);
+  var diaRef=15; // dia do pagamento gerado
+  var diaCompl=diaRef+1; // sugestão: dia seguinte
+  var dataCompl=ano+'-'+String(mes).padStart(2,'0')+'-'+String(diaCompl).padStart(2,'0');
+  document.getElementById('excedente-data').value=dataCompl;
+
+  var lista=document.getElementById('excedentes-lista');
+  lista.innerHTML=_itauExcedentes.map(function(r){
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:6px;gap:8px">'+
+      '<div><div style="font-size:13px;font-weight:600">'+r.nome+'</div>'+
+      '<div style="font-size:11px;color:var(--text3)">Direito: <b>'+fmtMoeda(r._bruto40)+'</b> &nbsp;|&nbsp; Vales: <b style="color:#b91c1c">'+fmtMoeda(r._totalVales)+'</b></div></div>'+
+      '<div style="text-align:right;flex-shrink:0">'+
+      '<div style="font-size:12px;color:#b45309;font-weight:700">Excedente</div>'+
+      '<div style="font-size:16px;font-weight:800;color:#b91c1c">'+fmtMoeda(r._excedente)+'</div></div></div>';
+  }).join('');
+  abrirModal('modal-excedentes');
+}
+
+function criarValesComplementares(){
+  var dataCompl=document.getElementById('excedente-data').value;
+  if(!dataCompl){notify('Informe a data do vale complementar','error');return;}
+  initVales();
+  var obs=document.getElementById('excedente-obs').value.trim()||'Vale complementar — excedente do adiantamento anterior';
+  var lancamento=new Date().toISOString().split('T')[0];
+  var novos=_itauExcedentes.map(function(r){
+    return{id:gerarId(),colaboradorId:r._colabId,colaboradorNome:r.nome,empresa:'',data:dataCompl,lancamento:lancamento,valor:r._excedente,obs:obs,criadoEm:new Date().toISOString()};
+  });
+  DB.vales.push.apply(DB.vales,novos);
+  salvarDB();
+  sincronizarScript('salvar_vales',novos);
+  fecharModal('modal-excedentes');
+  notify('✅ '+novos.length+' vale(s) complementar(es) criado(s) para '+fmtData(dataCompl));
+  renderVales();
+}
+
+let _itauDados=[];
+
+function parseSalario(v){
+  if(v===null||v===undefined||v==='')return 0;
+  // Número puro (Sheets às vezes retorna number)
+  if(typeof v==='number')return isNaN(v)?0:v;
+  const s=String(v).trim();
+  if(!s)return 0;
+  // Remove R$, espaços, tabs
+  let limpo=s.replace(/R\$\s*/g,'').replace(/\s/g,'').trim();
+  if(!limpo)return 0;
+  // Formato BR com ponto como milhar: 1.500,00
+  if(/^\d{1,3}(\.\d{3})+(,\d{1,2})?$/.test(limpo)){
+    return parseFloat(limpo.replace(/\./g,'').replace(',','.'))||0;
+  }
+  // Formato só com vírgula decimal: 1500,00
+  if(/^\d+(,\d{1,2})$/.test(limpo)){
+    return parseFloat(limpo.replace(',','.'))||0;
+  }
+  // Formato US: 1500.00 ou 1500
+  return parseFloat(limpo)||0;
+}
+
+function parseConta(contaRaw){
+  const digits=String(contaRaw||'').replace(/\D/g,'');
+  if(!digits)return{conta:'',digito:''};
+  const digito=digits.slice(-1);
+  const contaSemDig=digits.slice(0,-1);
+  const conta=contaSemDig.replace(/^0+/,'')||'0';
+  return{conta,digito};
+}
+
+function previewItau(){
+  try{
+    var mesAno=document.getElementById('itau-mes').value;
+    var empresa=document.getElementById('itau-empresa').value;
+    var finalidade=parseInt(document.getElementById('itau-finalidade').value)||0;
+    if(!mesAno){notify('Selecione o mês de referência','error');return;}
+    if(!finalidade){notify('Selecione a finalidade do pagamento','error');return;}
+    if(!empresa){notify('Selecione a empresa','error');return;}
+    var todos=DB.colaboradores||[];
+    var ativos=[];
+    for(var i=0;i<todos.length;i++){
+      var c=todos[i];
+      var status=String(c.status||'').trim();
+      var sal=parseSalario(c.salario);
+      var cpf=String(c.cpf||'').trim();
+      var emp=String(c.empresa||'').trim();
+      if(status.toLowerCase().includes('desligado'))continue;
+      if(sal<=0)continue;
+      if(!cpf)continue;
+      if(empresa&&emp!==empresa)continue;
+      ativos.push(c);
+    }
+    if(!ativos.length){
+      var emps=[...new Set(todos.map(function(c){return String(c.empresa||'');}))].join(' / ');
+      var nd=todos.filter(function(c){return String(c.status||'').trim()!=='Desligado';}).length;
+      var ns=todos.filter(function(c){return parseSalario(c.salario)>0;}).length;
+      var nc=todos.filter(function(c){return String(c.cpf||'').trim();}).length;
+      notify('Nenhum elegivel. Nao desligados:'+nd+' Com sal:'+ns+' Com CPF:'+nc+' | Empresas no DB: '+emps,'warn');
+      return;
+    }
+    _itauDados=ativos.map(function(c){
+      var salario=parseSalario(c.salario);
+      var calc=calcularAdiantamento15(c,mesAno,salario);
+      var bruto40=calc.bruto40||0;
+      var totalVales=calc.totalVales||0;
+      var liquido=calc.liquido||0;
+      var cpfLimpo=String(c.cpf||'').replace(/\D/g,'');
+      var pc=parseConta(c.conta);
+      var semBanco=!(c.agencia||c.conta);
+      return{agencia:String(c.agencia||'').replace(/\D/g,''),conta:pc.conta,digito:pc.digito,nome:c.nome||'',cpf:cpfLimpo,finalidade:finalidade,valor:liquido||bruto40,semBanco:semBanco,_bruto40:bruto40,_totalVales:totalVales,_colabId:String(c.id),_excedente:totalVales>bruto40?Math.round((totalVales-bruto40)*100)/100:0};
+    });
+
+    // Detecta excedentes e abre modal de alerta
+    var excedentes=_itauDados.filter(function(r){return r._excedente>0;});
+    if(excedentes.length>0){
+      _itauExcedentes=excedentes;
+      _itauMesAno=mesAno;
+      abrirModalExcedentes();
+    }
+    var semBancoCount=_itauDados.filter(function(r){return r.semBanco;}).length;
+    var comBancoCount=_itauDados.filter(function(r){return !r.semBanco;}).length;
+    var total=_itauDados.filter(function(r){return !r.semBanco;}).reduce(function(s,r){return s+r.valor;},0);
+    var parts=mesAno.split('-');
+    var ano=parts[0],mes=parts[1];
+    var nomeMes=new Date(Number(ano),Number(mes)-1,1).toLocaleString('pt-BR',{month:'long'});
+    var html='';
+    if(semBancoCount>0)html+='<div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#92400e">&#9888; <b>'+semBancoCount+'</b> sem dados bancarios.</div>';
+    html+='<table style="width:100%;border-collapse:collapse;font-size:11px">';
+    html+='<thead><tr style="background:#1a5c38;color:#fff">';
+    html+='<th style="padding:6px 8px">Agencia</th><th style="padding:6px 8px">Conta</th><th style="padding:6px 8px">Digito</th>';
+    html+='<th style="padding:6px 8px">Nome</th><th style="padding:6px 8px">CPF</th><th style="padding:6px 8px">Cod.</th>';
+    html+='<th style="padding:6px 8px;text-align:right">40%</th><th style="padding:6px 8px;text-align:right">Vales</th><th style="padding:6px 8px;text-align:right">Liquido</th>';
+    html+='</tr></thead><tbody>';
+    for(var j=0;j<_itauDados.length;j++){
+      var r=_itauDados[j];
+      var bg=r.semBanco?'#fef9c3':(j%2?'#f9fafb':'#ffffff');
+      html+='<tr style="background:'+bg+'">';
+      html+='<td style="padding:5px 8px">'+(r.agencia||'&#9888;')+'</td>';
+      html+='<td style="padding:5px 8px">'+(r.conta||'&#9888;')+'</td>';
+      html+='<td style="padding:5px 8px">'+(r.digito||'-')+'</td>';
+      html+='<td style="padding:5px 8px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.nome+'</td>';
+      html+='<td style="padding:5px 8px">'+r.cpf+'</td>';
+      html+='<td style="padding:5px 8px;text-align:center">'+(r.semBanco?'-':'9')+'</td>';
+      html+='<td style="padding:5px 8px;text-align:right">'+fmtMoeda(r._bruto40)+'</td>';
+      html+='<td style="padding:5px 8px;text-align:right;color:'+(r._totalVales>0?'#b91c1c':'#888')+'">'+(r._totalVales>0?'- '+fmtMoeda(r._totalVales):'-')+'</td>';
+      html+='<td style="padding:5px 8px;text-align:right;font-weight:700;color:'+(r.semBanco?'#92400e':'#1a5c38')+'">'+(r.semBanco?'sem banco':fmtMoeda(r.valor))+'</td>';
+      html+='</tr>';
+    }
+    html+='</tbody></table>';
+    document.getElementById('itau-preview-tabela').innerHTML=html;
+    var resumo='<b>'+comBancoCount+' no arquivo</b>';
+    if(semBancoCount>0)resumo+=' &middot; <span style="color:#b45309">'+semBancoCount+' sem banco</span>';
+    resumo+=' &middot; Total: <b style="color:#1a5c38">'+fmtMoeda(total)+'</b>';
+    resumo+=' &middot; Adiantamento 15/'+nomeMes.charAt(0).toUpperCase()+nomeMes.slice(1)+' '+ano;
+    document.getElementById('itau-preview-resumo').innerHTML=resumo;
+    document.getElementById('itau-preview').style.display='block';
+  }catch(err){
+    notify('Erro: '+err.message,'error');
+    console.error('previewItau:',err);
+  }
+}
+function downloadItau(){
+  if(!_itauDados.length){notify('Gere a prévia primeiro','warn');return;}
+  const mesAno=document.getElementById('itau-mes').value;
+  const [ano,mes]=mesAno.split('-');
+
+  // Gera XLSX no formato exato do Itaú (sem cabeçalho)
+  function gerarXlsx(){
+    const XLSX=window.XLSX;
+    const mesAno=document.getElementById('itau-mes').value;
+    const empresa=document.getElementById('itau-empresa').value;
+    const finalidadeSel=document.getElementById('itau-finalidade');
+    const finalidadeLabel=finalidadeSel.options[finalidadeSel.selectedIndex].text.split('—')[1]?.trim()||'Pagamento';
+    const [ano,mes]=mesAno.split('-');
+    const nomeMesFull=new Date(Number(ano),Number(mes)-1,1).toLocaleString('pt-BR',{month:'long'});
+    const nomeEmpresa=empresa.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
+    const nomeArquivo=nomeEmpresa+'_Dia15_'+nomeMesFull.charAt(0).toUpperCase()+nomeMesFull.slice(1)+'_'+ano+'.xlsx';
+
+    const linhas=_itauDados.filter(r=>!r.semBanco&&r.valor>0).map(r=>[
+      r.agencia,        // A - Agência
+      r.conta,          // B - Conta sem dígito
+      r.digito,         // C - Dígito
+      r.nome,           // D - Nome
+      r.cpf,            // E - CPF
+      r.finalidade,     // F - Código finalidade (número)
+      r.valor           // G - Valor como número (alinha à direita)
+    ]);
+
+    const wb=XLSX.utils.book_new();
+    const ws=XLSX.utils.aoa_to_sheet(linhas);
+
+    // Larguras das colunas
+    ws['!cols']=[{wch:8},{wch:10},{wch:6},{wch:35},{wch:16},{wch:6},{wch:12}];
+
+    // Força texto em CPF, conta e dígito (preserva zeros)
+    // Força número com 2 casas decimais na coluna G
+    linhas.forEach((row,i)=>{
+      const rowNum=i+1;
+      ['B','C','E'].forEach(col=>{
+        const cell=ws[col+rowNum];
+        if(cell){cell.t='s';cell.v=String(cell.v);}
+      });
+      // Coluna G — número puro com formato 2 decimais
+      const cellG=ws['G'+rowNum];
+      if(cellG){
+        cellG.t='n';
+        cellG.v=parseFloat(row[6])||0;
+        cellG.z='0.00';
+      }
+    });
+
+    XLSX.utils.book_append_sheet(wb,ws,'Pagamento');
+    XLSX.writeFile(wb,nomeArquivo);
+    notify('✅ Arquivo gerado: '+nomeArquivo);
+  }
+
+  if(window.XLSX){
+    gerarXlsx();
+  } else {
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload=gerarXlsx;
+    s.onerror=()=>notify('Erro ao carregar biblioteca Excel','error');
+    document.head.appendChild(s);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// CONFERÊNCIA DE VALES
+// ══════════════════════════════════════════════════════════
+
+function initConferencia(){
+  var sel=document.getElementById('conf-mes');
+  if(sel&&!sel.options.length){
+    var hoje=new Date();
+    var opts='';
+    for(var i=0;i<12;i++){
+      var d=new Date(hoje.getFullYear(),hoje.getMonth()-i,1);
+      var val=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+      var label=d.toLocaleString('pt-BR',{month:'long',year:'numeric'});
+      opts+='<option value="'+val+'"'+(i===0?' selected':'')+'>'+label.charAt(0).toUpperCase()+label.slice(1)+'</option>';
+    }
+    sel.innerHTML=opts;
+  }
+  atualizarPeriodoConf();
+}
+
+function atualizarPeriodoConf(){
+  var mesAno=document.getElementById('conf-mes').value||new Date().toISOString().slice(0,7);
+  var periodo=document.getElementById('conf-periodo').value;
+  var parts=mesAno.split('-');
+  var ano=Number(parts[0]),mes=Number(parts[1]);
+  var ultimoDia=new Date(ano,mes,0).getDate();
+  var sel=document.getElementById('conf-periodo');
+  sel.options[1].text='2ª quinzena (16 a '+ultimoDia+')';
+  sel.options[2].text='Mês completo (01 a '+ultimoDia+')';
+}
+
+function gerarConferencia(){
+  initVales();
+  var empresa=document.getElementById('conf-empresa').value;
+  var mesAno=document.getElementById('conf-mes').value;
+  var periodo=document.getElementById('conf-periodo').value;
+  if(!empresa){notify('Selecione a empresa','error');return;}
+  if(!mesAno){notify('Selecione o mês','error');return;}
+
+  var parts=mesAno.split('-');
+  var ano=Number(parts[0]),mes=Number(parts[1]);
+  var ultimoDia=new Date(ano,mes,0).getDate();
+  var dataIni,dataFim,periodoLabel;
+
+  if(periodo==='1'){
+    dataIni=mesAno+'-01'; dataFim=mesAno+'-15'; periodoLabel='1ª Quinzena (01 a 15)';
+  } else if(periodo==='2'){
+    dataIni=mesAno+'-16'; dataFim=mesAno+'-'+ultimoDia; periodoLabel='2ª Quinzena (16 a '+ultimoDia+')';
+  } else {
+    dataIni=mesAno+'-01'; dataFim=mesAno+'-'+ultimoDia; periodoLabel='Mês Completo (01 a '+ultimoDia+')';
+  }
+
+  var nomeMes=new Date(ano,mes-1,1).toLocaleString('pt-BR',{month:'long'});
+  nomeMes=nomeMes.charAt(0).toUpperCase()+nomeMes.slice(1);
+
+  // Filtra vales do período e empresa
+  var valesPeriodo=(DB.vales||[]).filter(function(v){
+    if(v.data<dataIni||v.data>dataFim)return false;
+    if(!empresa)return true;
+    // verifica empresa pelo colaborador
+    var c=DB.colaboradores.find(function(c){return String(c.id)===String(v.colaboradorId);});
+    return c&&c.empresa===empresa;
+  });
+
+  if(!valesPeriodo.length){
+    notify('Nenhum vale encontrado para este período e empresa','warn');
+    return;
+  }
+
+  // Agrupa por colaborador
+  var mapa={};
+  valesPeriodo.forEach(function(v){
+    var id=v.colaboradorId;
+    if(!mapa[id])mapa[id]={nome:v.colaboradorNome,vales:[],total:0};
+    mapa[id].vales.push(v);
+    mapa[id].total+=parseSalario(String(v.valor).replace(/\./g,'').replace(',','.'));
+  });
+
+  // Ordena por nome
+  var grupos=Object.values(mapa).sort(function(a,b){return(a.nome||'').localeCompare(b.nome||'','pt-BR');});
+  var totalGeral=grupos.reduce(function(s,g){return s+g.total;},0);
+  var qtdTotal=valesPeriodo.length;
+
+  // Gera HTML do relatório compacto
+  var html='<div id="relatorio-vales-print" style="font-family:Arial,sans-serif;font-size:12px;color:#111">';
+  html+='<div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #1a5c38;padding-bottom:8px;margin-bottom:10px">';
+  html+='<div><div style="font-size:15px;font-weight:800;color:#1a5c38">Conferência de Vales — '+empresa+'</div>';
+  html+='<div style="font-size:11px;color:#555">'+nomeMes+' '+ano+' · '+periodoLabel+' · Gerado em '+new Date().toLocaleDateString('pt-BR')+'</div></div>';
+  html+='<div style="text-align:right"><div style="font-size:11px;color:#555">Total geral</div><div style="font-size:18px;font-weight:800;color:#1a5c38">'+fmtMoeda(totalGeral)+'</div><div style="font-size:11px;color:#555">'+qtdTotal+' vale(s) · '+grupos.length+' colaborador(es)</div></div>';
+  html+='</div>';
+
+  // Tabela compacta
+  html+='<table style="width:100%;border-collapse:collapse;font-size:11px">';
+  html+='<thead><tr style="background:#1a5c38;color:#fff">';
+  html+='<th style="padding:5px 8px;text-align:left;width:30%">Colaborador</th>';
+  html+='<th style="padding:5px 8px;text-align:left;width:42%">Vales (data · valor · obs)</th>';
+  html+='<th style="padding:5px 8px;text-align:right;width:14%">Total</th>';
+  html+='<th style="padding:5px 8px;text-align:center;width:14%">Assinatura</th>';
+  html+='</tr></thead><tbody>';
+
+  grupos.forEach(function(g,i){
+    var bg=i%2===0?'#fff':'#f7faf8';
+    var valesStr=g.vales.map(function(v){
+      var d=fmtData(v.data);
+      var vl=fmtMoeda(parseSalario(String(v.valor).replace(/\./g,'').replace(',','.')));
+      return d+' · '+vl+(v.obs?' ('+v.obs+')':'');
+    }).join('<br>');
+    html+='<tr style="background:'+bg+';border-bottom:1px solid #e2e8f0">';
+    html+='<td style="padding:6px 8px;font-weight:600;vertical-align:top">'+g.nome+'</td>';
+    html+='<td style="padding:6px 8px;color:#333;vertical-align:top;line-height:1.6">'+valesStr+'</td>';
+    html+='<td style="padding:6px 8px;text-align:right;font-weight:700;color:#1a5c38;vertical-align:top">'+fmtMoeda(g.total)+'</td>';
+    html+='<td style="padding:6px 8px;vertical-align:top;border-left:1px solid #e2e8f0"></td>';
+    html+='</tr>';
+  });
+
+  html+='<tr style="background:#1a5c38;color:#fff"><td colspan="2" style="padding:6px 8px;font-weight:700">TOTAL GERAL — '+qtdTotal+' vale(s)</td>';
+  html+='<td style="padding:6px 8px;text-align:right;font-weight:800;font-size:13px">'+fmtMoeda(totalGeral)+'</td><td></td></tr>';
+  html+='</tbody></table>';
+  html+='<div style="margin-top:16px;font-size:10px;color:#888;text-align:center">Exp Pessoas · Sistema de Gestão de Pessoas · Explosão Alimentos</div>';
+  html+='</div>';
+
+  document.getElementById('conf-tabela').innerHTML=html;
+  document.getElementById('conf-resultado').style.display='block';
+}
+
+function imprimirConferencia(){
+  var conteudo=document.getElementById('relatorio-vales-print');
+  if(!conteudo){notify('Gere o relatório primeiro','warn');return;}
+  var janela=window.open('','_blank');
+  janela.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Conferência de Vales</title>');
+  janela.document.write('<style>');
+  janela.document.write('*{margin:0;padding:0;box-sizing:border-box;}');
+  janela.document.write('body{font-family:Arial,sans-serif;font-size:11px;padding:12px;color:#111;}');
+  janela.document.write('table{width:100%;border-collapse:collapse;}');
+  janela.document.write('th,td{padding:5px 8px;}');
+  janela.document.write('@media print{body{padding:8px;}@page{margin:10mm;size:A4;}}');
+  janela.document.write('</style></head><body>');
+  janela.document.write(conteudo.innerHTML);
+  janela.document.write('</body></html>');
+  janela.document.close();
+  janela.focus();
+  setTimeout(function(){janela.print();},400);
+}
+
+var _dia30Dados=[];
+
+function carregarPDFDia30(input){
+  var file=input.files[0];
+  if(!file)return;
+  var status=document.getElementById('dia30-status');
+  status.style.display='block';
+  status.textContent='Lendo PDF...';
+  document.getElementById('dia30-preview').style.display='none';
+
+  // Carrega pdf.js se necessário
+  function processar(){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      var typedarray=new Uint8Array(e.target.result);
+      pdfjsLib.getDocument({data:typedarray}).promise.then(function(pdf){
+        status.textContent='Extraindo texto ('+pdf.numPages+' páginas)...';
+        var promessas=[];
+        for(var i=1;i<=pdf.numPages;i++) promessas.push(pdf.getPage(i).then(function(page){return page.getTextContent();}));
+        Promise.all(promessas).then(function(paginas){
+          // Processa página por página — cada página = 1 funcionário (2 vias)
+          var textoTotal=paginas.map(function(tc){
+            var linhas={};
+            tc.items.forEach(function(item){
+              var y=Math.round(item.transform[5]);
+              if(!linhas[y]) linhas[y]=[];
+              linhas[y].push({x:item.transform[4],str:item.str});
+            });
+            return Object.keys(linhas)
+              .map(Number)
+              .sort(function(a,b){return b-a;})
+              .map(function(y){
+                return linhas[y]
+                  .sort(function(a,b){return a.x-b.x;})
+                  .map(function(i){return i.str;})
+                  .join(' ').replace(/\s+/g,' ').trim();
+              })
+              .filter(Boolean)
+              .join('\n');
+          });
+          extrairDadosDia30(textoTotal);
+        }).catch(function(err){status.textContent='Erro ao extrair texto: '+err.message;});
+      }).catch(function(err){status.textContent='Erro ao abrir PDF: '+err.message;});
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  if(window.pdfjsLib){
+    processar();
+  } else {
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload=function(){
+      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      processar();
+    };
+    s.onerror=function(){document.getElementById('dia30-status').textContent='Erro ao carregar biblioteca PDF.';};
+    document.head.appendChild(s);
+  }
+}
+
+function extrairDadosDia30(paginas){
+  var status=document.getElementById('dia30-status');
+  var empresa=document.getElementById('dia30-empresa').value;
+  var finalidade=parseInt(document.getElementById('dia30-finalidade').value)||1;
+
+  if(!empresa){status.textContent='Selecione a empresa antes de carregar o PDF.';return;}
+
+  var reNome=/^\d+\s+([A-ZÁÉÍÓÚÀÃÕÂÊÎÔÛÇ][A-ZÁÉÍÓÚÀÃÕÂÊÎÔÛÇ\s]+?)\s+\d{5,6}\s+\d+\s*$/m;
+  var reVliq=/Valor L[ií]quido\s+([\d.]+,\d{2})/;
+
+  _dia30Dados=[];
+
+  paginas.forEach(function(textoPag){
+    var mNome=reNome.exec(textoPag);
+    var mVliq=reVliq.exec(textoPag);
+    if(!mNome||!mVliq)return; // página sem dados (capa, rodapé, etc)
+
+    var nome=mNome[1].trim();
+    var liquido=parseSalario(mVliq[1].replace(/\./g,'').replace(',','.'));
+
+    // Evita duplicatas (se por acaso duas páginas tiverem o mesmo funcionário)
+    if(_dia30Dados.find(function(d){return d.nome===nome;}))return;
+
+    var colab=buscarColabPorNome(nome,empresa);
+    var pc=parseConta(colab?colab.conta:'');
+    _dia30Dados.push({
+      nome:nome,
+      cpf:colab?String(colab.cpf||'').replace(/\D/g,''):'',
+      agencia:colab?String(colab.agencia||'').replace(/\D/g,''):'',
+      conta:pc.conta,
+      digito:pc.digito,
+      finalidade:finalidade,
+      valor:liquido,
+      semBanco:!colab||!(colab.agencia||colab.conta),
+      semCPF:!colab||!colab.cpf,
+      _nomeCadastro:colab?colab.nome:''
+    });
+  });
+
+  status.textContent='Extraídos: '+_dia30Dados.length+' funcionários de '+paginas.length+' páginas.'+
+    (_dia30Dados.filter(function(d){return d.valor===0;}).length>0?' ('+_dia30Dados.filter(function(d){return d.valor===0;}).length+' com líquido zero)':'');
+  renderPreviewDia30(empresa,finalidade);
+}
+
+function buscarColabPorNome(nome,empresa){
+  var colabs=DB.colaboradores||[];
+  var nomeNorm=removerAcentos(nome).trim().toUpperCase();
+
+  // 1. Busca exata sem acento
+  var exato=colabs.find(function(c){
+    return removerAcentos(c.nome||'').toUpperCase()===nomeNorm&&(!empresa||c.empresa===empresa);
+  });
+  if(exato)return exato;
+
+  // 2. Busca exata sem acento ignorando empresa
+  exato=colabs.find(function(c){
+    return removerAcentos(c.nome||'').toUpperCase()===nomeNorm;
+  });
+  if(exato)return exato;
+
+  // 3. Fuzzy: primeiros 3 tokens
+  var tokens=nomeNorm.split(/\s+/).slice(0,3).join(' ');
+  var fuzzy=colabs.find(function(c){
+    return removerAcentos(c.nome||'').toUpperCase().startsWith(tokens)&&(!empresa||c.empresa===empresa);
+  });
+  if(fuzzy)return fuzzy;
+
+  // 4. Fuzzy sem empresa
+  return colabs.find(function(c){
+    return removerAcentos(c.nome||'').toUpperCase().startsWith(tokens);
+  })||null;
+}
+
+function renderPreviewDia30(empresa,finalidade){
+  if(!_dia30Dados.length){document.getElementById('dia30-preview').style.display='none';return;}
+  var semBanco=_dia30Dados.filter(function(r){return r.semBanco;}).length;
+  var semCPF=_dia30Dados.filter(function(r){return r.semCPF;}).length;
+  var comDados=_dia30Dados.filter(function(r){return !r.semBanco;}).length;
+  var total=_dia30Dados.filter(function(r){return !r.semBanco;}).reduce(function(s,r){return s+r.valor;},0);
+
+  var html='';
+  if(semBanco>0)html+='<div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#92400e">⚠️ <b>'+semBanco+'</b> sem dados bancários no cadastro — não entrarão no arquivo. Cadastre agência/conta para incluí-los.</div>';
+  html+='<table style="width:100%;border-collapse:collapse;font-size:11px">';
+  html+='<thead><tr style="background:#1a5c38;color:#fff"><th style="padding:6px 8px">Nome (PDF)</th><th style="padding:6px 8px">CPF</th><th style="padding:6px 8px">Agência</th><th style="padding:6px 8px">Conta</th><th style="padding:6px 8px">Díg.</th><th style="padding:6px 8px;text-align:center">Cod.</th><th style="padding:6px 8px;text-align:right">Líquido</th></tr></thead><tbody>';
+  _dia30Dados.forEach(function(r,i){
+    var bg=r.semBanco?'#fef9c3':(i%2?'#f9fafb':'#ffffff');
+    html+='<tr style="background:'+bg+'"><td style="padding:5px 8px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.nome+'</td><td style="padding:5px 8px">'+(r.cpf||'⚠')+'</td><td style="padding:5px 8px">'+(r.agencia||'⚠')+'</td><td style="padding:5px 8px">'+(r.conta||'⚠')+'</td><td style="padding:5px 8px">'+(r.digito||'—')+'</td><td style="padding:5px 8px;text-align:center">'+(r.semBanco?'—':r.finalidade)+'</td><td style="padding:5px 8px;text-align:right;font-weight:700;color:'+(r.semBanco?'#92400e':'#1a5c38')+'">'+fmtMoeda(r.valor)+'</td></tr>';
+  });
+  html+='</tbody></table>';
+  document.getElementById('dia30-preview-tabela').innerHTML=html;
+  document.getElementById('dia30-preview-resumo').innerHTML='<b>'+comDados+' no arquivo</b>'+(semBanco>0?' · <span style="color:#b45309">'+semBanco+' sem banco</span>':'')+(semCPF>0?' · <span style="color:#b45309">'+semCPF+' sem CPF</span>':'')
+    +' · Total: <b style="color:#1a5c38">'+fmtMoeda(total)+'</b>';
+  document.getElementById('dia30-preview').style.display='block';
+}
+
+function downloadDia30(){
+  if(!_dia30Dados.length){notify('Carregue o PDF primeiro','warn');return;}
+  var empresa=document.getElementById('dia30-empresa').value;
+  var nomeEmpresa=empresa.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
+  var hoje=new Date();
+  var mes=String(hoje.getMonth()+1).padStart(2,'0');
+  var ano=hoje.getFullYear();
+  var nomeMes=hoje.toLocaleString('pt-BR',{month:'long'});
+  var nomeArq=nomeEmpresa+'_Dia30_'+nomeMes.charAt(0).toUpperCase()+nomeMes.slice(1)+'_'+ano+'.xlsx';
+
+  function gerarXlsx30(){
+    var XLSX=window.XLSX;
+    var linhas=_dia30Dados.filter(function(r){return !r.semBanco&&r.valor>0;}).map(function(r){
+      return[r.agencia,r.conta,r.digito,r.nome,r.cpf,r.finalidade,r.valor];
+    });
+    if(!linhas.length){notify('Nenhum funcionário com dados bancários para gerar','warn');return;}
+    var wb=XLSX.utils.book_new();
+    var ws=XLSX.utils.aoa_to_sheet(linhas);
+    ws['!cols']=[{wch:8},{wch:10},{wch:6},{wch:35},{wch:16},{wch:6},{wch:12}];
+    linhas.forEach(function(row,i){
+      var rowNum=i+1;
+      ['B','C','E'].forEach(function(col){var cell=ws[col+rowNum];if(cell){cell.t='s';cell.v=String(cell.v);}});
+      var cellG=ws['G'+rowNum];if(cellG){cellG.t='n';cellG.v=parseFloat(row[6])||0;cellG.z='0.00';}
+    });
+    XLSX.utils.book_append_sheet(wb,ws,'Pagamento');
+    XLSX.writeFile(wb,nomeArq);
+    notify('✅ Arquivo gerado: '+nomeArq);
+  }
+
+  if(window.XLSX){gerarXlsx30();}
+  else{
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload=gerarXlsx30;
+    s.onerror=function(){notify('Erro ao carregar biblioteca Excel','error');};
+    document.head.appendChild(s);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// SISTEMA DE LOGIN
+// ══════════════════════════════════════════════════════════
+
+var _usuarioLogado=null;
+
+function getUsuarios(){try{return JSON.parse(localStorage.getItem('exp_usuarios')||'[]');}catch(e){return[];}}
+function salvarUsuarios(lista){localStorage.setItem('exp_usuarios',JSON.stringify(lista));}
+
+function inicializarLogin(){
+  var lista=getUsuarios();
+  if(!lista.length){
+    lista=[{id:'u1',nome:'Administrador',login:'admin',senha:'admin123',perfil:'master',menus:[]}];
+    salvarUsuarios(lista);
+  }
+  try{
+    var sessao=JSON.parse(sessionStorage.getItem('exp_sessao')||'null');
+    if(sessao&&sessao.id){
+      var u=lista.find(function(x){return x.id===sessao.id;});
+      if(u){_usuarioLogado=u;aplicarPermissoes();document.getElementById('login-overlay').style.display='none';return;}
+    }
+  }catch(e){}
+  document.getElementById('login-overlay').style.display='flex';
+}
+
+function mostrarBoasVindas(u){
+  var saudacao=getSaudacao();
+  var emojis={'Bom dia':'☀️','Boa tarde':'🌤️','Boa noite':'🌙'};
+  var diasSemana=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  var meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  var agora=new Date();
+  var dataStr=diasSemana[agora.getDay()]+', '+agora.getDate()+' de '+meses[agora.getMonth()]+' de '+agora.getFullYear();
+
+  document.getElementById('bv-emoji').textContent=emojis[saudacao]||'👋';
+  document.getElementById('bv-saudacao').textContent=saudacao;
+  document.getElementById('bv-nome').textContent=u.nome.split(' ')[0];
+  document.getElementById('bv-cargo').textContent=u.perfil==='master'?'👑 Administrador Master':'';
+  document.getElementById('bv-data').textContent=dataStr;
+
+  var modal=document.getElementById('modal-boasvindas');
+  var box=document.getElementById('modal-boasvindas-box');
+  modal.style.display='flex';
+  // Anima entrada
+  setTimeout(function(){
+    box.style.transform='scale(1)';
+    box.style.opacity='1';
+  },30);
+  // Fecha automaticamente após 5s
+  setTimeout(function(){fecharBoasVindas();},5000);
+}
+
+function fecharBoasVindas(){
+  var modal=document.getElementById('modal-boasvindas');
+  var box=document.getElementById('modal-boasvindas-box');
+  box.style.transform='scale(.9)';
+  box.style.opacity='0';
+  setTimeout(function(){modal.style.display='none';},300);
+}
+
+function getSaudacao(){
+  var h=new Date().getHours();
+  if(h>=5&&h<12)return'Bom dia';
+  if(h>=12&&h<18)return'Boa tarde';
+  return'Boa noite';
+}
+
+document.getElementById('login-usuario').addEventListener('input',function(){
+  var val=this.value.trim();
+  var el=document.getElementById('login-saudacao');
+  if(val.length>=2){
+    var u=getUsuarios().find(function(x){return x.login.toLowerCase()===val.toLowerCase();});
+    el.textContent=u?(getSaudacao()+', '+u.nome.split(' ')[0]+'! 👋'):'';
+  } else el.textContent='';
+});
+
+function toggleSenhaLogin(){
+  var inp=document.getElementById('login-senha');
+  inp.type=inp.type==='password'?'text':'password';
+}
+
+function fazerLogin(){
+  var login=document.getElementById('login-usuario').value.trim();
+  var senha=document.getElementById('login-senha').value;
+  var erro=document.getElementById('login-erro');
+  erro.textContent='';
+  if(!login||!senha){erro.textContent='Preencha usuário e senha.';return;}
+  var u=getUsuarios().find(function(x){return x.login.toLowerCase()===login.toLowerCase()&&x.senha===senha;});
+  if(!u){erro.textContent='Usuário ou senha incorretos.';document.getElementById('login-senha').value='';return;}
+  _usuarioLogado=u;
+  sessionStorage.setItem('exp_sessao',JSON.stringify({id:u.id}));
+  var overlay=document.getElementById('login-overlay');
+  overlay.style.transition='opacity .4s';overlay.style.opacity='0';
+  setTimeout(function(){
+    overlay.style.display='none';overlay.style.opacity='1';overlay.style.transition='';
+    aplicarPermissoes();
+    mostrarBoasVindas(u);
+  },400);
+}
+
+function fazerLogout(){
+  sessionStorage.removeItem('exp_sessao');_usuarioLogado=null;
+  var inf=document.getElementById('topbar-usuario-info');if(inf)inf.remove();
+  document.getElementById('login-usuario').value='';
+  document.getElementById('login-senha').value='';
+  document.getElementById('login-saudacao').textContent='';
+  document.getElementById('login-erro').textContent='';
+  // Reaplica menus completos antes de mostrar login
+  document.querySelectorAll('.nav-btn').forEach(function(b){b.style.display='';});
+  document.getElementById('login-overlay').style.display='flex';
+  showPage('dashboard');
+}
+
+function aplicarPermissoes(){
+  if(!_usuarioLogado)return;
+  var master=_usuarioLogado.perfil==='master';
+  var menus=master?null:(_usuarioLogado.menus||[]);
+  // Remove info anterior se existir
+  var existeInfo=document.getElementById('topbar-usuario-info');if(existeInfo)existeInfo.remove();
+  // Adiciona nome + botão sair no topbar
+  var topbarRight=document.querySelector('.topbar-right');
+  if(topbarRight){
+    var div=document.createElement('div');
+    div.id='topbar-usuario-info';
+    div.style.cssText='display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)';
+    div.innerHTML='<span style="font-weight:600;color:var(--text)">'+_usuarioLogado.nome.split(' ')[0]+'</span>'
+      +(master?'<span style="background:#1a5c38;color:#fff;font-size:10px;padding:2px 6px;border-radius:99px;font-weight:700">MASTER</span>':'')
+      +'<button onclick="fazerLogout()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 9px;cursor:pointer;font-size:11px;color:var(--text2);white-space:nowrap">Sair</button>';
+    topbarRight.insertBefore(div,topbarRight.firstChild);
+  }
+  // Controla menus
+  document.querySelectorAll('.nav-btn').forEach(function(btn){
+    var oc=btn.getAttribute('onclick')||'';
+    var m=oc.match(/showPage\('([^']+)'/);
+    var page=m?m[1]:'';
+    if(!page)return;
+    btn.style.display=(master||menus.indexOf(page)>=0)?'':'none';
+  });
+  // Abre primeiro menu permitido
+  var primeiro=master?'dashboard':(menus&&menus[0]?menus[0]:'dashboard');
+  showPage(primeiro);
+}
+
+// Gestão de usuários na tela Config
+function renderUsuariosConfig(){
+  var lista=getUsuarios();
+  var el=document.getElementById('cfg-usuarios-lista');
+  if(!el)return;
+  if(!lista.length){el.innerHTML='<div style="font-size:13px;color:var(--text3)">Nenhum usuário.</div>';return;}
+  el.innerHTML=lista.map(function(u){
+    var badge=u.perfil==='master'
+      ?'<span style="background:#1a5c38;color:#fff;font-size:10px;padding:2px 6px;border-radius:99px;font-weight:700;margin-left:6px">MASTER</span>'
+      :'<span style="background:var(--surface2);color:var(--text2);font-size:10px;padding:2px 6px;border-radius:99px;margin-left:6px">Usuário</span>';
+    var menus=u.perfil==='master'?'Acesso total':(u.menus||[]).length+' menu(s)';
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:8px">'
+      +'<div><div style="font-size:13px;font-weight:600">'+u.nome+badge+'</div>'
+      +'<div style="font-size:11px;color:var(--text3);margin-top:2px">@'+u.login+' · '+menus+'</div></div>'
+      +'<div style="display:flex;gap:6px;flex-shrink:0">'
+      +'<button class="btn btn-sm" onclick="abrirModalUsuario(\''+u.id+'\')">✏️</button>'
+      +(_usuarioLogado&&u.id===_usuarioLogado.id?'':'<button class="btn btn-sm btn-danger" onclick="excluirUsuario(\''+u.id+'\')">🗑</button>')
+      +'</div></div>';
+  }).join('');
+}
+
+function abrirModalUsuario(id){
+  document.getElementById('usr-id').value=id||'';
+  document.getElementById('usr-nome').value='';
+  document.getElementById('usr-login').value='';
+  document.getElementById('usr-senha').value='';
+  document.getElementById('usr-perfil').value='usuario';
+  document.querySelectorAll('#usr-menus-checkboxes input').forEach(function(cb){cb.checked=false;});
+  document.getElementById('modal-usuario-title').textContent=id?'Editar Usuário':'Novo Usuário';
+  if(id){
+    var u=getUsuarios().find(function(x){return x.id===id;});
+    if(u){
+      document.getElementById('usr-nome').value=u.nome;
+      document.getElementById('usr-login').value=u.login;
+      document.getElementById('usr-senha').value=u.senha;
+      document.getElementById('usr-perfil').value=u.perfil;
+      (u.menus||[]).forEach(function(m){var cb=document.querySelector('#usr-menus-checkboxes input[value="'+m+'"]');if(cb)cb.checked=true;});
+    }
+  }
+  toggleMenusUsuario();
+  abrirModal('modal-usuario');
+}
+
+function toggleMenusUsuario(){
+  document.getElementById('usr-menus-bloco').style.display=
+    document.getElementById('usr-perfil').value==='master'?'none':'block';
+}
+
+function salvarUsuario(){
+  var id=document.getElementById('usr-id').value;
+  var nome=document.getElementById('usr-nome').value.trim();
+  var login=document.getElementById('usr-login').value.trim();
+  var senha=document.getElementById('usr-senha').value;
+  var perfil=document.getElementById('usr-perfil').value;
+  if(!nome||!login||!senha){notify('Preencha nome, usuário e senha','error');return;}
+  if(senha.length<4){notify('Senha deve ter ao menos 4 caracteres','error');return;}
+  var menus=[];
+  document.querySelectorAll('#usr-menus-checkboxes input:checked').forEach(function(cb){menus.push(cb.value);});
+  var lista=getUsuarios();
+  if(lista.find(function(x){return x.login.toLowerCase()===login.toLowerCase()&&x.id!==id;})){
+    notify('Login "'+login+'" já existe','error');return;
+  }
+  if(id){
+    var idx=lista.findIndex(function(x){return x.id===id;});
+    if(idx>=0)lista[idx]={id:id,nome:nome,login:login,senha:senha,perfil:perfil,menus:menus};
+  } else {
+    lista.push({id:'u'+Date.now(),nome:nome,login:login,senha:senha,perfil:perfil,menus:menus});
+  }
+  salvarUsuarios(lista);
+  fecharModal('modal-usuario');
+  renderUsuariosConfig();
+  notify('Usuário salvo!');
+}
+
+function excluirUsuario(id){
+  if(!confirm('Excluir este usuário?'))return;
+  var lista=getUsuarios().filter(function(x){return x.id!==id;});
+  if(!lista.some(function(x){return x.perfil==='master';})){notify('Precisa de ao menos 1 master','error');return;}
+  salvarUsuarios(lista);renderUsuariosConfig();notify('Usuário excluído');
+}
 </script>
 
 <!-- ═══ BOTTOM NAV (mobile) ══════════════════════════════ -->
