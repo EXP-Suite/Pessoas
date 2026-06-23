@@ -1736,6 +1736,8 @@ let DB = {
   documentos:      safeArr('rh_documentos'),
   talentos:        safeArr('rh_talentos'),
   pagamentos_pix:  safeArr('rh_pagamentos_pix'),
+  usuarios:        safeArr('exp_usuarios'),
+  vales:           safeArr('rh_vales'),
 };
 // Empresas cadastradas
 const EMPRESAS = [
@@ -2786,6 +2788,10 @@ async function sincronizar(){
       }
       if(d.result.pagamentos_pix && Array.isArray(d.result.pagamentos_pix))DB.pagamentos_pix=d.result.pagamentos_pix;
       if(d.result.vales && Array.isArray(d.result.vales))DB.vales=d.result.vales;
+      if(d.result.usuarios && Array.isArray(d.result.usuarios)&&d.result.usuarios.length){
+        DB.usuarios=d.result.usuarios;
+        localStorage.setItem('exp_usuarios',JSON.stringify(d.result.usuarios));
+      }
       salvarDB();
       const hr=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
       setSyncStatus('online','Sincronizado '+hr);
@@ -6882,15 +6888,40 @@ function downloadDia30(){
 
 var _usuarioLogado=null;
 
-function getUsuarios(){try{return JSON.parse(localStorage.getItem('exp_usuarios')||'[]');}catch(e){return[];}}
-function salvarUsuarios(lista){localStorage.setItem('exp_usuarios',JSON.stringify(lista));}
+function getUsuarios(){
+  // localStorage é sempre a fonte de verdade para login
+  // DB.usuarios serve apenas para sincronizar com Sheets
+  try{
+    var local=JSON.parse(localStorage.getItem('exp_usuarios')||'[]');
+    if(local.length) return local;
+    // Fallback: DB carregado do Sheets
+    if(DB.usuarios&&DB.usuarios.length) return DB.usuarios;
+    return [];
+  }catch(e){return[];}
+}
+function salvarUsuarios(lista){
+  // Sempre salva no localStorage primeiro (garantia de acesso imediato)
+  localStorage.setItem('exp_usuarios',JSON.stringify(lista));
+  DB.usuarios=lista;
+  // Sincroniza com Sheets em background
+  if(SCRIPT_URL) sincronizarScript('salvarUsuarios',lista);
+}
+
+function garantirAdminPadrao(){
+  var lista=getUsuarios();
+  var temMaster=lista.some(function(x){return x.perfil==='master';});
+  if(!lista.length||!temMaster){
+    var novo=[{id:'u_default_admin',nome:'Administrador',login:'admin',senha:'admin123',perfil:'master',menus:[]}];
+    var merged=novo.concat(lista.filter(function(x){return x.id!=='u_default_admin';}));
+    localStorage.setItem('exp_usuarios',JSON.stringify(merged));
+    DB.usuarios=merged;
+    return merged;
+  }
+  return lista;
+}
 
 function inicializarLogin(){
-  var lista=getUsuarios();
-  if(!lista.length){
-    lista=[{id:'u1',nome:'Administrador',login:'admin',senha:'admin123',perfil:'master',menus:[]}];
-    salvarUsuarios(lista);
-  }
+  var lista=garantirAdminPadrao();
   try{
     var sessao=JSON.parse(sessionStorage.getItem('exp_sessao')||'null');
     if(sessao&&sessao.id){
@@ -6962,7 +6993,11 @@ function fazerLogin(){
   var erro=document.getElementById('login-erro');
   erro.textContent='';
   if(!login||!senha){erro.textContent='Preencha usuário e senha.';return;}
-  var u=getUsuarios().find(function(x){return x.login.toLowerCase()===login.toLowerCase()&&x.senha===senha;});
+  // Sempre busca do localStorage (fonte de verdade)
+  var lista=garantirAdminPadrao();
+  var u=lista.find(function(x){
+    return x.login.toLowerCase()===login.toLowerCase()&&String(x.senha)===String(senha);
+  });
   if(!u){erro.textContent='Usuário ou senha incorretos.';document.getElementById('login-senha').value='';return;}
   _usuarioLogado=u;
   sessionStorage.setItem('exp_sessao',JSON.stringify({id:u.id}));
