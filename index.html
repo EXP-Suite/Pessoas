@@ -341,6 +341,9 @@ tbody tr:hover td{background:var(--bg)}
 
     <button onclick="fazerLogin()" style="width:100%;padding:13px;background:linear-gradient(135deg,#1a5c38,#2d8a57);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.3px">Entrar →</button>
     <div id="login-erro" style="color:#b91c1c;font-size:12px;text-align:center;margin-top:12px;min-height:18px"></div>
+    <div style="text-align:center;margin-top:16px">
+      <button onclick="recuperarAcesso()" style="background:none;border:none;color:#aaa;font-size:11px;cursor:pointer;text-decoration:underline">Esqueci minha senha / Recuperar acesso</button>
+    </div>
   </div>
 
   <div style="color:rgba(255,255,255,.3);font-size:11px;margin-top:24px">Exp Pessoas · Explosão Alimentos</div>
@@ -2483,7 +2486,7 @@ function gerarHTMLAdvertencia(c, empresa, cnpj, logo, tipo, dataOcorr, desc, num
     .page{padding:24px 32px}
   }
   .print-btn{display:block;margin:28px auto 0;padding:10px 36px;background:#1a5c38;color:#fff;border:none;border-radius:5px;font-size:14px;cursor:pointer;font-family:inherit}
-</style>
+<\/style>
 </head><body>
 <div class="page">
 
@@ -2688,7 +2691,7 @@ function imprimirChecklist(){
   const empresa=document.getElementById('modal-checklist').dataset.empresa||'Explosão Alimentos';
   const logo=getLogoUrl(empresa);
   const w=window.open('','_blank');
-  w.document.write(`<html><head><title>Checklist Desligamento</title><style>body{font-family:Arial,sans-serif;padding:40px;max-width:600px;margin:auto;font-size:13px}.logo{text-align:center;margin-bottom:16px}.logo img{height:50px;width:auto}@media print{button{display:none}}</style></head><body><div class="logo"><img src="${logo}" alt="${empresa}"></div><h2>Checklist de Desligamento</h2>${el.innerHTML}<button onclick="window.print()" style="margin-top:30px;padding:10px 30px;background:#1a5c38;color:#fff;border:none;border-radius:6px;cursor:pointer">🖨️ Imprimir</button></body></html>`);
+  w.document.write('<html><head><title>Checklist Desligamento</title><style>body{font-family:Arial,sans-serif;padding:40px;max-width:600px;margin:auto;font-size:13px}.logo{text-align:center;margin-bottom:16px}.logo img{height:50px;width:auto}@media print{button{display:none}}<\/style></head><body><div class="logo"><img src="'+logo+'" alt="'+empresa+'"></div><h2>Checklist de Desligamento</h2>'+el.innerHTML+'<button onclick="window.print()" style="margin-top:30px;padding:10px 30px;background:#1a5c38;color:#fff;border:none;border-radius:6px;cursor:pointer">🖨️ Imprimir</button></body></html>');
 }
 function renderDesligamentos(){
   const emp=document.getElementById('filtro-empresa-desl')?.value||'';
@@ -6108,12 +6111,39 @@ function renderPix(){
 }
 
 // INIT
-window.addEventListener('DOMContentLoaded',()=>{
-  inicializarLogin();
+window.addEventListener('DOMContentLoaded',async()=>{
+  // Se há URL do Sheets, sincroniza PRIMEIRO para carregar usuários do servidor
+  // antes de mostrar o login — resolve o problema do GitHub Pages
   if(SCRIPT_URL){
-    setSyncStatus('online','Configurado');
-    sincronizar();
+    setSyncStatus('loading','Sincronizando...');
+    try{
+      const r=await fetch(SCRIPT_URL+'?action=listarTodos');
+      const d=await r.json();
+      if(d.ok&&d.result){
+        if(d.result.colaboradores&&Array.isArray(d.result.colaboradores))DB.colaboradores=d.result.colaboradores.map(c=>({...c,pix:preservarChavePix(String(c.pix||''))}));
+        if(d.result.ferias_gozo&&Array.isArray(d.result.ferias_gozo))DB.ferias_gozo=d.result.ferias_gozo;
+        if(d.result.advertencias&&Array.isArray(d.result.advertencias))DB.advertencias=d.result.advertencias;
+        if(d.result.cargos&&Array.isArray(d.result.cargos))DB.cargos=d.result.cargos;
+        if(d.result.desligamentos&&Array.isArray(d.result.desligamentos))DB.desligamentos=d.result.desligamentos;
+        if(d.result.historico_cargo&&Array.isArray(d.result.historico_cargo))DB.historico_cargo=d.result.historico_cargo;
+        if(d.result.documentos&&Array.isArray(d.result.documentos))DB.documentos=d.result.documentos;
+        if(d.result.talentos&&Array.isArray(d.result.talentos))DB.talentos=d.result.talentos;
+        if(d.result.pagamentos_pix&&Array.isArray(d.result.pagamentos_pix))DB.pagamentos_pix=d.result.pagamentos_pix;
+        if(d.result.vales&&Array.isArray(d.result.vales))DB.vales=d.result.vales;
+        // Carrega usuários do Sheets e salva no localStorage
+        if(d.result.usuarios&&Array.isArray(d.result.usuarios)&&d.result.usuarios.length){
+          DB.usuarios=d.result.usuarios;
+          localStorage.setItem('exp_usuarios',JSON.stringify(d.result.usuarios));
+        }
+        salvarDB();
+        setSyncStatus('online','Sincronizado');
+      }
+    }catch(e){
+      setSyncStatus('offline','Sem conexão');
+    }
   }
+  // Só mostra login depois de tentar carregar dados
+  inicializarLogin();
 });
 
 // ══════════════════════════════════════════════════════════
@@ -6679,7 +6709,7 @@ function imprimirConferencia(){
   janela.document.write('table{width:100%;border-collapse:collapse;}');
   janela.document.write('th,td{padding:5px 8px;}');
   janela.document.write('@media print{body{padding:8px;}@page{margin:10mm;size:A4;}}');
-  janela.document.write('</style></head><body>');
+  janela.document.write('<\/style></head><body>');
   janela.document.write(conteudo.innerHTML);
   janela.document.write('</body></html>');
   janela.document.close();
@@ -6907,6 +6937,19 @@ function salvarUsuarios(lista){
   if(SCRIPT_URL) sincronizarScript('salvarUsuarios',lista);
 }
 
+function recuperarAcesso(){
+  var lista=getUsuarios();
+  var logins=lista.map(function(u){return '@'+u.login+(u.perfil==='master'?' (master)':'');}).join(', ');
+  var msg='Usuários cadastrados: '+logins+'\n\nPara redefinir e criar um novo admin, clique OK.';
+  if(!confirm(msg))return;
+  var novoAdmin={id:'u_default_admin',nome:'Administrador',login:'admin',senha:'admin123',perfil:'master',menus:[]};
+  var mantidos=lista.filter(function(x){return x.id!=='u_default_admin';});
+  var nova=[novoAdmin].concat(mantidos);
+  localStorage.setItem('exp_usuarios',JSON.stringify(nova));
+  DB.usuarios=nova;
+  alert('Pronto! Entre com:\nUsuário: admin\nSenha: admin123\n\nTroque a senha depois nas Configurações.');
+}
+
 function garantirAdminPadrao(){
   var lista=getUsuarios();
   var temMaster=lista.some(function(x){return x.perfil==='master';});
@@ -6993,8 +7036,7 @@ function fazerLogin(){
   var erro=document.getElementById('login-erro');
   erro.textContent='';
   if(!login||!senha){erro.textContent='Preencha usuário e senha.';return;}
-  // Sempre busca do localStorage (fonte de verdade)
-  var lista=garantirAdminPadrao();
+  var lista=getUsuarios();
   var u=lista.find(function(x){
     return x.login.toLowerCase()===login.toLowerCase()&&String(x.senha)===String(senha);
   });
