@@ -6765,12 +6765,26 @@ function carregarPDFDia30(input){
   }
 
   if(window.pdfjsLib){
+    // Garante worker mesmo se já carregado sem configuração
+    if(!pdfjsLib.GlobalWorkerOptions.workerSrc){
+      try{
+        var wb=new Blob(['importScripts("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js");'],{type:'application/javascript'});
+        pdfjsLib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(wb);
+      }catch(e){ pdfjsLib.GlobalWorkerOptions.workerSrc=''; }
+    }
     processar();
   } else {
     var s=document.createElement('script');
     s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
     s.onload=function(){
-      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      // Cria worker inline via Blob — evita CORS no GitHub Pages e qualquer servidor
+      try{
+        var workerBlob=new Blob(['importScripts("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js");'],{type:'application/javascript'});
+        pdfjsLib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(workerBlob);
+      }catch(e){
+        // Fallback: desativa worker (roda na thread principal)
+        pdfjsLib.GlobalWorkerOptions.workerSrc='';
+      }
       processar();
     };
     s.onerror=function(){document.getElementById('dia30-status').textContent='Erro ao carregar biblioteca PDF.';};
