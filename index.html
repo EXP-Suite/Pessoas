@@ -6409,7 +6409,8 @@ function previewItau(){
       var sal=parseSalario(c.salario);
       var cpf=String(c.cpf||'').trim();
       var emp=String(c.empresa||'').trim();
-      if(status.toLowerCase().includes('desligado'))continue;
+      var s=status.toLowerCase();
+      if(s.includes('desligado')||s.includes('afastado'))continue;
       if(sal<=0)continue;
       if(!cpf)continue;
       if(empresa&&emp!==empresa)continue;
