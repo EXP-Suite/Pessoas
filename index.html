@@ -340,6 +340,77 @@ tbody tr:hover td{background:var(--bg)}
   </div>
 </div>
 
+<!-- ═══ BUSCA GLOBAL (Item 11) ═══════════════════════════ -->
+<div id="busca-global-overlay" style="display:none;position:fixed;inset:0;z-index:9990;background:rgba(0,0,0,.5);backdrop-filter:blur(4px)" onclick="if(event.target===this)fecharBuscaGlobal()">
+  <div style="max-width:560px;margin:60px auto 0;padding:0 16px">
+    <div style="background:var(--surface);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden">
+      <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border)">
+        <span style="font-size:18px">🔍</span>
+        <input type="text" id="busca-global-input" placeholder="Buscar colaborador, cargo, setor..." autocomplete="off"
+          style="flex:1;border:none;font-size:15px;background:transparent;color:var(--text);outline:none"
+          oninput="executarBuscaGlobal(this.value)" onkeydown="navBuscaGlobal(event)">
+        <button onclick="fecharBuscaGlobal()" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--text3)">✕</button>
+      </div>
+      <div id="busca-global-results" style="max-height:420px;overflow-y:auto;padding:8px 0"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PERFIL DO COLABORADOR (Item 15) ══════════════════ -->
+<div class="modal-overlay hidden" id="modal-perfil">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-header" id="perfil-header" style="background:linear-gradient(135deg,#1a5c38,#2d8a57);color:#fff;position:relative">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div id="perfil-avatar" style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;flex-shrink:0"></div>
+        <div>
+          <h3 id="perfil-nome" style="color:#fff;margin:0;font-size:18px"></h3>
+          <div id="perfil-cargo" style="font-size:12px;color:rgba(255,255,255,.8);margin-top:2px"></div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="fecharModal('modal-perfil')" style="color:#fff">✕</button>
+    </div>
+    <div class="modal-body" style="padding:0">
+      <!-- Abas do perfil -->
+      <div style="display:flex;border-bottom:1px solid var(--border);background:var(--surface2)">
+        <button onclick="switchPerfilTab('info')" id="ptab-info" class="ptab active-ptab" style="padding:10px 16px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--accent)">📋 Dados</button>
+        <button onclick="switchPerfilTab('ferias')" id="ptab-ferias" class="ptab" style="padding:10px 16px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2)">🏖️ Férias</button>
+        <button onclick="switchPerfilTab('adv')" id="ptab-adv" class="ptab" style="padding:10px 16px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2)">⚠️ Advertências</button>
+        <button onclick="switchPerfilTab('pix')" id="ptab-pix" class="ptab" style="padding:10px 16px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2)">💸 PIX</button>
+        <button onclick="switchPerfilTab('vales')" id="ptab-vales" class="ptab" style="padding:10px 16px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;color:var(--text2)">💰 Vales</button>
+      </div>
+      <div style="padding:16px;max-height:60vh;overflow-y:auto">
+        <div id="perfil-tab-info"></div>
+        <div id="perfil-tab-ferias" style="display:none"></div>
+        <div id="perfil-tab-adv" style="display:none"></div>
+        <div id="perfil-tab-pix" style="display:none"></div>
+        <div id="perfil-tab-vales" style="display:none"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal('modal-perfil')">Fechar</button>
+      <button class="btn btn-primary" id="perfil-editar-btn" onclick="">✏️ Editar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LOG DE AUDITORIA (Item 14) ══════════════════════ -->
+<div class="modal-overlay hidden" id="modal-log">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <h3>📋 Log de Auditoria</h3>
+      <button class="modal-close" onclick="fecharModal('modal-log')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:0">
+      <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;gap:8px">
+        <input type="text" id="log-busca" placeholder="Filtrar..." oninput="renderLog()" style="flex:1;font-size:12px">
+        <button class="btn btn-sm btn-danger" onclick="if(confirm('Limpar log?')){localStorage.removeItem('exp_log');renderLog();}">🗑 Limpar</button>
+      </div>
+      <div id="log-lista" style="max-height:480px;overflow-y:auto;font-size:12px;font-family:monospace"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-primary" onclick="fecharModal('modal-log')">Fechar</button></div>
+  </div>
+</div>
+
 <div class="topbar">
   <div class="topbar-title">
     <img src="https://explosaoalimentos.com.br/wp-content/uploads/2024/11/logo-menor-e1731554322568.png" alt="Explosão Alimentos" style="height:38px;width:auto;object-fit:contain">
@@ -349,6 +420,7 @@ tbody tr:hover td{background:var(--bg)}
     </div>
   </div>
   <div class="topbar-right">
+    <button onclick="abrirBuscaGlobal()" title="Busca global (Ctrl+K)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--text2);display:flex;align-items:center;gap:5px">🔍 <span id="busca-hint" style="opacity:.6">Ctrl+K</span></button>
     <select id="filtro-empresa-global" onchange="setFiltroEmpresa(this.value)" style="font-size:12px;padding:5px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-family:inherit">
       <option value="">Todas as Empresas</option>
       <option value="Explosão Alimentos">Explosão Alimentos</option>
@@ -423,6 +495,9 @@ tbody tr:hover td{background:var(--bg)}
       <div style="font-size:11px;opacity:.6;margin-top:2px">no mês atual</div>
     </div>
   </div>
+
+  <!-- ITEM 7: Alertas automáticos -->
+  <div id="dash-alertas" style="display:none;margin-bottom:16px"></div>
 
   <!-- Grid principal -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" id="dash-main-grid">
@@ -885,8 +960,8 @@ tbody tr:hover td{background:var(--bg)}
   <!-- ABA DIA 30 — PDF CONTRACHEQUE -->
   <div id="tab-dia30" style="display:none">
     <div class="card" style="max-width:640px">
-      <div style="font-size:14px;font-weight:700;margin-bottom:4px">📄 Gerar Arquivo — Pagamento Dia 30 (via PDF)</div>
-      <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Faça upload do PDF do contracheque da contabilidade. O sistema extrai automaticamente o nome e o valor líquido de cada funcionário.</div>
+      <div style="font-size:14px;font-weight:700;margin-bottom:4px">📄 Gerar Arquivo — Pagamento Dia 30</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Importe via PDF (contracheque) ou Excel .xls (modelo da contabilidade). O arquivo Itaú gerado é idêntico.</div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
         <div class="form-group">
@@ -912,19 +987,32 @@ tbody tr:hover td{background:var(--bg)}
         </div>
       </div>
 
-      <!-- Upload PDF -->
-      <div style="border:2px dashed var(--border);border-radius:var(--radius);padding:24px;text-align:center;margin-bottom:14px;cursor:pointer;transition:border-color .2s" id="dia30-dropzone" onclick="document.getElementById('dia30-pdf-input').click()">
-        <div style="font-size:28px;margin-bottom:8px">📂</div>
-        <div style="font-size:13px;font-weight:600;color:var(--text)">Clique para selecionar o PDF</div>
-        <div style="font-size:12px;color:var(--text3);margin-top:4px">Contracheque gerado pela contabilidade (todos os funcionários em um único arquivo)</div>
-        <input type="file" id="dia30-pdf-input" accept=".pdf" style="display:none" onchange="carregarPDFDia30(this)">
+      <!-- Dois botões de importação lado a lado -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <!-- Upload PDF -->
+        <div style="border:2px dashed var(--border);border-radius:var(--radius);padding:18px;text-align:center;cursor:pointer;transition:border-color .2s" onclick="document.getElementById('dia30-pdf-input').click()" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-size:24px;margin-bottom:6px">📄</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text)">Importar PDF</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">Contracheque da contabilidade</div>
+          <input type="file" id="dia30-pdf-input" accept=".pdf" style="display:none" onchange="carregarPDFDia30(this)">
+        </div>
+        <!-- Upload XLS -->
+        <div style="border:2px dashed var(--border);border-radius:var(--radius);padding:18px;text-align:center;cursor:pointer;transition:border-color .2s" onclick="document.getElementById('dia30-xls-input').click()" onmouseover="this.style.borderColor='#1d4ed8'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-size:24px;margin-bottom:6px">📊</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text)">Importar Excel</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">Modelo IV da contabilidade (.xls)</div>
+          <input type="file" id="dia30-xls-input" accept=".xls,.xlsx" style="display:none" onchange="carregarXLSDia30(this)">
+        </div>
       </div>
 
       <div id="dia30-status" style="display:none;font-size:12px;color:var(--text2);margin-bottom:10px;padding:8px 12px;background:var(--surface2);border-radius:var(--radius-sm)"></div>
 
       <!-- Prévia -->
       <div id="dia30-preview" style="display:none">
-        <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Prévia extraída do PDF</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Prévia extraída</div>
+          <button class="btn btn-sm btn-danger" onclick="limparDia30()">🗑 Limpar</button>
+        </div>
         <div id="dia30-preview-tabela" style="overflow-x:auto;margin-bottom:14px;max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm)"></div>
         <div id="dia30-preview-resumo" style="font-size:12px;color:var(--text2);margin-bottom:14px"></div>
         <button class="btn btn-primary" style="width:100%" onclick="downloadDia30()">⬇️ Baixar arquivo Excel (.xlsx)</button>
@@ -937,7 +1025,7 @@ tbody tr:hover td{background:var(--bg)}
 <div class="page" id="page-config">
   <div style="max-width:640px;display:flex;flex-direction:column;gap:14px">
     <div class="card">
-      <div class="card-title">👥 Usuários do Sistema</div>
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">👥 Usuários do Sistema <button class="btn btn-sm" onclick="abrirModal('modal-log');renderLog()">📋 Log de Auditoria</button></div>
       <p style="font-size:12px;color:var(--text2);margin-bottom:12px">Gerencie os usuários e defina quais menus cada um pode acessar. O usuário <b>master</b> tem acesso total.</p>
       <div id="cfg-usuarios-lista" style="margin-bottom:12px"></div>
       <button class="btn btn-primary" onclick="abrirModalUsuario()">＋ Novo Usuário</button>
@@ -1820,7 +1908,8 @@ function renderDashboard(){
   const deslFiltrados=empFiltro?DB.desligamentos.filter(d=>{const c=DB.colaboradores.find(x=>x.id==d.colaboradorId);return !empFiltro||(c&&c.empresa===empFiltro);}):DB.desligamentos;
   const deslMes=deslFiltrados.filter(d=>{const dt=new Date(d.data);return dt.getMonth()+1===mes&&dt.getFullYear()===ano;});
 
-  // Data atual
+  // ITEM 7: Alertas automáticos
+  renderAlertasDashboard();
   const dh=document.getElementById('dash-data-hoje');
   if(dh)dh.textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
@@ -1971,6 +2060,7 @@ function renderColabs(lista){
     <td data-label="Admissão">${fmtData(c.admissao)}</td>
     <td data-label="Contrato"><span class="badge b-gray">${c.contrato||'—'}</span></td>
     <td data-label="Ações"><div style="display:flex;gap:4px">
+      <button class="btn btn-sm" style="background:var(--accent);color:#fff;border-color:var(--accent)" data-tip="Perfil completo" onclick="abrirPerfilColab('${c.id}')">👤</button>
       <button class="btn btn-sm" data-tip="Ver ficha" onclick="verColab('${c.id}')">👁 Ver</button>
       <button class="btn btn-sm" data-tip="Editar" onclick="editarColab('${c.id}')">✏️</button>
       <button class="btn btn-sm" data-tip="Documentos" onclick="abrirDocsColab('${c.id}')">📁</button>
@@ -2060,6 +2150,8 @@ function salvarColaborador(editId){
   const admissao=document.getElementById('f-admissao').value;
   if(!nome||!cpf||!admissao){notify('Preencha Nome, CPF e Data de Admissão','error');return;}
   if(!document.getElementById('f-nascimento').value){notify('Data de Nascimento é obrigatória','error');return;}
+  const cpfDigits=cpf.replace(/\D/g,'');
+  if(cpfDigits.length===11&&!validarCPF(cpf)){notify('CPF inválido. Verifique os dígitos verificadores.','error');return;}
   const telRaw=document.getElementById('f-telefone').value.trim();
   const telNorm=normalizarTel(telRaw);
   if(telRaw && !telNorm){notify('Telefone inválido. Use o formato (xx) 9xxxxxxxx','error');document.getElementById('f-telefone-hint').style.display='block';return;}
@@ -2643,10 +2735,13 @@ function registrarDesligamento(){
   if(!confirm(`Confirmar desligamento de ${c?.nome}?`))return;
   const obj={id:gerarId(),colaboradorId:cId,nome:c?.nome,cargo:c?.cargo,setor:c?.setor,data,motivo,obs:document.getElementById('desl-obs').value.trim(),registradoEm:hoje()};
   DB.desligamentos.push(obj);
-  const idx=DB.colaboradores.findIndex(x=>x.id==cId);DB.colaboradores[idx].status='Desligado';
+  const idx=DB.colaboradores.findIndex(x=>x.id==cId);
+  DB.colaboradores[idx].status='Desligado';
   salvarDB();renderDesligamentos();populateSelectColabs(['desl-colaborador'],true);
   notify(`${c?.nome} desligado(a). Histórico preservado.`);
   sincronizarScript('novoDesligamento',obj);
+  // Sincroniza o colaborador com status atualizado para Desligado no Sheets
+  sincronizarScript('editarColaborador',DB.colaboradores[idx]);
 }
 function gerarChecklist(){
   const cId=document.getElementById('desl-colaborador').value;
@@ -2730,17 +2825,39 @@ function limparDadosLocais(){
 // ══════════════════════════════════════════
 // SINCRONIZAÇÃO
 // ══════════════════════════════════════════
+// ── ITEM 2: Validação de CPF ─────────────────────────────
+function validarCPF(cpf){
+  cpf=cpf.replace(/\D/g,'');
+  if(cpf.length!==11||/^(\d)\1+$/.test(cpf))return false;
+  let s=0;
+  for(let i=0;i<9;i++)s+=parseInt(cpf[i])*(10-i);
+  let r=11-(s%11);if(r>=10)r=0;
+  if(r!==parseInt(cpf[9]))return false;
+  s=0;
+  for(let i=0;i<10;i++)s+=parseInt(cpf[i])*(11-i);
+  r=11-(s%11);if(r>=10)r=0;
+  return r===parseInt(cpf[10]);
+}
+
 async function sincronizarScript(action,data){
   if(!SCRIPT_URL)return;
   try{
-    // Garante que campo pix seja enviado como string (evita Sheets remover zeros à esquerda)
     const payload=data&&data.pix!==undefined?{...data,pix:String(data.pix||'')}:data;
-    await fetch(SCRIPT_URL,{
+    const res=await fetch(SCRIPT_URL,{
       method:'POST',
       headers:{'Content-Type':'text/plain'},
       body:JSON.stringify({action,data:payload||{}})
     });
-  }catch(e){console.warn('Sync:',e);}
+    // ITEM 4: alerta se sync falhar
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const json=await res.json().catch(()=>({}));
+    if(json.ok===false) notify('⚠️ Sync falhou ('+action+'): '+(json.error||'erro desconhecido'),'warn');
+    else registrarLog(action,'OK');
+  }catch(e){
+    console.warn('Sync error:',e);
+    notify('⚠️ Falha ao sincronizar com Sheets. Dado salvo localmente.','warn');
+    registrarLog(action,'ERRO: '+e.message);
+  }
 }
 async function sincronizar(){
 
@@ -6405,12 +6522,11 @@ function previewItau(){
     var ativos=[];
     for(var i=0;i<todos.length;i++){
       var c=todos[i];
-      var status=String(c.status||'').trim();
+      var status=String(c.status||'').trim().toLowerCase().replace(/\s+/g,' ');
       var sal=parseSalario(c.salario);
       var cpf=String(c.cpf||'').trim();
       var emp=String(c.empresa||'').trim();
-      var s=status.toLowerCase();
-      if(s.includes('desligado')||s.includes('afastado'))continue;
+      if(colabExcluido(c))continue;
       if(sal<=0)continue;
       if(!cpf)continue;
       if(empresa&&emp!==empresa)continue;
@@ -6743,26 +6859,15 @@ function carregarPDFDia30(input){
   }
 
   if(window.pdfjsLib){
-    // Garante worker mesmo se já carregado sem configuração
-    if(!pdfjsLib.GlobalWorkerOptions.workerSrc){
-      try{
-        var wb=new Blob(['importScripts("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js");'],{type:'application/javascript'});
-        pdfjsLib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(wb);
-      }catch(e){ pdfjsLib.GlobalWorkerOptions.workerSrc=''; }
-    }
+    // Garante worker desativado
+    pdfjsLib.GlobalWorkerOptions.workerSrc='';
     processar();
   } else {
     var s=document.createElement('script');
     s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
     s.onload=function(){
-      // Cria worker inline via Blob — evita CORS no GitHub Pages e qualquer servidor
-      try{
-        var workerBlob=new Blob(['importScripts("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js");'],{type:'application/javascript'});
-        pdfjsLib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(workerBlob);
-      }catch(e){
-        // Fallback: desativa worker (roda na thread principal)
-        pdfjsLib.GlobalWorkerOptions.workerSrc='';
-      }
+      // Desativa worker — evita CORS e erros de WorkerMessageHandler
+      pdfjsLib.GlobalWorkerOptions.workerSrc='';
       processar();
     };
     s.onerror=function(){document.getElementById('dia30-status').textContent='Erro ao carregar biblioteca PDF.';};
@@ -6790,10 +6895,14 @@ function extrairDadosDia30(paginas){
     var nome=mNome[1].trim();
     var liquido=parseSalario(mVliq[1].replace(/\./g,'').replace(',','.'));
 
-    // Evita duplicatas (se por acaso duas páginas tiverem o mesmo funcionário)
+    // Evita duplicatas
     if(_dia30Dados.find(function(d){return d.nome===nome;}))return;
 
     var colab=buscarColabPorNome(nome,empresa);
+
+    // EXCLUI desligados e afastados — definitivo
+    if(colab&&colabExcluido(colab))return;
+
     var pc=parseConta(colab?colab.conta:'');
     _dia30Dados.push({
       nome:nome,
@@ -6812,6 +6921,12 @@ function extrairDadosDia30(paginas){
   status.textContent='Extraídos: '+_dia30Dados.length+' funcionários de '+paginas.length+' páginas.'+
     (_dia30Dados.filter(function(d){return d.valor===0;}).length>0?' ('+_dia30Dados.filter(function(d){return d.valor===0;}).length+' com líquido zero)':'');
   renderPreviewDia30(empresa,finalidade);
+}
+
+// Função central de exclusão por status — usada no Dia 15, Dia 30 PDF e XLS
+function colabExcluido(c){
+  var s=String(c.status||'').trim().toLowerCase().replace(/\s+/g,' ');
+  return s.includes('desligado')||s.includes('afastado')||s.includes('inativo');
 }
 
 function buscarColabPorNome(nome,empresa){
@@ -6845,24 +6960,87 @@ function buscarColabPorNome(nome,empresa){
 
 function renderPreviewDia30(empresa,finalidade){
   if(!_dia30Dados.length){document.getElementById('dia30-preview').style.display='none';return;}
+
+  function calcTotais(){
+    var semBanco=_dia30Dados.filter(function(r){return r.semBanco;}).length;
+    var semCPF=_dia30Dados.filter(function(r){return r.semCPF;}).length;
+    var comDados=_dia30Dados.filter(function(r){return !r.semBanco;}).length;
+    var total=_dia30Dados.filter(function(r){return !r.semBanco;}).reduce(function(s,r){return s+r.valor;},0);
+    document.getElementById('dia30-preview-resumo').innerHTML=
+      '<b>'+comDados+' no arquivo</b>'
+      +(semBanco>0?' · <span style="color:#b45309">'+semBanco+' sem banco</span>':'')
+      +(semCPF>0?' · <span style="color:#b45309">'+semCPF+' sem CPF</span>':'')
+      +' · Total: <b style="color:#1a5c38">'+fmtMoeda(total)+'</b>'
+      +' <span style="color:var(--text3);font-size:11px">— clique no valor para editar</span>';
+  }
+
+  var html='';
+  var semBanco=_dia30Dados.filter(function(r){return r.semBanco;}).length;
+  if(semBanco>0)html+='<div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#92400e">⚠️ <b>'+semBanco+'</b> sem dados bancários no cadastro — não entrarão no arquivo.</div>';
+
+  html+='<table style="width:100%;border-collapse:collapse;font-size:11px" id="dia30-tabela-dados">';
+  html+='<thead><tr style="background:#1a5c38;color:#fff">'
+    +'<th style="padding:6px 8px;text-align:left">Nome</th>'
+    +'<th style="padding:6px 8px">CPF</th>'
+    +'<th style="padding:6px 8px">Agência</th>'
+    +'<th style="padding:6px 8px">Conta</th>'
+    +'<th style="padding:6px 8px">Díg.</th>'
+    +'<th style="padding:6px 8px;text-align:center">Cod.</th>'
+    +'<th style="padding:6px 8px;text-align:right">Líquido ✏️</th>'
+    +'</tr></thead><tbody>';
+
+  _dia30Dados.forEach(function(r,i){
+    var bg=r.semBanco?'#fef9c3':(i%2?'#f9fafb':'#ffffff');
+    var valorCell=r.semBanco
+      ?'<td style="padding:5px 8px;text-align:right;color:#92400e">sem banco</td>'
+      :'<td style="padding:3px 6px;text-align:right">'
+        +'<input type="text" value="'+r.valor.toFixed(2).replace('.',',')+'"'
+        +' data-idx="'+i+'"'
+        +' onchange="editarValorDia30(this)"'
+        +' onfocus="this.style.background=\'#fffbeb\';this.select()"'
+        +' onblur="this.style.background=\'\'"'
+        +' style="width:80px;text-align:right;border:1px solid #d1fae5;border-radius:4px;padding:3px 6px;font-size:11px;font-weight:700;color:#1a5c38;background:transparent;font-family:inherit">'
+        +'</td>';
+
+    html+='<tr style="background:'+bg+'">'
+      +'<td style="padding:5px 8px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.nome+'</td>'
+      +'<td style="padding:5px 8px">'+(r.cpf||'⚠')+'</td>'
+      +'<td style="padding:5px 8px">'+(r.agencia||'⚠')+'</td>'
+      +'<td style="padding:5px 8px">'+(r.conta||'⚠')+'</td>'
+      +'<td style="padding:5px 8px">'+(r.digito||'—')+'</td>'
+      +'<td style="padding:5px 8px;text-align:center">'+(r.semBanco?'—':r.finalidade)+'</td>'
+      +valorCell
+      +'</tr>';
+  });
+
+  html+='</tbody></table>';
+  document.getElementById('dia30-preview-tabela').innerHTML=html;
+  calcTotais();
+  document.getElementById('dia30-preview').style.display='block';
+}
+
+function editarValorDia30(input){
+  var idx=parseInt(input.getAttribute('data-idx'));
+  var raw=input.value.replace(/\./g,'').replace(',','.');
+  var novo=parseFloat(raw);
+  if(isNaN(novo)||novo<0){
+    notify('Valor inválido','error');
+    input.value=_dia30Dados[idx].valor.toFixed(2).replace('.',',');
+    return;
+  }
+  _dia30Dados[idx].valor=novo;
+  input.value=novo.toFixed(2).replace('.',',');
+  // Atualiza total no rodapé
+  var total=_dia30Dados.filter(function(r){return !r.semBanco;}).reduce(function(s,r){return s+r.valor;},0);
   var semBanco=_dia30Dados.filter(function(r){return r.semBanco;}).length;
   var semCPF=_dia30Dados.filter(function(r){return r.semCPF;}).length;
   var comDados=_dia30Dados.filter(function(r){return !r.semBanco;}).length;
-  var total=_dia30Dados.filter(function(r){return !r.semBanco;}).reduce(function(s,r){return s+r.valor;},0);
-
-  var html='';
-  if(semBanco>0)html+='<div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#92400e">⚠️ <b>'+semBanco+'</b> sem dados bancários no cadastro — não entrarão no arquivo. Cadastre agência/conta para incluí-los.</div>';
-  html+='<table style="width:100%;border-collapse:collapse;font-size:11px">';
-  html+='<thead><tr style="background:#1a5c38;color:#fff"><th style="padding:6px 8px">Nome (PDF)</th><th style="padding:6px 8px">CPF</th><th style="padding:6px 8px">Agência</th><th style="padding:6px 8px">Conta</th><th style="padding:6px 8px">Díg.</th><th style="padding:6px 8px;text-align:center">Cod.</th><th style="padding:6px 8px;text-align:right">Líquido</th></tr></thead><tbody>';
-  _dia30Dados.forEach(function(r,i){
-    var bg=r.semBanco?'#fef9c3':(i%2?'#f9fafb':'#ffffff');
-    html+='<tr style="background:'+bg+'"><td style="padding:5px 8px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.nome+'</td><td style="padding:5px 8px">'+(r.cpf||'⚠')+'</td><td style="padding:5px 8px">'+(r.agencia||'⚠')+'</td><td style="padding:5px 8px">'+(r.conta||'⚠')+'</td><td style="padding:5px 8px">'+(r.digito||'—')+'</td><td style="padding:5px 8px;text-align:center">'+(r.semBanco?'—':r.finalidade)+'</td><td style="padding:5px 8px;text-align:right;font-weight:700;color:'+(r.semBanco?'#92400e':'#1a5c38')+'">'+fmtMoeda(r.valor)+'</td></tr>';
-  });
-  html+='</tbody></table>';
-  document.getElementById('dia30-preview-tabela').innerHTML=html;
-  document.getElementById('dia30-preview-resumo').innerHTML='<b>'+comDados+' no arquivo</b>'+(semBanco>0?' · <span style="color:#b45309">'+semBanco+' sem banco</span>':'')+(semCPF>0?' · <span style="color:#b45309">'+semCPF+' sem CPF</span>':'')
-    +' · Total: <b style="color:#1a5c38">'+fmtMoeda(total)+'</b>';
-  document.getElementById('dia30-preview').style.display='block';
+  document.getElementById('dia30-preview-resumo').innerHTML=
+    '<b>'+comDados+' no arquivo</b>'
+    +(semBanco>0?' · <span style="color:#b45309">'+semBanco+' sem banco</span>':'')
+    +(semCPF>0?' · <span style="color:#b45309">'+semCPF+' sem CPF</span>':'')
+    +' · Total: <b style="color:#1a5c38">'+fmtMoeda(total)+'</b>'
+    +' <span style="color:var(--text3);font-size:11px">— clique no valor para editar</span>';
 }
 
 function downloadDia30(){
@@ -6905,8 +7083,256 @@ function downloadDia30(){
 }
 
 // ══════════════════════════════════════════════════════════
-// SISTEMA DE LOGIN
+// ITEM 14: LOG DE AUDITORIA
 // ══════════════════════════════════════════════════════════
+function registrarLog(action,status){
+  if(!_usuarioLogado)return;
+  try{
+    var logs=JSON.parse(localStorage.getItem('exp_log')||'[]');
+    logs.unshift({
+      ts:new Date().toISOString(),
+      usuario:_usuarioLogado.login,
+      action,status
+    });
+    if(logs.length>500)logs=logs.slice(0,500);
+    localStorage.setItem('exp_log',JSON.stringify(logs));
+  }catch(e){}
+}
+
+function renderLog(){
+  var logs=[];
+  try{logs=JSON.parse(localStorage.getItem('exp_log')||'[]');}catch(e){}
+  var q=(document.getElementById('log-busca')?.value||'').toLowerCase();
+  if(q)logs=logs.filter(function(l){return (l.action+l.status+l.usuario).toLowerCase().includes(q);});
+  var el=document.getElementById('log-lista');
+  if(!el)return;
+  if(!logs.length){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3)">Nenhum registro encontrado.</div>';return;}
+  el.innerHTML=logs.map(function(l){
+    var ok=l.status==='OK';
+    var data=new Date(l.ts).toLocaleString('pt-BR');
+    return '<div style="display:grid;grid-template-columns:140px 100px 1fr auto;gap:8px;padding:7px 16px;border-bottom:1px solid var(--border);align-items:center">'
+      +'<span style="color:var(--text3)">'+data+'</span>'
+      +'<span style="font-weight:600">'+l.usuario+'</span>'
+      +'<span>'+l.action+'</span>'
+      +'<span style="color:'+(ok?'#1a5c38':'#b91c1c');'">'+(ok?'✅':'❌')+' '+l.status+'</span>'
+      +'</div>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+// ITEM 11: BUSCA GLOBAL
+// ══════════════════════════════════════════════════════════
+var _buscaIdx=0;
+
+function abrirBuscaGlobal(){
+  document.getElementById('busca-global-overlay').style.display='block';
+  document.getElementById('busca-global-results').innerHTML='<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">Digite para buscar colaboradores, cargos, setores...</div>';
+  document.getElementById('busca-global-input').value='';
+  setTimeout(function(){document.getElementById('busca-global-input').focus();},80);
+}
+
+function fecharBuscaGlobal(){
+  document.getElementById('busca-global-overlay').style.display='none';
+}
+
+function executarBuscaGlobal(q){
+  var el=document.getElementById('busca-global-results');
+  if(!q||q.length<2){
+    el.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">Digite ao menos 2 caracteres...</div>';
+    return;
+  }
+  var ql=q.toLowerCase();
+  var colabs=(DB.colaboradores||[]).filter(function(c){
+    return (c.nome||'').toLowerCase().includes(ql)
+      ||(c.cpf||'').replace(/\D/g,'').includes(ql)
+      ||(c.cargo||'').toLowerCase().includes(ql)
+      ||(c.setor||'').toLowerCase().includes(ql)
+      ||(c.email||'').toLowerCase().includes(ql);
+  }).slice(0,12);
+
+  if(!colabs.length){
+    el.innerHTML='<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">Nenhum resultado encontrado.</div>';
+    return;
+  }
+
+  el.innerHTML=colabs.map(function(c,i){
+    var statusColor=c.status==='Ativo'?'#1a5c38':c.status==='Desligado'?'#b91c1c':'#b45309';
+    return '<div class="busca-item" data-id="'+c.id+'" tabindex="0" onclick="abrirPerfilColab(\''+c.id+'\');fecharBuscaGlobal()" onkeydown="if(event.key===\'Enter\')this.click()"'
+      +' style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s"'
+      +' onmouseover="this.style.background=\'var(--accent-bg)\'" onmouseout="this.style.background=\'\'">'
+      +'<div style="width:36px;height:36px;border-radius:50%;background:#1a5c38;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0">'+(c.nome||'?')[0]+'</div>'
+      +'<div style="min-width:0">'
+      +'<div style="font-size:13px;font-weight:600">'+c.nome+'</div>'
+      +'<div style="font-size:11px;color:var(--text3)">'+(c.cargo||'—')+' · '+(c.setor||'—')+' · <span style="color:'+statusColor+'">'+c.status+'</span></div>'
+      +'</div>'
+      +'<div style="margin-left:auto;font-size:11px;color:var(--text3);flex-shrink:0">'+c.empresa+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function navBuscaGlobal(e){
+  if(e.key==='Escape') fecharBuscaGlobal();
+}
+
+// Atalho Ctrl+K
+document.addEventListener('keydown',function(e){
+  if((e.ctrlKey||e.metaKey)&&e.key==='k'){
+    e.preventDefault();
+    abrirBuscaGlobal();
+  }
+  if(e.key==='Escape') fecharBuscaGlobal();
+});
+
+// ══════════════════════════════════════════════════════════
+// ITEM 15: PERFIL DO COLABORADOR
+// ══════════════════════════════════════════════════════════
+var _perfilId=null;
+
+function abrirPerfilColab(id){
+  var c=DB.colaboradores.find(function(x){return String(x.id)===String(id);});
+  if(!c)return;
+  _perfilId=id;
+  document.getElementById('perfil-avatar').textContent=(c.nome||'?')[0];
+  document.getElementById('perfil-nome').textContent=c.nome;
+  document.getElementById('perfil-cargo').textContent=(c.cargo||'—')+' · '+(c.empresa||'—');
+  document.getElementById('perfil-editar-btn').setAttribute('onclick','fecharModal(\'modal-perfil\');abrirModalColab(\''+id+'\')');
+  switchPerfilTab('info');
+  abrirModal('modal-perfil');
+}
+
+function switchPerfilTab(tab){
+  ['info','ferias','adv','pix','vales'].forEach(function(t){
+    document.getElementById('perfil-tab-'+t).style.display=t===tab?'block':'none';
+    var btn=document.getElementById('ptab-'+t);
+    if(btn){btn.style.borderBottomColor=t===tab?'var(--accent)':'transparent';btn.style.color=t===tab?'var(--accent)':'var(--text2)';}
+  });
+  renderPerfilTab(tab);
+}
+
+function renderPerfilTab(tab){
+  var c=DB.colaboradores.find(function(x){return String(x.id)===String(_perfilId);});
+  if(!c)return;
+  var el=document.getElementById('perfil-tab-'+tab);
+
+  if(tab==='info'){
+    var campos=[
+      ['CPF',c.cpf],['RG',c.rg],['Nascimento',fmtData(c.nascimento)],['Estado Civil',c.estadoCivil],
+      ['Telefone',c.telefone],['E-mail',c.email],['Endereço',c.endereco],
+      ['Admissão',fmtData(c.admissao)],['Contrato',c.contrato],['Turno',c.turno],
+      ['Salário',fmtMoeda(c.salario)],['CTPS',c.ctps],['Status',c.status],
+      ['ASO',fmtData(c.aso)],['Banco',c.banco],['Agência',c.agencia],['Conta',c.conta+'-'+c.tipoConta],
+      ['Chave PIX',c.pix],['Emergência',c.emergNome+' '+c.emergTel]
+    ];
+    el.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+      campos.filter(function(r){return r[1]&&r[1].toString().trim();}).map(function(r){
+        return '<div style="padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm)">'
+          +'<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px">'+r[0]+'</div>'
+          +'<div style="font-size:13px;font-weight:500">'+r[1]+'</div></div>';
+      }).join('')+'</div>';
+  }
+
+  if(tab==='ferias'){
+    var ferias=(DB.ferias_gozo||[]).filter(function(f){return String(f.colaboradorId)===String(_perfilId);}).sort(function(a,b){return b.inicio.localeCompare(a.inicio);});
+    el.innerHTML=ferias.length?ferias.map(function(f){
+      return '<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)">'
+        +'<div><div style="font-size:13px;font-weight:600">'+fmtData(f.inicio)+' → '+fmtData(f.fim)+'</div>'
+        +'<div style="font-size:11px;color:var(--text3)">Período: '+fmtData(f.periodInicio)+' a '+fmtData(f.periodFim)+'</div></div></div>';
+    }).join(''):'<div style="padding:24px;text-align:center;color:var(--text3)">Nenhum registro de férias.</div>';
+  }
+
+  if(tab==='adv'){
+    var advs=(DB.advertencias||[]).filter(function(a){return String(a.colaboradorId)===String(_perfilId);}).sort(function(a,b){return b.data.localeCompare(a.data);});
+    el.innerHTML=advs.length?advs.map(function(a){
+      return '<div style="padding:9px 0;border-bottom:1px solid var(--border)">'
+        +'<div style="display:flex;justify-content:space-between"><span style="font-size:13px;font-weight:600">'+a.tipo+'</span><span style="font-size:11px;color:var(--text3)">'+fmtData(a.data)+'</span></div>'
+        +'<div style="font-size:12px;color:var(--text2);margin-top:3px">'+a.descricao+'</div></div>';
+    }).join(''):'<div style="padding:24px;text-align:center;color:var(--text3)">Nenhuma advertência.</div>';
+  }
+
+  if(tab==='pix'){
+    var pixList=(DB.pagamentos_pix||[]).filter(function(p){return String(p.colaboradorId)===String(_perfilId);}).sort(function(a,b){return b.dataSolicitacao.localeCompare(a.dataSolicitacao);});
+    var totalPix=pixList.reduce(function(s,p){return s+parseFloat(p.valor||0);},0);
+    el.innerHTML=(pixList.length?'<div style="font-size:12px;color:var(--text2);margin-bottom:10px">Total: <b style="color:var(--accent)">'+fmtMoeda(totalPix)+'</b> em '+pixList.length+' pagamento(s)</div>':'')+
+      (pixList.length?pixList.map(function(p){
+        var sc={Pago:'#1a5c38',Pendente:'#b45309',Cancelado:'#b91c1c'};
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:8px">'
+          +'<div><div style="font-size:13px;font-weight:600">'+fmtMoeda(p.valor)+'</div>'
+          +'<div style="font-size:11px;color:var(--text3)">'+p.tipo+' · '+fmtData(p.dataSolicitacao)+'</div></div>'
+          +'<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:'+(sc[p.status]||'#888')+'22;color:'+(sc[p.status]||'#888')+'">'+p.status+'</span>'
+          +'</div>';
+      }).join(''):'<div style="padding:24px;text-align:center;color:var(--text3)">Nenhum pagamento PIX.</div>');
+  }
+
+  if(tab==='vales'){
+    var valesList=(DB.vales||[]).filter(function(v){return String(v.colaboradorId)===String(_perfilId);}).sort(function(a,b){return b.data.localeCompare(a.data);});
+    var totalVales=valesList.reduce(function(s,v){return s+parseSalario(String(v.valor||'0'));},0);
+    el.innerHTML=(valesList.length?'<div style="font-size:12px;color:var(--text2);margin-bottom:10px">Total: <b style="color:var(--accent)">'+fmtMoeda(totalVales)+'</b> em '+valesList.length+' vale(s)</div>':'')+
+      (valesList.length?valesList.map(function(v){
+        return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">'
+          +'<div><div style="font-size:13px;font-weight:600">'+fmtMoeda(parseSalario(String(v.valor||'0')))+'</div>'
+          +'<div style="font-size:11px;color:var(--text3)">'+fmtData(v.data)+(v.obs?' · '+v.obs:'')+'</div></div></div>';
+      }).join(''):'<div style="padding:24px;text-align:center;color:var(--text3)">Nenhum vale lançado.</div>');
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// ITEM 6: HISTÓRICO PIX — já coberto no perfil (aba PIX)
+// ITEM 7: ALERTAS AUTOMÁTICOS NO DASHBOARD
+// ══════════════════════════════════════════════════════════
+function renderAlertasDashboard(){
+  var alertas=[];
+  var hoje=new Date();
+  var colabs=DB.colaboradores||[];
+
+  // 1. ASO vencido ou vencendo em 30 dias
+  colabs.filter(function(c){return c.status!=='Desligado'&&c.aso;}).forEach(function(c){
+    var venc=new Date(normalizarData(c.aso)+'T00:00');
+    var dias=Math.ceil((venc-hoje)/(1000*60*60*24));
+    if(dias<0) alertas.push({tipo:'danger',msg:'ASO vencido: <b>'+c.nome+'</b> ('+Math.abs(dias)+'d atrás)',page:'colaboradores'});
+    else if(dias<=30) alertas.push({tipo:'warn',msg:'ASO vence em '+dias+'d: <b>'+c.nome+'</b>',page:'colaboradores'});
+  });
+
+  // 2. Contratos temporários vencendo em 30 dias
+  colabs.filter(function(c){return c.status!=='Desligado'&&c.admissao&&(c.contrato==='Temporário'||c.contrato==='Aprendiz'||c.contrato==='Estágio');}).forEach(function(c){
+    var adm=new Date(normalizarData(c.admissao)+'T00:00');
+    var fim90=new Date(adm.getTime()+90*24*60*60*1000);
+    var diasFim=Math.ceil((fim90-hoje)/(1000*60*60*24));
+    if(diasFim>=0&&diasFim<=15) alertas.push({tipo:'warn',msg:'Contrato '+c.contrato+' de <b>'+c.nome+'</b> vence em ~'+diasFim+'d',page:'colaboradores'});
+  });
+
+  // 3. Vales que excedem adiantamento do mês atual
+  var mesAtual=hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0');
+  var ini=mesAtual+'-01',fim15=mesAtual+'-15';
+  colabs.filter(function(c){return c.status!=='Desligado'&&c.salario;}).forEach(function(c){
+    var bruto40=parseSalario(String(c.salario||'0'))*0.40;
+    var totalVales=(DB.vales||[]).filter(function(v){return String(v.colaboradorId)===String(c.id)&&v.data>=ini&&v.data<=fim15;}).reduce(function(s,v){return s+parseSalario(String(v.valor||'0'));},0);
+    if(totalVales>bruto40) alertas.push({tipo:'warn',msg:'Vales excedem adiantamento: <b>'+c.nome+'</b> (excedente: '+fmtMoeda(totalVales-bruto40)+')',page:'pagamentos'});
+  });
+
+  // 4. Colaboradores sem ASO cadastrado
+  var semASO=colabs.filter(function(c){return c.status==='Ativo'&&!c.aso;}).length;
+  if(semASO>0) alertas.push({tipo:'info',msg:semASO+' colaborador(es) ativo(s) sem ASO cadastrado',page:'colaboradores'});
+
+  var el=document.getElementById('dash-alertas');
+  if(!el)return;
+  if(!alertas.length){el.style.display='none';return;}
+
+  var cores={danger:'#fee2e2',warn:'#fef3c7',info:'#dbeafe'};
+  var textCores={danger:'#b91c1c',warn:'#92400e',info:'#1e40af'};
+  var icons={danger:'🔴',warn:'⚠️',info:'ℹ️'};
+
+  el.style.display='block';
+  el.innerHTML='<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px">'
+    +'<div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">🔔 Alertas ('+alertas.length+')</div>'
+    +'<div style="display:flex;flex-direction:column;gap:6px">'
+    +alertas.map(function(a){
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:'+cores[a.tipo]+';border-radius:6px;gap:10px">'
+        +'<span style="font-size:12px;color:'+textCores[a.tipo]+'">'+icons[a.tipo]+' '+a.msg+'</span>'
+        +'<button onclick="showPage(\''+a.page+'\')" style="background:'+textCores[a.tipo]+';color:#fff;border:none;border-radius:5px;padding:3px 10px;font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0">Ver →</button>'
+        +'</div>';
+    }).join('')
+    +'</div></div>';
+}
 
 var _usuarioLogado=null;
 
@@ -7166,6 +7592,115 @@ function excluirUsuario(id){
   var lista=getUsuarios().filter(function(x){return x.id!==id;});
   if(!lista.some(function(x){return x.perfil==='master';})){notify('Precisa de ao menos 1 master','error');return;}
   salvarUsuarios(lista);renderUsuariosConfig();notify('Usuário excluído');
+}
+
+function limparDia30(){
+  _dia30Dados=[];
+  document.getElementById('dia30-preview').style.display='none';
+  document.getElementById('dia30-status').style.display='none';
+  document.getElementById('dia30-pdf-input').value='';
+  document.getElementById('dia30-xls-input').value='';
+}
+// Estrutura: linha 8+ = dados; col[0]=código, col[1]=nome,
+//            col[12]=CPF, col[19]=Valor Líquido
+// ══════════════════════════════════════════════════════════
+function carregarXLSDia30(input){
+  var file=input.files[0];
+  if(!file)return;
+  var status=document.getElementById('dia30-status');
+  status.style.display='block';
+  status.textContent='Lendo planilha Excel...';
+  document.getElementById('dia30-preview').style.display='none';
+
+  var empresa=document.getElementById('dia30-empresa').value;
+  var finalidade=parseInt(document.getElementById('dia30-finalidade').value)||1;
+  if(!empresa){status.textContent='Selecione a empresa antes de carregar o arquivo.';return;}
+
+  function processar(){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      try{
+        var data=new Uint8Array(e.target.result);
+        var wb=XLSX.read(data,{type:'array'});
+        var sh=wb.Sheets[wb.SheetNames[0]];
+        var rows=XLSX.utils.sheet_to_json(sh,{header:1,defval:''});
+
+        // Dados começam na linha 8 (índice 7)
+        // Col 0=código, 1=nome, 12=CPF, 19=Valor Líquido
+        // Para quando código vazio ou não-numérico (rodapé a partir da linha 57)
+        var extraidos=[];
+        for(var i=7;i<rows.length;i++){
+          var row=rows[i];
+          var codigoRaw=row[0];
+          if(!codigoRaw&&codigoRaw!==0)continue;
+          var codigo=String(codigoRaw).replace('.0','').trim();
+          if(!codigo||isNaN(Number(codigo)))continue;
+
+          var nome=String(row[1]||'').trim();
+          var cpfRaw=String(row[12]||'').trim();
+          var liquidoRaw=row[19];
+          if(!nome)continue;
+          if(!liquidoRaw&&liquidoRaw!==0)continue;
+
+          // CPF pode vir como número (perde zeros à esquerda) — repadeia para 11 dígitos
+          var cpfDigits=cpfRaw.replace(/\D/g,'').padStart(11,'0');
+          var liquido=parseFloat(String(liquidoRaw).replace(',','.'));
+          if(isNaN(liquido)||liquido<0)continue;
+
+          extraidos.push({nome:nome,cpf:cpfDigits,valor:liquido});
+        }
+
+        if(!extraidos.length){
+          status.textContent='Nenhum dado encontrado. Verifique se é o Modelo IV da contabilidade.';
+          return;
+        }
+
+        // Monta _dia30Dados com exatamente os mesmos campos do fluxo PDF
+        _dia30Dados=extraidos.map(function(r){
+          // Busca por CPF primeiro (mais preciso), depois por nome
+          var colab=DB.colaboradores.find(function(c){
+            return String(c.cpf||'').replace(/\D/g,'')===r.cpf&&(!empresa||c.empresa===empresa);
+          })||buscarColabPorNome(r.nome,empresa);
+
+          // EXCLUI desligados e afastados — definitivo
+          if(colab&&colabExcluido(colab))return null;
+
+          var pc=parseConta(colab?colab.conta:'');
+          return{
+            nome:r.nome,
+            cpf:r.cpf,
+            agencia:colab?String(colab.agencia||'').replace(/\D/g,''):'',
+            conta:pc.conta,
+            digito:pc.digito,
+            finalidade:finalidade,
+            valor:r.valor,
+            semBanco:!colab||!(colab.agencia||colab.conta),
+            semCPF:!colab||!colab.cpf,
+            _nomeCadastro:colab?colab.nome:''
+          };
+        }).filter(Boolean);
+
+        status.textContent='✅ Importados '+_dia30Dados.length+' funcionários do Excel.';
+        renderPreviewDia30(empresa,finalidade);
+
+      }catch(err){
+        status.textContent='Erro ao ler planilha: '+err.message;
+        console.error('XLS Dia30 error:',err);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  // Usa SheetJS — já carregado pelo Dia 15 ou carrega agora
+  if(window.XLSX){
+    processar();
+  } else {
+    var s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload=processar;
+    s.onerror=function(){status.textContent='Erro ao carregar biblioteca Excel.';};
+    document.head.appendChild(s);
+  }
 }
 </script>
 
