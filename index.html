@@ -394,6 +394,22 @@ tbody tr:hover td{background:var(--bg)}
 </div>
 
 <!-- ═══ LOG DE AUDITORIA (Item 14) ══════════════════════ -->
+<!-- ═══ MODAL DETALHE ALERTA ══════════════════════════════ -->
+<div class="modal-overlay hidden" id="modal-alerta-detalhe">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header" id="modal-alerta-header">
+      <h3 id="modal-alerta-titulo">Detalhes do Alerta</h3>
+      <button class="modal-close" onclick="fecharModal('modal-alerta-detalhe')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:0">
+      <div id="modal-alerta-lista" style="max-height:460px;overflow-y:auto"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="fecharModal('modal-alerta-detalhe')">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay hidden" id="modal-log">
   <div class="modal" style="max-width:600px">
     <div class="modal-header">
@@ -7302,54 +7318,103 @@ function renderAlertasDashboard(){
   var hoje=new Date();
   var colabs=DB.colaboradores||[];
 
-  // 1. ASO vencido ou vencendo em 30 dias
+  // 1. ASO vencido (por colaborador)
   colabs.filter(function(c){return c.status!=='Desligado'&&c.aso;}).forEach(function(c){
     var venc=new Date(normalizarData(c.aso)+'T00:00');
     var dias=Math.ceil((venc-hoje)/(1000*60*60*24));
-    if(dias<0) alertas.push({tipo:'danger',msg:'ASO vencido: <b>'+c.nome+'</b> ('+Math.abs(dias)+'d atrás)',page:'colaboradores'});
-    else if(dias<=30) alertas.push({tipo:'warn',msg:'ASO vence em '+dias+'d: <b>'+c.nome+'</b>',page:'colaboradores'});
+    if(dias<0) alertas.push({tipo:'danger',icon:'🔴',msg:'ASO vencido há <b>'+Math.abs(dias)+'d</b>',nome:c.nome,colabId:c.id});
+    else if(dias<=30) alertas.push({tipo:'warn',icon:'⚠️',msg:'ASO vence em <b>'+dias+' dia(s)</b>',nome:c.nome,colabId:c.id});
   });
 
-  // 2. Contratos temporários vencendo em 30 dias
+  // 2. Contratos temporários vencendo
   colabs.filter(function(c){return c.status!=='Desligado'&&c.admissao&&(c.contrato==='Temporário'||c.contrato==='Aprendiz'||c.contrato==='Estágio');}).forEach(function(c){
     var adm=new Date(normalizarData(c.admissao)+'T00:00');
     var fim90=new Date(adm.getTime()+90*24*60*60*1000);
     var diasFim=Math.ceil((fim90-hoje)/(1000*60*60*24));
-    if(diasFim>=0&&diasFim<=15) alertas.push({tipo:'warn',msg:'Contrato '+c.contrato+' de <b>'+c.nome+'</b> vence em ~'+diasFim+'d',page:'colaboradores'});
+    if(diasFim>=0&&diasFim<=15) alertas.push({tipo:'warn',icon:'📋',msg:'Contrato <b>'+c.contrato+'</b> vence em ~'+diasFim+'d',nome:c.nome,colabId:c.id});
   });
 
-  // 3. Vales que excedem adiantamento do mês atual
+  // 3. Vales que excedem adiantamento
   var mesAtual=hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0');
   var ini=mesAtual+'-01',fim15=mesAtual+'-15';
   colabs.filter(function(c){return c.status!=='Desligado'&&c.salario;}).forEach(function(c){
     var bruto40=parseSalario(String(c.salario||'0'))*0.40;
     var totalVales=(DB.vales||[]).filter(function(v){return String(v.colaboradorId)===String(c.id)&&v.data>=ini&&v.data<=fim15;}).reduce(function(s,v){return s+parseSalario(String(v.valor||'0'));},0);
-    if(totalVales>bruto40) alertas.push({tipo:'warn',msg:'Vales excedem adiantamento: <b>'+c.nome+'</b> (excedente: '+fmtMoeda(totalVales-bruto40)+')',page:'pagamentos'});
+    if(totalVales>bruto40) alertas.push({tipo:'warn',icon:'💰',msg:'Vales excedem adiantamento em <b>'+fmtMoeda(totalVales-bruto40)+'</b>',nome:c.nome,colabId:c.id,page:'pagamentos'});
   });
 
-  // 4. Colaboradores sem ASO cadastrado
-  var semASO=colabs.filter(function(c){return c.status==='Ativo'&&!c.aso;}).length;
-  if(semASO>0) alertas.push({tipo:'info',msg:semASO+' colaborador(es) ativo(s) sem ASO cadastrado',page:'colaboradores'});
+  // 4. Sem ASO — grupo (abre modal com lista)
+  var semASOList=colabs.filter(function(c){return c.status==='Ativo'&&!c.aso;});
+  if(semASOList.length>0) alertas.push({tipo:'info',icon:'ℹ️',msg:'<b>'+semASOList.length+'</b> colaborador(es) ativo(s) sem ASO cadastrado',grupo:true,grupoIds:semASOList.map(function(c){return c.id;})});
 
   var el=document.getElementById('dash-alertas');
   if(!el)return;
   if(!alertas.length){el.style.display='none';return;}
 
-  var cores={danger:'#fee2e2',warn:'#fef3c7',info:'#dbeafe'};
+  var cores={danger:'#fee2e2',warn:'#fef9c3',info:'#dbeafe'};
+  var bordas={danger:'#fca5a5',warn:'#fde68a',info:'#93c5fd'};
   var textCores={danger:'#b91c1c',warn:'#92400e',info:'#1e40af'};
-  var icons={danger:'🔴',warn:'⚠️',info:'ℹ️'};
 
   el.style.display='block';
   el.innerHTML='<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px">'
     +'<div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">🔔 Alertas ('+alertas.length+')</div>'
     +'<div style="display:flex;flex-direction:column;gap:6px">'
     +alertas.map(function(a){
-      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:'+cores[a.tipo]+';border-radius:6px;gap:10px">'
-        +'<span style="font-size:12px;color:'+textCores[a.tipo]+'">'+icons[a.tipo]+' '+a.msg+'</span>'
-        +'<button onclick="showPage(\''+a.page+'\')" style="background:'+textCores[a.tipo]+';color:#fff;border:none;border-radius:5px;padding:3px 10px;font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0">Ver →</button>'
+      var btn='';
+      if(a.grupo){
+        // Alerta de grupo — abre modal com lista completa
+        btn='<button onclick="abrirModalAlerta(\'semASO\')" '
+          +'style="background:'+textCores[a.tipo]+';color:#fff;border:none;border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0">'
+          +'Ver lista →</button>';
+      } else if(a.page==='pagamentos'){
+        // Vales — vai para pagamentos
+        btn='<button onclick="showPage(\'pagamentos\');switchTabPag(\'conferencia\')" '
+          +'style="background:'+textCores[a.tipo]+';color:#fff;border:none;border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0">'
+          +'Ver vales →</button>';
+      } else {
+        // Alerta individual — abre perfil direto
+        btn='<button onclick="fecharBuscaGlobal();abrirPerfilColab(\''+a.colabId+'\')" '
+          +'style="background:'+textCores[a.tipo]+';color:#fff;border:none;border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0">'
+          +'Ver cadastro →</button>';
+      }
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:'+cores[a.tipo]+';border:1px solid '+bordas[a.tipo]+';border-radius:6px;gap:10px">'
+        +'<span style="font-size:12px;color:'+textCores[a.tipo]+'">'
+          +a.icon+' '+(a.nome?'<b>'+a.nome+'</b> — ':'')+a.msg
+        +'</span>'
+        +btn
         +'</div>';
     }).join('')
     +'</div></div>';
+}
+
+function abrirModalAlerta(tipo){
+  var colabs=DB.colaboradores||[];
+  var titulo='',lista=[];
+
+  if(tipo==='semASO'){
+    titulo='Colaboradores ativos sem ASO';
+    lista=colabs.filter(function(c){return c.status==='Ativo'&&!c.aso;});
+  }
+
+  if(!lista.length){fecharModal('modal-alerta-detalhe');return;}
+
+  var cores={danger:'#fee2e2',warn:'#fef9c3',info:'#dbeafe'};
+  document.getElementById('modal-alerta-titulo').textContent='ℹ️ '+titulo+' ('+lista.length+')';
+
+  document.getElementById('modal-alerta-lista').innerHTML=lista.map(function(c,i){
+    var bg=i%2===0?'var(--surface)':'var(--surface2)';
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--border);background:'+bg+';gap:10px">'
+      +'<div>'
+        +'<div style="font-size:13px;font-weight:600">'+c.nome+'</div>'
+        +'<div style="font-size:11px;color:var(--text3)">'+( c.cargo||'—')+' · '+(c.empresa||'—')+'</div>'
+      +'</div>'
+      +'<button onclick="fecharModal(\'modal-alerta-detalhe\');abrirModalColab(\''+c.id+'\')" '
+        +'style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0">'
+        +'✏️ Editar cadastro</button>'
+      +'</div>';
+  }).join('');
+
+  abrirModal('modal-alerta-detalhe');
 }
 
 var _usuarioLogado=null;
