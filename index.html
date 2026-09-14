@@ -2270,6 +2270,7 @@ let DB = {
   vales:           safeArr('rh_vales'),
   cal_eventos:     safeArr('cal_eventos'),
   atestados:       safeArr('rh_atestados'),
+  avaliacoes:      safeArr('rh_avaliacoes'),
 };
 // Empresas cadastradas
 const EMPRESAS = [
@@ -3719,6 +3720,7 @@ async function sincronizar(){
         localStorage.setItem('cal_eventos',JSON.stringify(d.result.cal_eventos));
       }
       if(d.result.atestados&&Array.isArray(d.result.atestados))DB.atestados=d.result.atestados;
+      if(d.result.avaliacoes&&Array.isArray(d.result.avaliacoes))DB.avaliacoes=d.result.avaliacoes;
       if(d.result.usuarios && Array.isArray(d.result.usuarios)&&d.result.usuarios.length){
         DB.usuarios=d.result.usuarios;
         localStorage.setItem('exp_usuarios',JSON.stringify(d.result.usuarios));
@@ -7130,6 +7132,7 @@ window.addEventListener('DOMContentLoaded',()=>{
             localStorage.setItem('cal_eventos',JSON.stringify(r.cal_eventos));
           }
           if(r.atestados&&Array.isArray(r.atestados))DB.atestados=r.atestados;
+          if(r.avaliacoes&&Array.isArray(r.avaliacoes))DB.avaliacoes=r.avaliacoes;
           if(r.usuarios&&Array.isArray(r.usuarios)&&r.usuarios.length){
             DB.usuarios=r.usuarios;
             localStorage.setItem('exp_usuarios',JSON.stringify(r.usuarios));
@@ -8281,10 +8284,10 @@ function renderPerfilTab(tab){
 // ══════════════════════════════════════════════════════════
 function renderAlertasDashboard(){
   var alertas=[];
-  var hoje=new Date();
+  var hoje=new Date();hoje.setHours(0,0,0,0);
   var colabs=DB.colaboradores||[];
 
-  // 1. ASO vencido (por colaborador)
+  // 1. ASO vencido
   colabs.filter(function(c){return c.status!=='Desligado'&&c.aso;}).forEach(function(c){
     var venc=new Date(normalizarData(c.aso)+'T00:00');
     var dias=Math.ceil((venc-hoje)/(1000*60*60*24));
@@ -8300,7 +8303,7 @@ function renderAlertasDashboard(){
     if(diasFim>=0&&diasFim<=15) alertas.push({tipo:'warn',icon:'📋',msg:'Contrato <b>'+c.contrato+'</b> vence em ~'+diasFim+'d',nome:c.nome,colabId:c.id});
   });
 
-  // 3. Vales que excedem adiantamento
+  // 3. Vales excedem adiantamento
   var mesAtual=hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0');
   var ini=mesAtual+'-01',fim15=mesAtual+'-15';
   colabs.filter(function(c){return c.status!=='Desligado'&&c.salario;}).forEach(function(c){
@@ -8309,9 +8312,34 @@ function renderAlertasDashboard(){
     if(totalVales>bruto40) alertas.push({tipo:'warn',icon:'💰',msg:'Vales excedem adiantamento em <b>'+fmtMoeda(totalVales-bruto40)+'</b>',nome:c.nome,colabId:c.id,page:'pagamentos'});
   });
 
-  // 4. Sem ASO — grupo (abre modal com lista)
+  // 4. Sem ASO — grupo
   var semASOList=colabs.filter(function(c){return c.status==='Ativo'&&!c.aso;});
   if(semASOList.length>0) alertas.push({tipo:'info',icon:'ℹ️',msg:'<b>'+semASOList.length+'</b> colaborador(es) ativo(s) sem ASO cadastrado',grupo:true,grupoIds:semASOList.map(function(c){return c.id;})});
+
+  // 5. Avaliação de experiência — 30 e 60 dias
+  var avaliacoes=getAvaliacoesExperiencia();
+  colabs.filter(function(c){return c.status==='Ativo'&&c.admissao;}).forEach(function(c){
+    var adm=new Date(normalizarData(c.admissao)+'T00:00');
+    [30,60].forEach(function(prazo){
+      var chave='aval_'+c.id+'_'+prazo;
+      if(avaliacoes[chave])return;
+      var dataAval=new Date(adm.getTime()+prazo*24*60*60*1000);
+      var diasParaAval=Math.ceil((dataAval-hoje)/(1000*60*60*24));
+      var diasDesde=-diasParaAval;
+      if(diasParaAval<=5){
+        var atrasado=diasParaAval<0;
+        alertas.push({
+          tipo:atrasado?'danger':'warn',
+          icon:'📝',
+          msg:(diasParaAval===0?'Avaliação de <b>'+prazo+' dias</b> é <b>hoje!</b>'
+            :atrasado?'Avaliação de <b>'+prazo+' dias</b> atrasada há <b>'+diasDesde+'d</b>'
+            :'Avaliação de <b>'+prazo+' dias</b> em <b>'+diasParaAval+' dia(s)</b>'),
+          nome:c.nome,colabId:c.id,
+          avaliacao:{chave:chave,prazo:prazo,colabId:c.id,colabNome:c.nome}
+        });
+      }
+    });
+  });
 
   var el=document.getElementById('dash-alertas');
   if(!el)return;
@@ -8326,31 +8354,60 @@ function renderAlertasDashboard(){
     +'<div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">🔔 Alertas ('+alertas.length+')</div>'
     +'<div style="display:flex;flex-direction:column;gap:6px">'
     +alertas.map(function(a){
-      var btn='';
-      if(a.grupo){
-        // Alerta de grupo — abre modal com lista completa
-        btn='<button onclick="abrirModalAlerta(\'semASO\')" '
-          +'style="background:'+textCores[a.tipo]+';color:#fff;border:none;border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0">'
-          +'Ver lista →</button>';
+      var btns='';
+      if(a.avaliacao){
+        btns='<div style="display:flex;gap:5px;flex-shrink:0">'
+          +'<button onclick="abrirPerfilColab(\''+a.colabId+'\')" '
+            +'style="background:'+textCores[a.tipo]+';color:#fff;border:none;border-radius:5px;padding:4px 8px;font-size:11px;cursor:pointer">Ver →</button>'
+          +'<button onclick="registrarAvaliacaoFeita(\''+a.avaliacao.chave+'\',\''+a.avaliacao.colabNome.replace(/'/g,'\\u0027')+'\','+a.avaliacao.prazo+')" '
+            +'style="background:#16a34a;color:#fff;border:none;border-radius:5px;padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap">✅ Avaliação feita</button>'
+          +'</div>';
+      } else if(a.grupo){
+        btns='<button onclick="abrirModalAlerta(\'semASO\')" '
+          +'style="background:'+textCores[a.tipo]+';color:#fff;border:none;border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0">Ver lista →</button>';
       } else if(a.page==='pagamentos'){
-        // Vales — vai para pagamentos
-        btn='<button onclick="showPage(\'pagamentos\');switchTabPag(\'conferencia\')" '
-          +'style="background:'+textCores[a.tipo]+';color:#fff;border:none;border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0">'
-          +'Ver vales →</button>';
+        btns='<button onclick="showPage(\'pagamentos\');switchTabPag(\'conferencia\')" '
+          +'style="background:'+textCores[a.tipo]+';color:#fff;border:none;border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0">Ver vales →</button>';
       } else {
-        // Alerta individual — abre perfil direto
-        btn='<button onclick="fecharBuscaGlobal();abrirPerfilColab(\''+a.colabId+'\')" '
-          +'style="background:'+textCores[a.tipo]+';color:#fff;border:none;border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0">'
-          +'Ver cadastro →</button>';
+        btns='<button onclick="fecharBuscaGlobal();abrirPerfilColab(\''+a.colabId+'\')" '
+          +'style="background:'+textCores[a.tipo]+';color:#fff;border:none;border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0">Ver cadastro →</button>';
       }
-      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:'+cores[a.tipo]+';border:1px solid '+bordas[a.tipo]+';border-radius:6px;gap:10px">'
-        +'<span style="font-size:12px;color:'+textCores[a.tipo]+'">'
-          +a.icon+' '+(a.nome?'<b>'+a.nome+'</b> — ':'')+a.msg
-        +'</span>'
-        +btn
-        +'</div>';
-    }).join('')
-    +'</div></div>';
+      return'<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:'+cores[a.tipo]+';border:1px solid '+bordas[a.tipo]+';border-radius:6px;gap:10px">'
+        +'<span style="font-size:12px;color:'+textCores[a.tipo]+'">'+a.icon+' '+(a.nome?'<b>'+a.nome+'</b> — ':'')+a.msg+'</span>'
+        +btns+'</div>';
+    }).join('')+'</div></div>';
+}
+
+// ── Avaliações de Experiência ────────────────────────────
+function getAvaliacoesExperiencia(){
+  // Converte array do DB em mapa {chave: obj} para lookup rápido
+  var mapa={};
+  (DB.avaliacoes||[]).forEach(function(a){
+    if(a.chave)mapa[a.chave]=a;
+  });
+  return mapa;
+}
+
+function registrarAvaliacaoFeita(chave,nome,prazo){
+  if(!DB.avaliacoes)DB.avaliacoes=[];
+  // Evita duplicata
+  if(DB.avaliacoes.find(function(a){return a.chave===chave;})){
+    notify('Avaliação já registrada!','warn');return;
+  }
+  var obj={
+    id:gerarId(),
+    chave:chave,
+    colabNome:nome,
+    prazo:prazo,
+    data:fmtDateKey(new Date()),
+    registradoEm:new Date().toISOString(),
+    registradoPor:_usuarioLogado?_usuarioLogado.login:''
+  };
+  DB.avaliacoes.push(obj);
+  salvarDB();
+  sincronizarScript('novaAvaliacao',obj);
+  notify('✅ Avaliação de '+prazo+' dias de '+nome+' registrada!');
+  renderAlertasDashboard();
 }
 
 function abrirModalAlerta(tipo){
