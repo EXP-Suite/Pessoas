@@ -80,6 +80,11 @@ select,input[type=text],input[type=date],input[type=number],input[type=email],in
 select:focus,input:focus,textarea:focus{border-color:var(--accent)}
 textarea{resize:vertical}
 
+/* PERC ADIANT BUTTONS */
+.btn-perc-adiant{flex:1;padding:8px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;border:2px solid var(--border2);background:var(--surface2);color:var(--text2);font-family:inherit;line-height:1.2}
+.btn-perc-adiant:hover{border-color:var(--accent);color:var(--accent)}
+.btn-perc-adiant.active{border-color:var(--accent)!important;background:var(--accent)!important;color:#fff!important}
+
 /* BUTTONS */
 .btn{padding:7px 14px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;background:var(--surface);color:var(--text);cursor:pointer;font-weight:500;transition:background .15s;white-space:nowrap;font-family:inherit;display:inline-flex;align-items:center;gap:6px}
 .btn:hover{background:var(--surface2)}
@@ -1981,9 +1986,9 @@ tbody tr:hover td{background:var(--bg)}
         <div class="form-group" style="grid-column:1/-1">
           <label>% Adiantamento (Dia 15)</label>
           <div style="display:flex;gap:8px;margin-top:4px" id="f-perc-adiant-group">
-            <button type="button" class="btn-perc-adiant active" data-perc="40" onclick="selecionarPercAdiant(40)" style="flex:1;padding:8px;border-radius:7px;border:2px solid var(--primary);background:var(--primary);color:#fff;font-weight:700;cursor:pointer;transition:all .2s">40%</button>
-            <button type="button" class="btn-perc-adiant" data-perc="25" onclick="selecionarPercAdiant(25)" style="flex:1;padding:8px;border-radius:7px;border:2px solid #ccc;background:#fff;color:#555;font-weight:600;cursor:pointer;transition:all .2s">25%</button>
-            <button type="button" class="btn-perc-adiant" data-perc="0" onclick="selecionarPercAdiant(0)" style="flex:1;padding:8px;border-radius:7px;border:2px solid #ccc;background:#fff;color:#555;font-weight:600;cursor:pointer;transition:all .2s">0%</button>
+            <button type="button" class="btn-perc-adiant active" data-perc="40" onclick="selecionarPercAdiant(40)">40%</button>
+            <button type="button" class="btn-perc-adiant" data-perc="25" onclick="selecionarPercAdiant(25)">25%</button>
+            <button type="button" class="btn-perc-adiant" data-perc="0" onclick="selecionarPercAdiant(0)">0%</button>
           </div>
           <div style="font-size:11px;color:var(--text3);margin-top:4px">Padrão: 40%. Use 25% ou 0% para colaboradores com consignado.</div>
         </div>
@@ -2782,11 +2787,8 @@ function normalizaTelInput(el){
 }
 function selecionarPercAdiant(perc){
   document.querySelectorAll('.btn-perc-adiant').forEach(function(btn){
-    var isActive=parseInt(btn.dataset.perc)===perc;
-    btn.style.border='2px solid '+(isActive?'var(--primary)':'#ccc');
-    btn.style.background=isActive?'var(--primary)':'#fff';
-    btn.style.color=isActive?'#fff':'#555';
-    if(isActive) btn.classList.add('active'); else btn.classList.remove('active');
+    if(parseInt(btn.dataset.perc)===perc) btn.classList.add('active');
+    else btn.classList.remove('active');
   });
 }
 
