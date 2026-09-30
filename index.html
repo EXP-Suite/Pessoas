@@ -1138,7 +1138,7 @@ tbody tr:hover td{background:var(--bg)}
 
   <!-- ABA ITAÚ DIA 15 -->
   <div id="tab-itau" style="display:none">
-    <div class="card" style="max-width:640px">
+    <div class="card">
       <div style="font-size:14px;font-weight:700;margin-bottom:4px">🏦 Gerar Arquivo — Pagamento Dia 15</div>
       <div style="font-size:12px;color:var(--text3);margin-bottom:16px">40% do salário bruto, descontando vales do período 01 a 15 do mês selecionado.</div>
 
@@ -1185,7 +1185,7 @@ tbody tr:hover td{background:var(--bg)}
       <!-- Prévia -->
       <div id="itau-preview" style="display:none">
         <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Prévia do arquivo</div>
-        <div id="itau-preview-tabela" style="overflow-x:auto;margin-bottom:14px;max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm)"></div>
+        <div id="itau-preview-tabela" style="overflow-x:auto;margin-bottom:14px;max-height:480px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm)"></div>
         <div id="itau-preview-resumo" style="font-size:12px;color:var(--text2);margin-bottom:14px"></div>
         <button class="btn btn-primary" style="width:100%" onclick="downloadItau()">⬇️ Baixar arquivo Excel (.xlsx)</button>      </div>
     </div>
@@ -1193,7 +1193,7 @@ tbody tr:hover td{background:var(--bg)}
 
   <!-- ABA CONFERÊNCIA DE VALES -->
   <div id="tab-conferencia" style="display:none">
-    <div class="card" style="max-width:700px">
+    <div class="card">
       <div style="font-size:14px;font-weight:700;margin-bottom:4px">📋 Conferência de Vales</div>
       <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Relatório resumido por colaborador para conferência e envio à contabilidade.</div>
 
@@ -1233,7 +1233,7 @@ tbody tr:hover td{background:var(--bg)}
 
   <!-- ABA DIA 30 — PDF CONTRACHEQUE -->
   <div id="tab-dia30" style="display:none">
-    <div class="card" style="max-width:640px">
+    <div class="card">
       <div style="font-size:14px;font-weight:700;margin-bottom:4px">📄 Gerar Arquivo — Pagamento Dia 30</div>
       <div style="font-size:12px;color:var(--text3);margin-bottom:14px">Importe via PDF (contracheque) ou Excel .xls (modelo da contabilidade). O arquivo Itaú gerado é idêntico.</div>
 
@@ -2634,13 +2634,28 @@ function abrirModalColab(id){
       Object.entries(fs).forEach(([k,v])=>{const el=document.getElementById('f-'+k);if(el&&v!=null&&v!=='')el.value=v;});
       document.getElementById('f-pix-tipo').value='';
       if(c.pix)detectarEPreencherTipo('f-pix-tipo','f-pix',c.pix);
-      if(c.sexo)document.getElementById('f-sexo').value=c.sexo;
-      if(c.estadoCivil)document.getElementById('f-estado-civil').value=c.estadoCivil;
-      if(c.setor)document.getElementById('f-setor').value=c.setor;
-      if(c.turno)document.getElementById('f-turno').value=c.turno;
-      if(c.contrato)document.getElementById('f-contrato').value=c.contrato;
-      if(c.status)document.getElementById('f-status').value=c.status;
-      if(c.tipoConta)document.getElementById('f-tipo-conta').value=c.tipoConta;
+      // Sexo: normaliza valor vindo do Sheets (pode ter espaço, capitalização diferente)
+      (function(){
+        var sexoRaw=String(c.sexo||'').trim();
+        var sexoOpts=['Masculino','Feminino'];
+        var sexoMatch=sexoOpts.find(function(o){return o.toLowerCase()===sexoRaw.toLowerCase();});
+        document.getElementById('f-sexo').value=sexoMatch||'';
+      })();
+      // estadoCivil: trim para garantir match
+      (function(){
+        var el=document.getElementById('f-estado-civil');
+        var v=String(c.estadoCivil||'').trim();
+        if(v){
+          var opts=Array.from(el.options).map(function(o){return o.value;});
+          el.value=opts.find(function(o){return o.toLowerCase()===v.toLowerCase();})||v;
+        }
+      })();
+      // setor: trim
+      if(c.setor){var elSt=document.getElementById('f-setor');elSt.value=String(c.setor).trim();}
+      if(c.turno){var elTu=document.getElementById('f-turno');elTu.value=String(c.turno).trim();}
+      if(c.contrato){var elCo=document.getElementById('f-contrato');elCo.value=String(c.contrato).trim();}
+      if(c.status){var elSta=document.getElementById('f-status');elSta.value=String(c.status).trim();}
+      if(c.tipoConta){var elTc=document.getElementById('f-tipo-conta');elTc.value=String(c.tipoConta).trim();}
       // Carrega cargo + nível no select encadeado
       if(c.cargo)carregarCargoNoSelect(c.cargo);
       // Carrega percAdiant
@@ -3720,7 +3735,25 @@ async function sincronizar(){
     const r=await fetch(SCRIPT_URL+'?action=listarTodos');
     const d=await r.json();
     if(d.ok&&d.result){
-      if(d.result.colaboradores && Array.isArray(d.result.colaboradores))DB.colaboradores=d.result.colaboradores.map(c=>({...c,pix:preservarChavePix(String(c.pix||''))}));
+      if(d.result.colaboradores && Array.isArray(d.result.colaboradores)){
+        DB.colaboradores=d.result.colaboradores.map(function(c){
+          // Normaliza sexo: garante string limpa independente do que vem do Sheets
+          var sexoRaw=c.sexo;
+          var sexoStr='';
+          if(sexoRaw instanceof Date){sexoStr='';}
+          else if(typeof sexoRaw==='number'){sexoStr='';}
+          else{
+            sexoStr=String(sexoRaw||'').trim();
+            if(sexoStr.toLowerCase()==='masculino')sexoStr='Masculino';
+            else if(sexoStr.toLowerCase()==='feminino')sexoStr='Feminino';
+            else sexoStr='';
+          }
+          // Normaliza percAdiant
+          var percRaw=c.percAdiant;
+          var percVal=(percRaw!==undefined&&percRaw!==''&&!isNaN(Number(percRaw)))?Number(percRaw):40;
+          return Object.assign({},c,{pix:preservarChavePix(String(c.pix||'')),sexo:sexoStr,percAdiant:percVal});
+        });
+      }
       if(d.result.ferias_gozo && Array.isArray(d.result.ferias_gozo))DB.ferias_gozo=d.result.ferias_gozo;
       if(d.result.advertencias && Array.isArray(d.result.advertencias))DB.advertencias=d.result.advertencias;
       if(d.result.cargos && Array.isArray(d.result.cargos))DB.cargos=d.result.cargos;
