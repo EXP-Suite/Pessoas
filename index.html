@@ -86,14 +86,15 @@ textarea{resize:vertical}
 .btn-perc-adiant.active{border-color:var(--accent)!important;background:var(--accent)!important;color:#fff!important}
 /* FOTO COLABORADOR */
 .foto-colab-wrap{display:flex;align-items:flex-start;gap:16px}
-.foto-colab-preview{width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid var(--border2);background:var(--surface2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:30px;color:var(--text3);overflow:hidden}
-.foto-colab-preview img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.foto-colab-preview{width:90px;height:90px;border-radius:12px;border:3px solid var(--border2);background:var(--surface2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:30px;color:var(--text3);overflow:hidden}
+.foto-colab-preview img{width:100%;height:100%;object-fit:cover;object-position:top center;border-radius:9px}
 .foto-colab-info{flex:1}
 .foto-colab-actions{display:flex;flex-direction:column;gap:6px;margin-top:4px}
 .btn-foto{padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;border:1.5px solid var(--border2);background:var(--surface2);color:var(--text2);font-family:inherit;white-space:nowrap}
 .btn-foto:hover{border-color:var(--accent);color:var(--accent)}
 .btn-foto.uploading{opacity:.6;pointer-events:none}
-.foto-ver-ficha{width:110px;height:110px;border-radius:50%;object-fit:cover;border:3px solid var(--border2);background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:40px;color:var(--text3);overflow:hidden;margin:0 auto 12px}
+.foto-ver-ficha{width:120px;height:150px;border-radius:12px;border:3px solid var(--border2);background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:40px;color:var(--text3);overflow:hidden;margin:0 auto 12px}
+.foto-ver-ficha img{width:100%;height:100%;object-fit:cover;object-position:top center}
 
 /* BUTTONS */
 .btn{padding:7px 14px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;background:var(--surface);color:var(--text);cursor:pointer;font-weight:500;transition:background .15s;white-space:nowrap;font-family:inherit;display:inline-flex;align-items:center;gap:6px}
@@ -2607,7 +2608,7 @@ function renderColabs(lista){
     const empBadge=c.empresa==='AGS Distribuidora'?'b-info':'b-ok';
     const empAbrev=c.empresa==='AGS Distribuidora'?'AGS':'EA';
     return`<tr>
-    <td class="td-nome" data-label=""><div style="display:flex;align-items:center;gap:8px">${c.fotoUrl?`<img src="${c.fotoUrl}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1.5px solid var(--border2)" onerror="this.style.display='none'">`:'<div style="width:32px;height:32px;border-radius:50%;background:var(--surface2);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">👤</div>'}<span>${c.nome} <span class="badge ${c.status==='Ativo'?'b-ok':c.status==='Afastado'?'b-warn':'b-danger'}" style="margin-left:6px;font-size:10px">${c.status}</span></span></div></td>
+    <td class="td-nome" data-label=""><div style="display:flex;align-items:center;gap:8px">${c.fotoUrl?`<img src="${c.fotoUrl}" style="width:32px;height:32px;border-radius:6px;object-fit:cover;object-position:top center;flex-shrink:0;border:1.5px solid var(--border2)" onerror="this.style.display='none'">`:'<div style="width:32px;height:32px;border-radius:6px;background:var(--surface2);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">👤</div>'}<span>${c.nome} <span class="badge ${c.status==='Ativo'?'b-ok':c.status==='Afastado'?'b-warn':'b-danger'}" style="margin-left:6px;font-size:10px">${c.status}</span></span></div></td>
     <td data-label="Empresa"><span class="badge ${empBadge}" style="font-size:10px">${empAbrev} — ${c.empresa}</span></td>
     <td data-label="Cargo">${c.cargo||'—'}</td>
     <td data-label="Setor">${c.setor||'—'}</td>
