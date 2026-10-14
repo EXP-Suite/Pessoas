@@ -3889,7 +3889,11 @@ async function sincronizar(){
           var percRaw=c.percAdiant;
           var percVal=(percRaw!==undefined&&percRaw!==''&&!isNaN(Number(percRaw)))?Number(percRaw):40;
           var fotoId=String(c.fotoId||'').trim();
-          var fotoUrl=String(c.fotoUrl||'').trim();
+          var fotoUrlRaw=String(c.fotoUrl||'').trim();
+          // Converte URL antiga (/uc?id=) para o endpoint que funciona em <img>
+          var fotoUrl=fotoUrlRaw.replace(/https?:\/\/drive\.google\.com\/uc\?(?:export=view&)?id=([a-zA-Z0-9_-]+)/,'https://lh3.googleusercontent.com/d/$1');
+          // Fallback: se tem só fotoId mas fotoUrl vazia, monta a URL
+          if(!fotoUrl&&fotoId) fotoUrl='https://lh3.googleusercontent.com/d/'+fotoId;
           return Object.assign({},c,{pix:preservarChavePix(String(c.pix||'')),sexo:sexoStr,percAdiant:percVal,fotoId:fotoId,fotoUrl:fotoUrl});
         });
       }
