@@ -84,6 +84,16 @@ textarea{resize:vertical}
 .btn-perc-adiant{flex:1;padding:8px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;border:2px solid var(--border2);background:var(--surface2);color:var(--text2);font-family:inherit;line-height:1.2}
 .btn-perc-adiant:hover{border-color:var(--accent);color:var(--accent)}
 .btn-perc-adiant.active{border-color:var(--accent)!important;background:var(--accent)!important;color:#fff!important}
+/* FOTO COLABORADOR */
+.foto-colab-wrap{display:flex;align-items:flex-start;gap:16px}
+.foto-colab-preview{width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid var(--border2);background:var(--surface2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:30px;color:var(--text3);overflow:hidden}
+.foto-colab-preview img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.foto-colab-info{flex:1}
+.foto-colab-actions{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.btn-foto{padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;border:1.5px solid var(--border2);background:var(--surface2);color:var(--text2);font-family:inherit;white-space:nowrap}
+.btn-foto:hover{border-color:var(--accent);color:var(--accent)}
+.btn-foto.uploading{opacity:.6;pointer-events:none}
+.foto-ver-ficha{width:110px;height:110px;border-radius:50%;object-fit:cover;border:3px solid var(--border2);background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:40px;color:var(--text3);overflow:hidden;margin:0 auto 12px}
 
 /* BUTTONS */
 .btn{padding:7px 14px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;background:var(--surface);color:var(--text);cursor:pointer;font-weight:500;transition:background .15s;white-space:nowrap;font-family:inherit;display:inline-flex;align-items:center;gap:6px}
@@ -1992,6 +2002,24 @@ tbody tr:hover td{background:var(--bg)}
           </div>
           <div style="font-size:11px;color:var(--text3);margin-top:4px">Padrão: 40%. Use 25% ou 0% para colaboradores com consignado.</div>
         </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Foto do Colaborador</label>
+          <div class="foto-colab-wrap" style="margin-top:6px">
+            <div class="foto-colab-preview" id="f-foto-preview">👤</div>
+            <div class="foto-colab-info">
+              <div style="font-size:12px;color:var(--text2);margin-bottom:8px" id="f-foto-nome-arquivo">Nenhuma foto selecionada</div>
+              <div class="foto-colab-actions">
+                <button type="button" class="btn-foto" onclick="document.getElementById('f-foto-input').click()">📷 Selecionar foto</button>
+                <button type="button" class="btn-foto" id="btn-foto-remover" onclick="removerFotoColab()" style="display:none;color:#dc2626;border-color:#dc2626">🗑 Remover foto</button>
+              </div>
+              <input type="file" id="f-foto-input" accept="image/*" style="display:none" onchange="onFotoColabChange(event)">
+              <div style="font-size:11px;color:var(--text3);margin-top:6px">JPG ou PNG · máx. 5MB · aparece na ficha e pode ser usada na portaria HIKVISION</div>
+            </div>
+          </div>
+          <input type="hidden" id="f-foto-id" value="">
+          <input type="hidden" id="f-foto-url" value="">
+        </div>
+
         <div class="form-group"><label>Estado Civil</label>
           <select id="f-estado-civil"><option>Solteiro(a)</option><option>Casado(a)</option><option>Divorciado(a)</option><option>Viúvo(a)</option><option>União Estável</option></select></div>
         <div class="form-group"><label>Telefone *</label><input type="tel" id="f-telefone" placeholder="(62) 9xxxxxxxx" oninput="maskTel(this)" onblur="normalizaTelInput(this)" maxlength="15"><div id="f-telefone-hint" style="font-size:11px;color:#b86000;margin-top:3px;display:none">⚠ Formato esperado: (xx) 9xxxxxxxx</div></div>
@@ -2579,7 +2607,7 @@ function renderColabs(lista){
     const empBadge=c.empresa==='AGS Distribuidora'?'b-info':'b-ok';
     const empAbrev=c.empresa==='AGS Distribuidora'?'AGS':'EA';
     return`<tr>
-    <td class="td-nome" data-label="">${c.nome} <span class="badge ${c.status==='Ativo'?'b-ok':c.status==='Afastado'?'b-warn':'b-danger'}" style="margin-left:6px;font-size:10px">${c.status}</span></td>
+    <td class="td-nome" data-label=""><div style="display:flex;align-items:center;gap:8px">${c.fotoUrl?`<img src="${c.fotoUrl}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1.5px solid var(--border2)" onerror="this.style.display='none'">`:'<div style="width:32px;height:32px;border-radius:50%;background:var(--surface2);border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">👤</div>'}<span>${c.nome} <span class="badge ${c.status==='Ativo'?'b-ok':c.status==='Afastado'?'b-warn':'b-danger'}" style="margin-left:6px;font-size:10px">${c.status}</span></span></div></td>
     <td data-label="Empresa"><span class="badge ${empBadge}" style="font-size:10px">${empAbrev} — ${c.empresa}</span></td>
     <td data-label="Cargo">${c.cargo||'—'}</td>
     <td data-label="Setor">${c.setor||'—'}</td>
@@ -2614,6 +2642,8 @@ function abrirModalColab(id){
   document.getElementById('f-cargo').value='';
   document.getElementById('f-sexo').value='';
   selecionarPercAdiant(40);
+  // Limpa foto
+  limparFotoColab();
   document.getElementById('f-pix-tipo').value='';
   document.getElementById('f-pix').placeholder='Selecione o tipo ao lado';
   const fph=document.getElementById('f-pix-hint');if(fph)fph.textContent='';
@@ -2660,6 +2690,12 @@ function abrirModalColab(id){
       if(c.cargo)carregarCargoNoSelect(c.cargo);
       // Carrega percAdiant
       selecionarPercAdiant(c.percAdiant!==undefined&&c.percAdiant!==''?parseInt(c.percAdiant):40);
+      // Carrega foto existente
+      if(c.fotoUrl){
+        carregarFotoExistente(c.fotoId||'',c.fotoUrl);
+      } else {
+        limparFotoColab();
+      }
     }
     document.getElementById('btn-salvar-colab').onclick=()=>salvarColaborador(id);
   } else {
@@ -2807,7 +2843,89 @@ function selecionarPercAdiant(perc){
   });
 }
 
-function salvarColaborador(editId){
+// ── FOTO DO COLABORADOR ──────────────────────────────────────
+function limparFotoColab(){
+  var prev=document.getElementById('f-foto-preview');
+  if(prev){prev.innerHTML='👤';}
+  var inp=document.getElementById('f-foto-input');
+  if(inp)inp.value='';
+  var fn=document.getElementById('f-foto-nome-arquivo');
+  if(fn)fn.textContent='Nenhuma foto selecionada';
+  var rem=document.getElementById('btn-foto-remover');
+  if(rem)rem.style.display='none';
+  document.getElementById('f-foto-id').value='';
+  document.getElementById('f-foto-url').value='';
+}
+
+function carregarFotoExistente(fotoId,fotoUrl){
+  var prev=document.getElementById('f-foto-preview');
+  if(prev)prev.innerHTML='<img src="'+fotoUrl+'" alt="Foto" onerror="this.parentElement.innerHTML=\'👤\'">';
+  var fn=document.getElementById('f-foto-nome-arquivo');
+  if(fn)fn.textContent='Foto já salva no Drive';
+  var rem=document.getElementById('btn-foto-remover');
+  if(rem)rem.style.display='';
+  document.getElementById('f-foto-id').value=fotoId||'';
+  document.getElementById('f-foto-url').value=fotoUrl||'';
+}
+
+function onFotoColabChange(event){
+  var file=event.target.files[0];
+  if(!file)return;
+  if(file.size>5*1024*1024){notify('Foto muito grande. Máximo 5MB.','error');return;}
+  if(!file.type.startsWith('image/')){notify('Selecione uma imagem (JPG ou PNG).','error');return;}
+  var fn=document.getElementById('f-foto-nome-arquivo');
+  if(fn)fn.textContent=file.name+' ('+Math.round(file.size/1024)+'KB) — será salva ao clicar em Salvar';
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var prev=document.getElementById('f-foto-preview');
+    if(prev)prev.innerHTML='<img src="'+e.target.result+'" alt="Foto">';
+    // Guarda base64 temporário em dataset para usar no salvar
+    document.getElementById('f-foto-input').dataset.base64=e.target.result.split(',')[1];
+    document.getElementById('f-foto-input').dataset.mimeType=file.type;
+  };
+  reader.readAsDataURL(file);
+  var rem=document.getElementById('btn-foto-remover');
+  if(rem)rem.style.display='';
+}
+
+function removerFotoColab(){
+  if(!confirm('Remover a foto deste colaborador?'))return;
+  limparFotoColab();
+  notify('Foto removida. Clique em Salvar para confirmar.','info');
+}
+
+// Upload de foto para o Drive (chamado por salvarColaborador) — retorna {fileId,url} ou null
+async function uploadFotoColabDrive(colabId,nomeColab,fotoIdAnterior){
+  var inp=document.getElementById('f-foto-input');
+  var base64=inp&&inp.dataset.base64;
+  var mimeType=(inp&&inp.dataset.mimeType)||'image/jpeg';
+  if(!base64)return null; // sem nova foto selecionada
+  var btn=document.getElementById('btn-salvar-colab');
+  if(btn){btn.disabled=true;btn.textContent='📤 Enviando foto...';}
+  try{
+    if(!SCRIPT_URL)throw new Error('URL do script não configurada');
+    const res=await fetch(SCRIPT_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({action:'uploadFotoColab',data:{base64,colaboradorId:colabId,nomeColab,mimeType,fotoIdAnterior:fotoIdAnterior||''}})
+    });
+    const json=await res.json();
+    if(btn){btn.disabled=false;btn.textContent='💾 Salvar';}
+    if(json.ok){
+      inp.dataset.base64=''; // limpa
+      return {fileId:json.fileId,url:json.url};
+    } else {
+      notify('Erro ao enviar foto: '+(json.error||'desconhecido'),'error');
+      return null;
+    }
+  }catch(e){
+    if(btn){btn.disabled=false;btn.textContent='💾 Salvar';}
+    notify('Erro ao enviar foto: '+e.message,'error');
+    return null;
+  }
+}
+
+async function salvarColaborador(editId){
   const nome=document.getElementById('f-nome').value.trim();
   const cpf=document.getElementById('f-cpf').value.trim();
   const admissao=document.getElementById('f-admissao').value;
@@ -2821,7 +2939,20 @@ function salvarColaborador(editId){
   const telNorm=normalizarTel(telRaw);
   if(telRaw && !telNorm){notify('Telefone inválido. Use o formato (xx) 9xxxxxxxx','error');document.getElementById('f-telefone-hint').style.display='block';return;}
   document.getElementById('f-telefone-hint').style.display='none';
-  const obj={id:editId||gerarId(),nome,cpf,sexo,empresa:document.getElementById('f-empresa').value,rg:document.getElementById('f-rg').value.trim(),nascimento:document.getElementById('f-nascimento').value,estadoCivil:document.getElementById('f-estado-civil').value,telefone:normalizarTel(document.getElementById('f-telefone').value.trim())||document.getElementById('f-telefone').value.trim(),email:document.getElementById('f-email').value.trim(),endereco:document.getElementById('f-endereco').value.trim(),emergNome:document.getElementById('f-emerg-nome').value.trim(),emergTel:document.getElementById('f-emerg-tel').value.trim(),admissao,cargo:document.getElementById('f-cargo').value.trim(),setor:document.getElementById('f-setor').value,turno:document.getElementById('f-turno').value,contrato:document.getElementById('f-contrato').value,salario:parseFloat(document.getElementById('f-salario').value)||0,ctps:document.getElementById('f-ctps').value.trim(),status:document.getElementById('f-status').value,aso:document.getElementById('f-aso').value,banco:document.getElementById('f-banco').value.trim(),agencia:document.getElementById('f-agencia').value.trim(),conta:document.getElementById('f-conta').value.trim(),tipoConta:document.getElementById('f-tipo-conta').value,pix:preservarChavePix(document.getElementById('f-pix').value.trim()),percAdiant:(function(){var a=document.querySelector('.btn-perc-adiant.active');return a?parseInt(a.dataset.perc):40;})()};
+  // Monta o obj com fotoId/fotoUrl atuais (podem ser sobrescritos após upload)
+  const colabId=editId||gerarId();
+  let fotoId=document.getElementById('f-foto-id').value||'';
+  let fotoUrl=document.getElementById('f-foto-url').value||'';
+  // Se há nova foto selecionada, faz upload primeiro
+  const inp=document.getElementById('f-foto-input');
+  if(inp&&inp.dataset.base64){
+    const fotoRes=await uploadFotoColabDrive(colabId,nome,fotoId);
+    if(fotoRes){fotoId=fotoRes.fileId;fotoUrl=fotoRes.url;}
+  } else if(!fotoUrl){
+    // Foto foi removida (limparFotoColab chamado)
+    fotoId='';fotoUrl='';
+  }
+  const obj={id:colabId,nome,cpf,sexo,empresa:document.getElementById('f-empresa').value,rg:document.getElementById('f-rg').value.trim(),nascimento:document.getElementById('f-nascimento').value,estadoCivil:document.getElementById('f-estado-civil').value,telefone:normalizarTel(document.getElementById('f-telefone').value.trim())||document.getElementById('f-telefone').value.trim(),email:document.getElementById('f-email').value.trim(),endereco:document.getElementById('f-endereco').value.trim(),emergNome:document.getElementById('f-emerg-nome').value.trim(),emergTel:document.getElementById('f-emerg-tel').value.trim(),admissao,cargo:document.getElementById('f-cargo').value.trim(),setor:document.getElementById('f-setor').value,turno:document.getElementById('f-turno').value,contrato:document.getElementById('f-contrato').value,salario:parseFloat(document.getElementById('f-salario').value)||0,ctps:document.getElementById('f-ctps').value.trim(),status:document.getElementById('f-status').value,aso:document.getElementById('f-aso').value,banco:document.getElementById('f-banco').value.trim(),agencia:document.getElementById('f-agencia').value.trim(),conta:document.getElementById('f-conta').value.trim(),tipoConta:document.getElementById('f-tipo-conta').value,pix:preservarChavePix(document.getElementById('f-pix').value.trim()),percAdiant:(function(){var a=document.querySelector('.btn-perc-adiant.active');return a?parseInt(a.dataset.perc):40;})(),fotoId,fotoUrl};
   if(editId){const idx=DB.colaboradores.findIndex(c=>c.id==editId);DB.colaboradores[idx]=obj;notify('Colaborador atualizado!');}
   else{if(DB.colaboradores.find(c=>c.cpf===cpf)){notify('CPF já cadastrado!','error');return;}DB.colaboradores.push(obj);notify('Colaborador cadastrado!');}
   salvarDB();fecharModal('modal-colab');renderColabs();
@@ -2851,7 +2982,13 @@ function verColab(id){
     <td style="font-size:11px;color:var(--text2)">${d.descricao||'—'}</td>
     <td>${d.driveUrl?`<a href="${d.driveUrl}" target="_blank" class="btn btn-sm" style="text-decoration:none">🔗 Abrir</a>`:'<span style="font-size:11px;color:var(--text3)">—</span>'}</td>
   </tr>`).join(''):'<tr><td colspan="5" class="empty">Nenhum documento anexado.</td></tr>';
-  document.getElementById('ver-colab-body').innerHTML=`<div class="form-grid">
+  const fotoHtml=c.fotoUrl
+    ?`<div style="text-align:center;margin-bottom:16px">
+        <div class="foto-ver-ficha"><img src="${c.fotoUrl}" alt="Foto de ${c.nome}" onerror="this.parentElement.innerHTML='👤'"></div>
+        <div style="font-size:11px;color:var(--text3)">Foto do colaborador</div>
+      </div>`
+    :'';
+  document.getElementById('ver-colab-body').innerHTML=`${fotoHtml}<div class="form-grid">
     <div class="form-section">👤 Dados Pessoais</div>
     ${row2('CPF',c.cpf)}${row2('RG',c.rg)}${row2('Nascimento',fmtData(c.nascimento))}${row2('Estado Civil',c.estadoCivil)}${row2('Telefone',c.telefone)}${row2('E-mail',c.email)}${row2('Endereço',c.endereco)}${row2('Emerg.',c.emergNome+(c.emergTel?' · '+c.emergTel:''))}
     <div class="form-section">💼 Dados Profissionais</div>
@@ -3751,7 +3888,9 @@ async function sincronizar(){
           // Normaliza percAdiant
           var percRaw=c.percAdiant;
           var percVal=(percRaw!==undefined&&percRaw!==''&&!isNaN(Number(percRaw)))?Number(percRaw):40;
-          return Object.assign({},c,{pix:preservarChavePix(String(c.pix||'')),sexo:sexoStr,percAdiant:percVal});
+          var fotoId=String(c.fotoId||'').trim();
+          var fotoUrl=String(c.fotoUrl||'').trim();
+          return Object.assign({},c,{pix:preservarChavePix(String(c.pix||'')),sexo:sexoStr,percAdiant:percVal,fotoId:fotoId,fotoUrl:fotoUrl});
         });
       }
       if(d.result.ferias_gozo && Array.isArray(d.result.ferias_gozo))DB.ferias_gozo=d.result.ferias_gozo;
