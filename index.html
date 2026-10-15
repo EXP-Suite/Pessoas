@@ -86,15 +86,15 @@ textarea{resize:vertical}
 .btn-perc-adiant.active{border-color:var(--accent)!important;background:var(--accent)!important;color:#fff!important}
 /* FOTO COLABORADOR */
 .foto-colab-wrap{display:flex;align-items:flex-start;gap:16px}
-.foto-colab-preview{width:90px;height:90px;border-radius:12px;border:3px solid var(--border2);background:var(--surface2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:30px;color:var(--text3);overflow:hidden}
-.foto-colab-preview img{width:100%;height:100%;object-fit:contain;object-position:center top;display:block;border-radius:9px}
+.foto-colab-preview{width:72px;height:96px;border-radius:10px;border:3px solid var(--border2);background:var(--surface2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--text3);overflow:hidden}
+.foto-colab-preview img{width:100%;height:100%;object-fit:cover;display:block;border-radius:7px}
 .foto-colab-info{flex:1}
 .foto-colab-actions{display:flex;flex-direction:column;gap:6px;margin-top:4px}
 .btn-foto{padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;border:1.5px solid var(--border2);background:var(--surface2);color:var(--text2);font-family:inherit;white-space:nowrap}
 .btn-foto:hover{border-color:var(--accent);color:var(--accent)}
 .btn-foto.uploading{opacity:.6;pointer-events:none}
 .foto-ver-ficha{width:130px;height:160px;border-radius:12px;border:3px solid var(--border2);background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:40px;color:var(--text3);overflow:hidden;margin:0 auto 12px}
-.foto-ver-ficha img{width:130px;height:160px;object-fit:contain;object-position:center top;display:block}
+.foto-ver-ficha img{width:130px;height:160px;object-fit:cover;display:block}
 
 /* BUTTONS */
 .btn{padding:7px 14px;border:1px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;background:var(--surface);color:var(--text);cursor:pointer;font-weight:500;transition:background .15s;white-space:nowrap;font-family:inherit;display:inline-flex;align-items:center;gap:6px}
@@ -309,7 +309,14 @@ tbody tr:hover td{background:var(--bg)}
 }
 
 
+/* MODAL CROP FOTO */
+#modal-crop-foto .modal-box{max-width:500px;width:95vw}
+.crop-container{position:relative;width:100%;height:360px;background:#111;border-radius:8px;overflow:hidden}
+.crop-container img{display:block;max-width:100%}
+.crop-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.crop-hint{font-size:12px;color:var(--text3);margin-top:8px;text-align:center}
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
 </head>
 <body>
 
@@ -2250,7 +2257,98 @@ tbody tr:hover td{background:var(--bg)}
   <div class="modal">
     <div class="modal-header"><h3 id="ver-colab-nome">—</h3><button class="modal-close" onclick="fecharModal('modal-ver-colab')">✕</button></div>
     <div class="modal-body" id="ver-colab-body"></div>
-    <div class="modal-footer"><button class="btn" onclick="fecharModal('modal-ver-colab')">Fechar</button><button class="btn" id="btn-docs-ficha">📁 Documentos</button><button class="btn btn-primary" id="btn-promover-ficha" onclick="">📈 Registrar Progressão</button></div>
+    <div class="modal-footer"><button class="btn" onclick="fecharModal('modal-ver-colab')">Fechar</button><button class="btn" id="btn-docs-ficha">📁 Documentos</button><button class="btn" id="btn-readmitir-ficha" style="display:none;background:#166534;color:#fff;border-color:#166534">🔄 Readmitir</button><button class="btn btn-primary" id="btn-promover-ficha" onclick="">📈 Registrar Progressão</button></div>
+  </div>
+</div>
+
+<!-- Modal Crop Foto -->
+<div class="modal-overlay hidden" id="modal-crop-foto">
+  <div class="modal-box" style="max-width:500px">
+    <div class="modal-header">
+      <span class="modal-title">✂️ Enquadrar foto</span>
+      <button class="modal-close" onclick="cancelarCropFoto()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px;text-align:center">
+        Arraste e redimensione para enquadrar o rosto. Proporção <strong>3×4</strong> (padrão HIKVISION e crachás).
+      </div>
+      <div class="crop-container" id="crop-container">
+        <img id="crop-img" src="" alt="Foto para recorte">
+      </div>
+      <div class="crop-hint">Use a roda do mouse ou os dedos para dar zoom · Arraste para reposicionar</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="cancelarCropFoto()">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarCropFoto()">✅ Confirmar recorte</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Readmissão -->
+<div class="modal-overlay hidden" id="modal-readmissao">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <h3>🔄 Readmissão de Colaborador</h3>
+      <button class="modal-close" onclick="fecharModal('modal-readmissao')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#dcfce7;border:1px solid #86efac;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#166534">
+        <strong>📋 O que será preservado:</strong> documentos, atestados, advertências, histórico de cargo e foto.<br>
+        <strong>🔄 O que será renovado:</strong> data de admissão, cargo, salário, ASO e dados bancários. O histórico de férias anterior é zerado para o novo período aquisitivo.
+      </div>
+      <div id="readmissao-nome-colab" style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px;padding:10px 14px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)"></div>
+      <div class="form-grid">
+        <div class="form-section">💼 Novos Dados de Admissão</div>
+        <div class="form-group"><label>Data de Admissão *</label><input type="date" id="readm-admissao"></div>
+        <div class="form-group"><label>Tipo de Contrato</label>
+          <select id="readm-contrato"><option>CLT</option><option>Temporário</option><option>Estágio</option><option>PJ</option><option>Aprendiz</option></select>
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Cargo *</label>
+          <select id="readm-cargo-base" onchange="onReadmCargoBaseChange()">
+            <option value="">Selecione o cargo...</option>
+          </select>
+        </div>
+        <div class="form-group" id="readm-cargo-nivel-wrap" style="display:none"><label>Nível</label>
+          <select id="readm-cargo-nivel" onchange="montarReadmCargoFinal()">
+            <option value="">Sem nível</option>
+          </select>
+          <div id="readm-cargo-nivel-sal" style="font-size:11px;color:var(--accent);margin-top:4px"></div>
+        </div>
+        <input type="hidden" id="readm-cargo">
+        <div class="form-group"><label>Setor</label>
+          <select id="readm-setor"><option>Administração</option><option>Comercial</option><option>Compras</option><option>Empacotamento</option><option>Engenharia</option><option>Expedição</option><option>Financeiro</option><option>Logística</option><option>Manutenção</option><option>Produção</option><option>RH</option><option>Serviços Gerais</option><option>TI</option><option>Outro</option></select>
+        </div>
+        <div class="form-group"><label>Turno</label>
+          <select id="readm-turno"><option>Diurno</option><option>Noturno</option><option>Misto</option><option>Administrativo</option></select>
+        </div>
+        <div class="form-group"><label>Salário (R$) *</label><input type="number" id="readm-salario" placeholder="0,00" step="0.01" min="0"></div>
+        <div class="form-group"><label>ASO — Vencimento</label><input type="date" id="readm-aso"></div>
+        <div class="form-section">🏦 Dados Bancários (opcional — deixe em branco para manter)</div>
+        <div class="form-group"><label>Banco</label><input type="text" id="readm-banco" placeholder="Manter atual"></div>
+        <div class="form-group"><label>Agência</label><input type="text" id="readm-agencia" placeholder="Manter atual"></div>
+        <div class="form-group"><label>Conta</label><input type="text" id="readm-conta" placeholder="Manter atual"></div>
+        <div class="form-group"><label>Tipo de Conta</label>
+          <select id="readm-tipo-conta"><option value="">Manter atual</option><option>Corrente</option><option>Poupança</option><option>Salário</option></select>
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Chave PIX</label>
+          <select id="readm-pix-tipo" onchange="trocarTipoChavePix('readm-pix-tipo','readm-pix')" style="width:100%;margin-bottom:6px">
+            <option value="">Manter atual / selecione para alterar</option>
+            <option value="cpf">CPF</option><option value="celular">Celular</option><option value="email">E-mail</option><option value="cnpj">CNPJ</option><option value="aleatoria">Chave Aleatória</option>
+          </select>
+          <input type="text" id="readm-pix" placeholder="Deixe em branco para manter a chave atual" style="width:100%">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Observação</label>
+          <textarea id="readm-obs" rows="2" placeholder="Ex: Retorno após licença, novo contrato, etc."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="fecharModal('modal-readmissao')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarReadmissao()" style="background:#166534;border-color:#166534">🔄 Confirmar Readmissão</button>
+    </div>
   </div>
 </div>
 
@@ -2283,7 +2381,7 @@ tbody tr:hover td{background:var(--bg)}
 
 <div class="toast" id="toast"></div>
 <div id="wms-tooltip"></div>
-<div id="app-version">Rev 2.6</div>
+<div id="app-version">Versão 3.0.0</div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
@@ -2869,24 +2967,77 @@ function carregarFotoExistente(fotoId,fotoUrl){
   document.getElementById('f-foto-url').value=fotoUrl||'';
 }
 
+// Instância global do Cropper
+var _cropperInstance=null;
+var _cropMimeType='image/jpeg';
+
 function onFotoColabChange(event){
   var file=event.target.files[0];
   if(!file)return;
-  if(file.size>5*1024*1024){notify('Foto muito grande. Máximo 5MB.','error');return;}
+  if(file.size>10*1024*1024){notify('Foto muito grande. Máximo 10MB.','error');return;}
   if(!file.type.startsWith('image/')){notify('Selecione uma imagem (JPG ou PNG).','error');return;}
-  var fn=document.getElementById('f-foto-nome-arquivo');
-  if(fn)fn.textContent=file.name+' ('+Math.round(file.size/1024)+'KB) — será salva ao clicar em Salvar';
+  _cropMimeType=file.type||'image/jpeg';
   var reader=new FileReader();
   reader.onload=function(e){
-    var prev=document.getElementById('f-foto-preview');
-    if(prev)prev.innerHTML='<img src="'+e.target.result+'" alt="Foto">';
-    // Guarda base64 temporário em dataset para usar no salvar
-    document.getElementById('f-foto-input').dataset.base64=e.target.result.split(',')[1];
-    document.getElementById('f-foto-input').dataset.mimeType=file.type;
+    abrirCropFoto(e.target.result);
   };
   reader.readAsDataURL(file);
+  // Limpa o input para permitir selecionar o mesmo arquivo novamente
+  event.target.value='';
+}
+
+function abrirCropFoto(dataUrl){
+  var img=document.getElementById('crop-img');
+  img.src=dataUrl;
+  abrirModal('modal-crop-foto');
+  // Destrói instância anterior se existir
+  if(_cropperInstance){_cropperInstance.destroy();_cropperInstance=null;}
+  // Aguarda imagem carregar antes de iniciar o Cropper
+  img.onload=function(){
+    _cropperInstance=new Cropper(img,{
+      aspectRatio:3/4,
+      viewMode:1,
+      dragMode:'move',
+      autoCropArea:0.85,
+      restore:false,
+      guides:true,
+      center:true,
+      highlight:false,
+      cropBoxMovable:true,
+      cropBoxResizable:true,
+      toggleDragModeOnDblclick:false,
+      background:true,
+    });
+  };
+  // Se já carregou (cache), dispara manualmente
+  if(img.complete&&img.naturalWidth>0)img.onload();
+}
+
+function confirmarCropFoto(){
+  if(!_cropperInstance){fecharModal('modal-crop-foto');return;}
+  // Gera canvas recortado — máx 600×800px (3×4 a 200dpi crachá), JPEG 90%
+  var canvas=_cropperInstance.getCroppedCanvas({width:600,height:800,imageSmoothingEnabled:true,imageSmoothingQuality:'high'});
+  var mime=_cropMimeType==='image/png'?'image/png':'image/jpeg';
+  var quality=mime==='image/png'?undefined:0.90;
+  var dataUrl=canvas.toDataURL(mime,quality);
+  // Atualiza preview no formulário
+  var prev=document.getElementById('f-foto-preview');
+  if(prev)prev.innerHTML='<img src="'+dataUrl+'" alt="Foto">';
+  // Guarda base64 para upload
+  var inp=document.getElementById('f-foto-input');
+  if(inp){inp.dataset.base64=dataUrl.split(',')[1];inp.dataset.mimeType=mime;}
+  var fn=document.getElementById('f-foto-nome-arquivo');
+  if(fn)fn.textContent='Foto enquadrada ('+Math.round(dataUrl.length*0.75/1024)+'KB) — será salva ao clicar em Salvar';
   var rem=document.getElementById('btn-foto-remover');
   if(rem)rem.style.display='';
+  // Fecha modal crop
+  _cropperInstance.destroy();_cropperInstance=null;
+  fecharModal('modal-crop-foto');
+}
+
+function cancelarCropFoto(){
+  if(_cropperInstance){_cropperInstance.destroy();_cropperInstance=null;}
+  fecharModal('modal-crop-foto');
 }
 
 function removerFotoColab(){
@@ -3015,6 +3166,16 @@ function verColab(id){
   </div>`;
   document.getElementById('btn-promover-ficha').onclick=()=>{fecharModal('modal-ver-colab');abrirModalProgressao(id);};
   document.getElementById('btn-docs-ficha').onclick=()=>{fecharModal('modal-ver-colab');abrirDocsColab(id);};
+  // Botão Readmitir: visível apenas para colaboradores Desligados
+  const btnReadmitir=document.getElementById('btn-readmitir-ficha');
+  if(btnReadmitir){
+    if(c.status==='Desligado'){
+      btnReadmitir.style.display='';
+      btnReadmitir.onclick=()=>{fecharModal('modal-ver-colab');abrirModalReadmissao(id);};
+    } else {
+      btnReadmitir.style.display='none';
+    }
+  }
   abrirModal('modal-ver-colab');
 }
 function row2(l,v){return`<div class="form-group"><label>${l}</label><div style="padding:7px 10px;background:var(--surface2);border-radius:var(--radius-sm);font-size:13px;border:1px solid var(--border)">${v||'—'}</div></div>`;}
@@ -3773,6 +3934,144 @@ function imprimirChecklist(){
   const w=window.open('','_blank');
   w.document.write('<html><head><title>Checklist Desligamento</title><style>body{font-family:Arial,sans-serif;padding:40px;max-width:600px;margin:auto;font-size:13px}.logo{text-align:center;margin-bottom:16px}.logo img{height:50px;width:auto}@media print{button{display:none}}<\/style></head><body><div class="logo"><img src="'+logo+'" alt="'+empresa+'"></div><h2>Checklist de Desligamento</h2>'+el.innerHTML+'<button onclick="window.print()" style="margin-top:30px;padding:10px 30px;background:#1a5c38;color:#fff;border:none;border-radius:6px;cursor:pointer">🖨️ Imprimir</button></body></html>');
 }
+// ══════════════════════════════════════════
+// READMISSÃO
+// ══════════════════════════════════════════
+function abrirModalReadmissao(colabId){
+  const c=DB.colaboradores.find(x=>x.id==colabId);
+  if(!c){notify('Colaborador não encontrado','error');return;}
+  if(c.status!=='Desligado'){notify('Colaborador não está desligado.','warn');return;}
+  // Guarda id no modal
+  document.getElementById('modal-readmissao').dataset.colabId=colabId;
+  // Nome
+  document.getElementById('readmissao-nome-colab').textContent='👤 '+c.nome+(c.cargo?' — '+c.cargo:'');
+  // Pré-preenche com dados anteriores
+  document.getElementById('readm-admissao').value=hoje();
+  document.getElementById('readm-contrato').value=c.contrato||'CLT';
+  document.getElementById('readm-setor').value=c.setor||'Administração';
+  document.getElementById('readm-turno').value=c.turno||'Diurno';
+  document.getElementById('readm-salario').value=c.salario||'';
+  document.getElementById('readm-aso').value='';
+  document.getElementById('readm-banco').value='';
+  document.getElementById('readm-agencia').value='';
+  document.getElementById('readm-conta').value='';
+  document.getElementById('readm-tipo-conta').value='';
+  document.getElementById('readm-pix-tipo').value='';
+  document.getElementById('readm-pix').value='';
+  document.getElementById('readm-obs').value='';
+  // Popula cargos
+  const sel=document.getElementById('readm-cargo-base');
+  sel.innerHTML='<option value="">Selecione o cargo...</option>'+
+    DB.cargos.slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'))
+    .map(cg=>`<option value="${cg.id}">${cg.nome}</option>`).join('');
+  document.getElementById('readm-cargo').value='';
+  document.getElementById('readm-cargo-nivel-wrap').style.display='none';
+  document.getElementById('readm-cargo-nivel').innerHTML='<option value="">Sem nível</option>';
+  document.getElementById('readm-cargo-nivel-sal').textContent='';
+  // Tenta pré-selecionar cargo anterior
+  if(c.cargo){
+    const cgAnterior=DB.cargos.find(cg=>cg.nome===c.cargo||(c.cargo.startsWith(cg.nome)));
+    if(cgAnterior){sel.value=cgAnterior.id;onReadmCargoBaseChange();}
+    else{document.getElementById('readm-cargo').value=c.cargo;}
+  }
+  abrirModal('modal-readmissao');
+}
+
+function onReadmCargoBaseChange(){
+  const cargoId=document.getElementById('readm-cargo-base').value;
+  const cargo=DB.cargos.find(c=>c.id==cargoId);
+  const wrap=document.getElementById('readm-cargo-nivel-wrap');
+  const selNivel=document.getElementById('readm-cargo-nivel');
+  selNivel.innerHTML='<option value="">Sem nível</option>';
+  document.getElementById('readm-cargo-nivel-sal').textContent='';
+  if(!cargo){wrap.style.display='none';document.getElementById('readm-cargo').value='';return;}
+  const nivelMax=parseInt(cargo.nivel);
+  const nivelMaxOk=isNaN(nivelMax)?0:nivelMax;
+  if(nivelMaxOk>0){
+    wrap.style.display='block';
+    for(var n=0;n<=nivelMaxOk;n++){
+      const sal=parseFloat(cargo.salBase||0)*Math.pow(1.05,n);
+      const opt=document.createElement('option');
+      opt.value=n;opt.textContent='Nível '+n+(sal?' — '+fmtMoeda(sal):'');
+      opt.dataset.sal=sal.toFixed(2);selNivel.appendChild(opt);
+    }
+  } else {wrap.style.display='none';}
+  montarReadmCargoFinal();
+}
+
+function montarReadmCargoFinal(){
+  const cargoId=document.getElementById('readm-cargo-base').value;
+  const cargo=DB.cargos.find(c=>c.id==cargoId);
+  if(!cargo){document.getElementById('readm-cargo').value='';return;}
+  const nivel=document.getElementById('readm-cargo-nivel').value;
+  const nome=nivel&&nivel!==''?cargo.nome+' N'+nivel:cargo.nome;
+  document.getElementById('readm-cargo').value=nome;
+  const selNivel=document.getElementById('readm-cargo-nivel');
+  const optSel=selNivel.options[selNivel.selectedIndex];
+  if(optSel&&optSel.dataset.sal){
+    const s=parseFloat(optSel.dataset.sal);
+    if(s){document.getElementById('readm-salario').value=s.toFixed(2);document.getElementById('readm-cargo-nivel-sal').textContent='Salário sugerido: '+fmtMoeda(s);}
+  }
+}
+
+function confirmarReadmissao(){
+  const colabId=document.getElementById('modal-readmissao').dataset.colabId;
+  const c=DB.colaboradores.find(x=>x.id==colabId);
+  if(!c){notify('Colaborador não encontrado','error');return;}
+  const novaAdmissao=document.getElementById('readm-admissao').value;
+  const novoCargo=document.getElementById('readm-cargo').value.trim()||c.cargo;
+  const novoSalario=parseFloat(document.getElementById('readm-salario').value)||c.salario;
+  if(!novaAdmissao){notify('Informe a nova data de admissão','error');return;}
+  if(!novoCargo){notify('Selecione o cargo','error');return;}
+  if(!confirm('Confirmar readmissão de '+c.nome+'?\n\nO histórico de férias anterior será zerado para iniciar novo período aquisitivo.\nDocumentos, atestados, advertências e histórico de cargo serão preservados.'))return;
+
+  const idx=DB.colaboradores.findIndex(x=>x.id==colabId);
+
+  // Campos bancários: usa novo se preenchido, mantém o atual
+  const novoBanco=document.getElementById('readm-banco').value.trim()||c.banco;
+  const novaAgencia=document.getElementById('readm-agencia').value.trim()||c.agencia;
+  const novaConta=document.getElementById('readm-conta').value.trim()||c.conta;
+  const novoTipoConta=document.getElementById('readm-tipo-conta').value||c.tipoConta;
+  const novoPixTipo=document.getElementById('readm-pix-tipo').value;
+  const novoPix=document.getElementById('readm-pix').value.trim();
+  const pixFinal=novoPix?preservarChavePix(novoPix):c.pix;
+
+  // Atualiza colaborador
+  DB.colaboradores[idx]=Object.assign({},c,{
+    status:'Ativo',
+    admissao:novaAdmissao,
+    cargo:novoCargo,
+    setor:document.getElementById('readm-setor').value||c.setor,
+    turno:document.getElementById('readm-turno').value||c.turno,
+    contrato:document.getElementById('readm-contrato').value||c.contrato,
+    salario:novoSalario,
+    aso:document.getElementById('readm-aso').value||'',
+    banco:novoBanco,agencia:novaAgencia,conta:novaConta,tipoConta:novoTipoConta,pix:pixFinal
+  });
+
+  // Zera férias do período anterior (remove registros de férias deste colaborador)
+  DB.ferias_gozo=DB.ferias_gozo.filter(f=>f.colaboradorId!=colabId);
+
+  // Registra no histórico de cargo como "Readmissão"
+  const histObj={
+    id:gerarId(),colaboradorId:colabId,
+    cargoAnterior:'[Desligado]',salarioAnterior:c.salario,
+    cargoNovo:novoCargo,salarioNovo:novoSalario,
+    data:novaAdmissao,motivo:'Readmissão',
+    obs:document.getElementById('readm-obs').value.trim()||'',
+    registradoEm:hoje()
+  };
+  DB.historico_cargo.push(histObj);
+
+  salvarDB();
+  fecharModal('modal-readmissao');
+  renderColabs();
+  if(document.getElementById('page-desligamentos').classList.contains('active'))renderDesligamentos();
+  notify('✅ '+c.nome+' readmitido(a) com sucesso! Férias zeradas para novo período aquisitivo.');
+  sincronizarScript('editarColaborador',DB.colaboradores[idx]);
+  sincronizarScript('inserirHistoricoCargo',histObj);
+}
+
 function renderDesligamentos(){
   const emp=document.getElementById('filtro-empresa-desl')?.value||'';
   let lista=DB.desligamentos;
@@ -3782,7 +4081,7 @@ function renderDesligamentos(){
     <td data-label="Cargo">${d.cargo||'—'}</td>
     <td data-label="Setor">${d.setor||'—'}</td>
     <td data-label="Data">${fmtData(d.data)}</td>
-    <td data-label="Ações"><button class="btn btn-sm" data-tip="Ver histórico" onclick="verColab('${d.colaboradorId}')">👁 Ver ficha</button></td>
+    <td data-label="Ações" style="display:flex;gap:4px"><button class="btn btn-sm" data-tip="Ver histórico" onclick="verColab('${d.colaboradorId}')">👁 Ver ficha</button><button class="btn btn-sm" style="background:#166534;color:#fff;border-color:#166534" onclick="abrirModalReadmissao('${d.colaboradorId}')">🔄 Readmitir</button></td>
   </tr>`).join(''):'<tr><td colspan="5" class="empty">Nenhum registro.</td></tr>';
 }
 
@@ -10312,5 +10611,6 @@ function compartilharCalendarioWpp(){
   <button class="bnav-btn" onclick="showPage('calendario',this)" data-page="calendario"><span>📅</span>Agenda</button>
   <button class="bnav-btn" onclick="showPage('config',this)" data-page="config"><span>⚙️</span>Config</button>
 </nav>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 </body>
 </html>
