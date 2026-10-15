@@ -2381,7 +2381,7 @@ tbody tr:hover td{background:var(--bg)}
 
 <div class="toast" id="toast"></div>
 <div id="wms-tooltip"></div>
-<div id="app-version">Versão 3.0.0</div>
+<div id="app-version">Versão 3.0.1</div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
@@ -3169,7 +3169,8 @@ function verColab(id){
   // Botão Readmitir: visível apenas para colaboradores Desligados
   const btnReadmitir=document.getElementById('btn-readmitir-ficha');
   if(btnReadmitir){
-    if(c.status==='Desligado'){
+    const statusNorm=String(c.status||'').trim().toLowerCase();
+    if(statusNorm==='desligado'){
       btnReadmitir.style.display='';
       btnReadmitir.onclick=()=>{fecharModal('modal-ver-colab');abrirModalReadmissao(id);};
     } else {
@@ -3940,7 +3941,7 @@ function imprimirChecklist(){
 function abrirModalReadmissao(colabId){
   const c=DB.colaboradores.find(x=>x.id==colabId);
   if(!c){notify('Colaborador não encontrado','error');return;}
-  if(c.status!=='Desligado'){notify('Colaborador não está desligado.','warn');return;}
+  if(String(c.status||'').trim().toLowerCase()!=='desligado'){notify('Colaborador não está desligado.','warn');return;}
   // Guarda id no modal
   document.getElementById('modal-readmissao').dataset.colabId=colabId;
   // Nome
