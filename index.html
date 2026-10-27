@@ -493,8 +493,8 @@ tbody tr:hover td{background:var(--bg)}
   <button class="nav-btn" onclick="showPage('desligamentos',this)"><span class="nav-icon">📋</span>Desligamentos</button>
   <button class="nav-btn" onclick="showPage('documentos',this)"><span class="nav-icon">📁</span>Documentos</button>
   <button class="nav-btn" onclick="showPage('talentos',this)"><span class="nav-icon">🎯</span>Banco de Talentos</button>
-  <button class="nav-btn" onclick="showPage('pagamentos',this)"><span class="nav-icon">💰</span>Pagamentos</button>
-  <button class="nav-btn" onclick="showPage('pix',this)"><span class="nav-icon">💸</span>Pagamentos PIX</button>
+  <button class="nav-btn" onclick="showPage('pagamentos',this)"><span class="nav-icon">💰</span>Folha & Vales</button>
+  <button class="nav-btn" onclick="showPage('pix',this)"><span class="nav-icon">💸</span>Solicitações PIX</button>
   <button class="nav-btn" onclick="showPage('calendario',this)"><span class="nav-icon">📅</span>Calendário</button>
   <button class="nav-btn" onclick="showPage('config',this)"><span class="nav-icon">⚙️</span>Configurações</button>
 </nav>
@@ -1071,7 +1071,7 @@ tbody tr:hover td{background:var(--bg)}
 
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
     <div>
-      <div style="font-size:20px;font-weight:800;color:var(--text);letter-spacing:-.3px">💰 Pagamentos</div>
+      <div style="font-size:20px;font-weight:800;color:var(--text);letter-spacing:-.3px">💰 Folha & Vales</div>
       <div style="font-size:12px;color:var(--text3);margin-top:2px">Registro de vales e geração de arquivos bancários</div>
     </div>
   </div>
@@ -1327,7 +1327,8 @@ tbody tr:hover td{background:var(--bg)}
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <select id="cal-ano" onchange="renderCalendario()" style="font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface)"></select>
         <button class="btn btn-primary" onclick="abrirModalEvento()">＋ Evento</button>
-        <button class="btn" onclick="gerarPDFCalendario()" style="background:#b91c1c;color:#fff;border-color:#b91c1c">📄 Gerar PDF</button>
+        <button class="btn" onclick="gerarPDFCalendario()" style="background:#b91c1c;color:#fff;border-color:#b91c1c">📄 PDF Anual</button>
+        <button class="btn" onclick="gerarPDFMensal()" style="background:#7c3aed;color:#fff;border-color:#7c3aed">📅 PDF Mensal</button>
         <button class="btn" onclick="compartilharCalendarioWpp()" style="background:#25D366;color:#fff;border-color:#25D366">📱 WhatsApp</button>
       </div>
     </div>
@@ -1556,8 +1557,8 @@ tbody tr:hover td{background:var(--bg)}
 <!-- ═══ PAGAMENTOS PIX ══════════════════════════════════ -->
 <div class="page" id="page-pix">
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px">
-    <div style="font-size:13px;font-weight:600;color:var(--text2)">Pagamentos PIX</div>
-    <button class="btn btn-primary" onclick="abrirModalPix()">＋ Novo Pagamento</button>
+    <div style="font-size:13px;font-weight:600;color:var(--text2)">💸 Solicitações PIX</div>
+    <button class="btn btn-primary" onclick="abrirModalPix()">＋ Nova Solicitação</button>
   </div>
   <div class="summary-grid">
     <div class="stat-card warn"><div class="stat-label">Solicitados</div><div class="stat-value" id="pix-kpi-pendente">—</div></div>
@@ -2381,7 +2382,7 @@ tbody tr:hover td{background:var(--bg)}
 
 <div class="toast" id="toast"></div>
 <div id="wms-tooltip"></div>
-<div id="app-version">Versão 3.0.1</div>
+<div id="app-version">Versão 3.4.1</div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
@@ -8385,6 +8386,45 @@ function carregarPDFDia30(input){
   }
 }
 
+// ── SERVIDORES (Alta Administração) ─────────────────────────────────────────
+// Para estes colaboradores o valor do Dia 30 é calculado diretamente pelo
+// cadastro (salário − 40% já pago − vales do mês), ignorando o contracheque.
+var SERVIDORES_NOMES=[
+  'CAROLINA GOMES NEVES DA MATA',
+  'CESAR ALEXANDRE ARAO GOMES SILVA',
+  'MURILO ARAO GOMES DA MATA',
+  'RODRIGO ARAO GOMES DA MATA',
+  'IGOR ARAO GOMES'
+];
+
+function isServidor(nomeOuColab){
+  var nome=typeof nomeOuColab==='string'
+    ? removerAcentos(nomeOuColab).toUpperCase().trim()
+    : removerAcentos((nomeOuColab&&nomeOuColab.nome)||'').toUpperCase().trim();
+  return SERVIDORES_NOMES.some(function(s){
+    // Basta os 3 primeiros tokens baterem (cobre abreviações no PDF)
+    var tokensS=s.split(/\s+/).slice(0,3).join(' ');
+    var tokensN=nome.split(/\s+/).slice(0,3).join(' ');
+    return tokensN===tokensS;
+  });
+}
+
+function calcularValorServidor(colab,mesRef){
+  // mesRef: 'YYYY-MM' — se omitido usa mês atual
+  var salario=parseFloat(String(colab.salario||'').replace(',','.'))||0;
+  var adiant40=Math.round(salario*0.40*100)/100;
+  var mes=mesRef||hoje().substring(0,7);
+  var vales=(DB.vales||[])
+    .filter(function(v){
+      return String(v.colaboradorId)==String(colab.id)
+        &&String(v.data||'').substring(0,7)===mes;
+    })
+    .reduce(function(s,v){return s+(parseFloat(v.valor)||0);},0);
+  var resultado=Math.max(0,Math.round((salario-adiant40-vales)*100)/100);
+  return resultado;
+}
+// ── fim SERVIDORES ───────────────────────────────────────────────────────────
+
 function extrairDadosDia30(paginas){
   var status=document.getElementById('dia30-status');
   var empresa=document.getElementById('dia30-empresa').value;
@@ -8413,6 +8453,11 @@ function extrairDadosDia30(paginas){
     // EXCLUI desligados e afastados — definitivo
     if(colab&&colabExcluido(colab))return;
 
+    // SERVIDORES: ignora o líquido do contracheque — usa salário cadastrado
+    if(colab&&isServidor(colab)){
+      liquido=calcularValorServidor(colab);
+    }
+
     var pc=parseConta(colab?colab.conta:'');
     _dia30Dados.push({
       nome:nome,
@@ -8424,7 +8469,8 @@ function extrairDadosDia30(paginas){
       valor:liquido,
       semBanco:!colab||!(colab.agencia||colab.conta),
       semCPF:!colab||!colab.cpf,
-      _nomeCadastro:colab?colab.nome:''
+      _nomeCadastro:colab?colab.nome:'',
+      _servidor:!!(colab&&isServidor(colab))
     });
   });
 
@@ -8500,7 +8546,7 @@ function renderPreviewDia30(empresa,finalidade){
     +'</tr></thead><tbody>';
 
   _dia30Dados.forEach(function(r,i){
-    var bg=r.semBanco?'#fef9c3':(i%2?'#f9fafb':'#ffffff');
+    var bg=r.semBanco?'#fef9c3':r._servidor?'#f0fdf4':(i%2?'#f9fafb':'#ffffff');
     var valorCell=r.semBanco
       ?'<td style="padding:5px 8px;text-align:right;color:#92400e">sem banco</td>'
       :'<td style="padding:3px 6px;text-align:right">'
@@ -8512,8 +8558,9 @@ function renderPreviewDia30(empresa,finalidade){
         +' style="width:80px;text-align:right;border:1px solid #d1fae5;border-radius:4px;padding:3px 6px;font-size:11px;font-weight:700;color:#1a5c38;background:transparent;font-family:inherit">'
         +'</td>';
 
+    var nomeCell=r.nome+(r._servidor?' <span style="font-size:9px;background:#166534;color:#fff;border-radius:3px;padding:1px 4px;font-weight:700">SERVIDOR</span>':'');
     html+='<tr style="background:'+bg+'">'
-      +'<td style="padding:5px 8px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.nome+'</td>'
+      +'<td style="padding:5px 8px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+nomeCell+'</td>'
       +'<td style="padding:5px 8px">'+(r.cpf||'⚠')+'</td>'
       +'<td style="padding:5px 8px">'+(r.agencia||'⚠')+'</td>'
       +'<td style="padding:5px 8px">'+(r.conta||'⚠')+'</td>'
@@ -9279,6 +9326,12 @@ function carregarXLSDia30(input){
           // EXCLUI desligados e afastados — definitivo
           if(colab&&colabExcluido(colab))return null;
 
+          // SERVIDORES: ignora o líquido do contracheque — usa salário cadastrado
+          var valorFinal=r.valor;
+          if(colab&&isServidor(colab)){
+            valorFinal=calcularValorServidor(colab);
+          }
+
           var pc=parseConta(colab?colab.conta:'');
           return{
             nome:r.nome,
@@ -9287,10 +9340,11 @@ function carregarXLSDia30(input){
             conta:pc.conta,
             digito:pc.digito,
             finalidade:finalidade,
-            valor:r.valor,
+            valor:valorFinal,
             semBanco:!colab||!(colab.agencia||colab.conta),
             semCPF:!colab||!colab.cpf,
-            _nomeCadastro:colab?colab.nome:''
+            _nomeCadastro:colab?colab.nome:'',
+            _servidor:!!(colab&&isServidor(colab))
           };
         }).filter(Boolean);
 
@@ -10500,73 +10554,395 @@ function excluirEvento(){
 function gerarPDFCalendario(){
   var ano=_calAnoAtual;
   var eventos=getEventosCalendario(ano);
+  var cfgPag=getConfigPagamentos(ano);
   var NM=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  var DS=['D','S','T','Q','Q','S','S'];
+  var NM_ABREV=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  var DS_FULL=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  var DS=['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
+  var DS1=['D','S','T','Q','Q','S','S'];
 
-  function miniMesPDF(m){
+  // ── Mapa de pagamentos por data ────────────────────────────────────────
+  var mapPag={};
+  for(var mi=0;mi<12;mi++){
+    var cp=cfgPag[mi];
+    var autoD15=anteciparParaDiaUtil(new Date(ano,mi,15));
+    var autoD30=anteciparParaDiaUtil(new Date(ano,mi+1,0));
+    var dt15=cp.data15||fmtDateKey(autoD15);
+    var dt30=cp.data30||fmtDateKey(autoD30);
+    if(cp.ativo15!==false){if(!mapPag[dt15])mapPag[dt15]=[];mapPag[dt15].push({tipo:'adiantamento'});}
+    if(cp.ativo30!==false){if(!mapPag[dt30])mapPag[dt30]=[];mapPag[dt30].push({tipo:'folha'});}
+  }
+
+  // ── Eventos relevantes por data (sem aniversariantes no anual) ────────
+  var listaEvts=[],vistos={};
+  for(var m=0;m<12;m++){
+    var tot=new Date(ano,m+1,0).getDate();
+    for(var d=1;d<=tot;d++){
+      getEventosDia(ano,m,d,eventos).forEach(function(e){
+        if(e.operacional||e.tipo==='aniversariantes')return;
+        var k=e.id+'_'+m+'_'+d;
+        if(!vistos[k]){vistos[k]=true;listaEvts.push({mes:m,dia:d,evt:e});}
+      });
+    }
+  }
+
+  // ── Pagamentos como lista ordenada ────────────────────────────────────
+  var listaPag=[];
+  Object.keys(mapPag).sort().forEach(function(dt){
+    var parts=dt.split('-');
+    var mi2=parseInt(parts[1])-1,di=parseInt(parts[2]);
+    mapPag[dt].forEach(function(p){listaPag.push({mes:mi2,dia:di,tipo:p.tipo,dt:dt});});
+  });
+
+  // ── Renderiza um bloco de mês para o grid anual ────────────────────────
+  function blocoMes(m){
     var prim=new Date(ano,m,1).getDay(),total=new Date(ano,m+1,0).getDate();
+    var hdrCells=DS.map(function(x,i){
+      var c=i===0?'#e53e3e':i===6?'#c05621':'#4a5568';
+      return'<th style="font-size:6.5px;font-weight:700;color:'+c+';text-align:center;padding:2px 0;letter-spacing:.3px;border-bottom:1px solid #e8e8e8">'+x+'</th>';
+    }).join('');
     var rows='',d=1-prim;
     while(d<=total){
       var cells='';
       for(var dw=0;dw<7;dw++,d++){
         if(d<1||d>total){cells+='<td></td>';continue;}
-        var ev=getEventosDia(ano,m,d,eventos);
-        var fim=dw===0||dw===6;
-        var bg=ev.length?CAL_TIPOS[ev[0].tipo].bg:fim?'#f8fafc':'transparent';
-        var cor=ev.length?CAL_TIPOS[ev[0].tipo].cor:fim?'#94a3b8':'#1a1a1a';
-        var tip=ev.map(function(e){return e.titulo;}).join(' | ');
-        cells+='<td title="'+tip+'" style="text-align:center;padding:3px 2px;background:'+bg+';border-radius:3px;font-weight:'+(ev.length?'900':'400')+';color:'+cor+';font-size:10px">'+d+'</td>';
+        var dtKey=String(ano)+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+        var evDia=getEventosDia(ano,m,d,eventos).filter(function(e){return!e.operacional&&e.tipo!=='aniversariantes';});
+        var pagDia=mapPag[dtKey]||[];
+        var isWeekend=dw===0||dw===6;
+        var isDom=dw===0;
+        // Determina estilo da célula
+        var bgC='transparent',corN=isDom?'#c53030':isWeekend?'#b7791f':'#2d3748',fwN='500',bordaEsq='',notch='';
+        if(evDia.length>0){
+          var tp0=CAL_TIPOS[evDia[0].tipo]||{bg:'#fef3c7',cor:'#92400e'};
+          bgC=tp0.bg; corN=tp0.cor; fwN='800';
+          notch='<span style="position:absolute;top:1px;right:1px;width:4px;height:4px;border-radius:50%;background:'+tp0.cor+';opacity:.7"></span>';
+        } else if(pagDia.length>0){
+          var haAdiant=pagDia.some(function(p){return p.tipo==='adiantamento';});
+          var haFolha=pagDia.some(function(p){return p.tipo==='folha';});
+          bgC=haAdiant?'#f0fff4':'#ebf8ff'; corN=haAdiant?'#276749':'#2b6cb0'; fwN='800';
+          bordaEsq='border-left:3px solid '+(haAdiant?'#38a169':'#3182ce')+';';
+          notch='<span style="position:absolute;bottom:2px;left:0;right:0;display:flex;justify-content:center;gap:1px">'
+            +(haAdiant?'<span style="width:3px;height:3px;border-radius:50%;background:#38a169;display:block"></span>':'')
+            +(haFolha?'<span style="width:3px;height:3px;border-radius:50%;background:#3182ce;display:block"></span>':'')
+            +'</span>';
+        } else if(isWeekend){
+          bgC='#fafafa';
+        }
+        var titles=[].concat(evDia.map(function(e){return e.titulo;}),pagDia.map(function(p){return p.tipo==='adiantamento'?'Adiantamento':'Folha';})).join(' | ');
+        cells+='<td title="'+titles+'" style="position:relative;text-align:center;padding:2.5px 0;background:'+bgC+';'+bordaEsq+'border-radius:3px;font-size:8px;font-weight:'+fwN+';color:'+corN+';line-height:1.2">'+d+notch+'</td>';
       }
       rows+='<tr>'+cells+'</tr>';
     }
-    return'<div style="break-inside:avoid">'
-      +'<div style="background:#1a5c38;color:#fff;text-align:center;padding:4px;font-weight:700;font-size:11px;border-radius:4px 4px 0 0">'+NM[m]+'</div>'
-      +'<table style="width:100%;border-collapse:collapse"><tr>'+DS.map(function(d){return'<th style="text-align:center;padding:2px;font-size:8px;color:#888">'+d+'</th>';}).join('')+'</tr>'+rows+'</table>'
+    // Cor de destaque do cabeçalho por trimestre
+    var qColors=['#1a5c38','#1a5c38','#1a5c38','#276749','#276749','#276749','#2f855a','#2f855a','#2f855a','#22543d','#22543d','#22543d'];
+    return '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07)">'
+      +'<div style="background:'+qColors[m]+';padding:5px 6px;display:flex;justify-content:space-between;align-items:center">'
+      +'<span style="font-size:10.5px;font-weight:800;color:#fff;letter-spacing:.5px;text-transform:uppercase">'+NM[m]+'</span>'
+      +'<span style="font-size:8px;color:rgba(255,255,255,.7);font-weight:600">'+ano+'</span>'
+      +'</div>'
+      +'<table style="width:100%;border-collapse:collapse;padding:2px"><thead><tr>'+hdrCells+'</tr></thead><tbody>'+rows+'</tbody></table>'
       +'</div>';
   }
 
-  // Lista eventos relevantes (sem operacionais e pagamentos)
-  var listaEvts=[],vistos={};
-  for(var m=0;m<12;m++){
-    var tot=new Date(ano,m+1,0).getDate();
-    for(var d=1;d<=tot;d++){
-      getEventosDia(ano,m,d,eventos).filter(function(e){return!e.operacional&&e.tipo!=='pagamento'&&e.tipo!=='aniversariantes';}).forEach(function(e){
-        var k=e.id+'_'+m;if(!vistos[k]){vistos[k]=true;listaEvts.push({mes:m,dia:d,evt:e});}
-      });
+  // ── Gera a agenda compacta (pagamentos + eventos lado a lado) ──────────
+  function agendaHTML(){
+    // Pagamentos — coluna esquerda
+    var colPag='<div style="flex:1;min-width:0">';
+    colPag+='<div style="font-size:8px;font-weight:800;color:#276749;text-transform:uppercase;letter-spacing:.6px;border-bottom:2px solid #276749;padding-bottom:3px;margin-bottom:5px">💰 Pagamentos de Salários</div>';
+    colPag+='<table style="width:100%;border-collapse:collapse;font-size:7.5px">';
+    colPag+='<thead><tr style="background:#f7fafc"><th style="padding:2px 5px;text-align:left;color:#4a5568;font-size:7px;font-weight:700">MÊS</th><th style="padding:2px 5px;text-align:center;color:#276749;font-size:7px;font-weight:700">ADIANT. (15)</th><th style="padding:2px 5px;text-align:center;color:#2b6cb0;font-size:7px;font-weight:700">FOLHA (FIM)</th></tr></thead><tbody>';
+    for(var mi3=0;mi3<12;mi3++){
+      var cp2=cfgPag[mi3];
+      var a15=anteciparParaDiaUtil(new Date(ano,mi3,15));
+      var a30=anteciparParaDiaUtil(new Date(ano,mi3+1,0));
+      var d15txt=String((cp2.data15?new Date(cp2.data15+'T12:00:00'):a15).getDate()).padStart(2,'0')+'/'+String(mi3+1).padStart(2,'0');
+      var d30txt=String((cp2.data30?new Date(cp2.data30+'T12:00:00'):a30).getDate()).padStart(2,'0')+'/'+String(mi3+1).padStart(2,'0');
+      var bgR=mi3%2===0?'#fff':'#f7fafc';
+      colPag+='<tr style="background:'+bgR+';border-bottom:1px solid #edf2f7">';
+      colPag+='<td style="padding:2px 5px;font-weight:700;color:#2d3748;font-size:7.5px">'+NM_ABREV[mi3]+'</td>';
+      colPag+=(cp2.ativo15!==false?'<td style="text-align:center;font-weight:700;color:#276749;padding:2px 5px">'+d15txt+'</td>':'<td style="text-align:center;color:#a0aec0;padding:2px 5px">—</td>');
+      colPag+=(cp2.ativo30!==false?'<td style="text-align:center;font-weight:700;color:#2b6cb0;padding:2px 5px">'+d30txt+'</td>':'<td style="text-align:center;color:#a0aec0;padding:2px 5px">—</td>');
+      colPag+='</tr>';
     }
+    colPag+='</tbody></table></div>';
+
+    // Eventos — coluna direita
+    var colEvt='<div style="flex:1.6;min-width:0">';
+    colEvt+='<div style="font-size:8px;font-weight:800;color:#2c5282;text-transform:uppercase;letter-spacing:.6px;border-bottom:2px solid #2c5282;padding-bottom:3px;margin-bottom:5px">📅 Programação de Eventos &amp; Datas Importantes</div>';
+    if(listaEvts.length===0){
+      colEvt+='<p style="font-size:7.5px;color:#a0aec0;font-style:italic;padding:6px 0">Nenhum evento cadastrado.</p>';
+    } else {
+      colEvt+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px 10px">';
+      listaEvts.forEach(function(x){
+        var tp=CAL_TIPOS[x.evt.tipo]||{cor:'#718096',bg:'#f7fafc',icon:'•'};
+        colEvt+='<div style="display:flex;align-items:baseline;gap:3px;padding:1.5px 0;border-bottom:1px solid #f7fafc">'
+          +'<span style="font-size:7px;font-weight:800;color:'+tp.cor+';white-space:nowrap;min-width:28px">'+String(x.dia).padStart(2,'0')+'/'+String(x.mes+1).padStart(2,'0')+'</span>'
+          +'<span style="font-size:7px;color:'+tp.cor+';font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px" title="'+x.evt.titulo+'">'+tp.icon+' '+x.evt.titulo+'</span>'
+          +'</div>';
+      });
+      colEvt+='</div>';
+    }
+    colEvt+='</div>';
+
+    return '<div style="display:flex;gap:14px;align-items:flex-start">'+colPag+colEvt+'</div>';
   }
 
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Calendário '+ano+'</title><style>';
-  html+='*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;padding:14px;color:#1a1a1a}';
-  html+='.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}';
-  html+='@page{margin:8mm;size:A4 portrait}@media print{body{padding:0}}';
-  html+='<\/style></head><body>';
-  html+='<div style="text-align:center;border-bottom:3px solid #1a5c38;padding-bottom:8px;margin-bottom:12px">';
-  html+='<div style="font-size:24px;font-weight:900;color:#1a5c38;letter-spacing:-1px">CALENDÁRIO '+ano+'</div>';
-  html+='<div style="font-size:12px;color:#666;margin-top:3px">Explosão Alimentos · Trindade — GO</div></div>';
-  html+='<div class="grid">';
-  for(var m=0;m<12;m++)html+=miniMesPDF(m);
+  // ── Legenda de tipos ────────────────────────────────────────────────────
+  function legendaHTML(){
+    var it='';
+    it+='<span style="font-size:6.5px;font-weight:700;color:#718096;margin-right:4px;text-transform:uppercase;letter-spacing:.4px">Legenda:</span>';
+    it+='<span style="display:inline-flex;align-items:center;gap:2px;font-size:6.5px;padding:1px 6px;border-radius:99px;background:#f0fff4;color:#276749;font-weight:700;margin-right:2px">● Adiantamento (dia 15)</span>';
+    it+='<span style="display:inline-flex;align-items:center;gap:2px;font-size:6.5px;padding:1px 6px;border-radius:99px;background:#ebf8ff;color:#2b6cb0;font-weight:700;margin-right:4px">● Folha (fim do mês)</span>';
+    Object.values(CAL_TIPOS).forEach(function(t){
+      it+='<span style="font-size:6.5px;padding:1px 6px;border-radius:99px;background:'+t.bg+';color:'+t.cor+';font-weight:700;margin-right:2px">'+t.icon+' '+t.label+'</span>';
+    });
+    return it;
+  }
+
+  // ── Monta HTML final ─────────────────────────────────────────────────────
+  var css='';
+  css+='@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");';
+  css+='*{margin:0;padding:0;box-sizing:border-box}';
+  css+='body{font-family:"Inter",Arial,sans-serif;background:#fff;color:#2d3748;-webkit-print-color-adjust:exact;print-color-adjust:exact}';
+  css+='.pagina{width:420mm;min-height:297mm;padding:8mm 10mm 7mm 10mm;display:flex;flex-direction:column;gap:6px}';
+  css+='.topo{display:flex;align-items:stretch;gap:0;border-radius:10px;overflow:hidden;margin-bottom:2px}';
+  css+='.topo-esq{background:linear-gradient(135deg,#1a5c38 0%,#2f855a 100%);flex:1;padding:12px 16px;display:flex;flex-direction:column;justify-content:center}';
+  css+='.topo-dir{background:linear-gradient(135deg,#22543d 0%,#276749 100%);width:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}';
+  css+='.grid-anual{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;flex:1}';
+  css+='.rodape{border-top:1px solid #e2e8f0;padding-top:5px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px}';
+  css+='@page{size:A3 landscape;margin:0}';
+  css+='@media print{body{padding:0}.pagina{page-break-after:avoid}}';
+
+  var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">';
+  html+='<title>Calendário '+ano+' — Explosão Alimentos</title>';
+  html+='<style>'+css+'<\/style></head><body><div class="pagina">';
+
+  // Topo / cabeçalho premium
+  html+='<div class="topo">';
+  html+='<div class="topo-esq">';
+  html+='<div style="font-size:28px;font-weight:900;color:#fff;letter-spacing:-1.5px;line-height:1">CALENDÁRIO <span style="color:#9ae6b4">'+ano+'</span></div>';
+  html+='<div style="font-size:10.5px;color:rgba(255,255,255,.75);margin-top:4px;font-weight:500;letter-spacing:.2px">Explosão Alimentos &nbsp;·&nbsp; Trindade — GO &nbsp;·&nbsp; Folha de Pagamento &amp; Agenda</div>';
   html+='</div>';
-  // Legenda
-  html+='<div style="display:flex;flex-wrap:wrap;gap:5px;margin:8px 0;padding:6px;background:#f8f8f8;border-radius:4px">';
-  Object.values(CAL_TIPOS).forEach(function(t){html+='<span style="font-size:8px;padding:2px 6px;border-radius:99px;background:'+t.bg+';color:'+t.cor+';font-weight:700">'+t.icon+' '+t.label+'</span>';});
+  html+='<div class="topo-dir">';
+  html+='<div style="font-size:28px;line-height:1">🌿</div>';
+  html+='<div style="font-size:7px;color:rgba(255,255,255,.6);text-align:center;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Exp<br>Pessoas</div>';
   html+='</div>';
-  // Eventos
-  html+='<div style="font-size:10px;font-weight:700;color:#1a5c38;border-bottom:1px solid #1a5c38;padding-bottom:2px;margin-bottom:6px">DATAS IMPORTANTES</div>';
-  html+='<table style="width:100%;border-collapse:collapse;font-size:9px">';
-  var umAtual=-1;
-  listaEvts.forEach(function(x){
-    if(x.mes!==umAtual){
-      html+='<tr><td colspan="3" style="padding:4px 4px 1px;font-weight:700;color:#1a5c38;font-size:9px">'+NM[x.mes].toUpperCase()+'</td></tr>';
-      umAtual=x.mes;
+  html+='</div>';
+
+  // Grade 4×3 com os 12 meses
+  html+='<div class="grid-anual">';
+  for(var m=0;m<12;m++)html+=blocoMes(m);
+  html+='</div>';
+
+  // Legenda de tipos
+  html+='<div style="padding:4px 8px;background:#f7fafc;border-radius:5px;border:1px solid #e8f0f7;line-height:2">';
+  html+=legendaHTML();
+  html+='</div>';
+
+  // Agenda: pagamentos + eventos
+  html+='<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;box-shadow:0 1px 3px rgba(0,0,0,.05)">';
+  html+=agendaHTML();
+  html+='</div>';
+
+  // Rodapé
+  html+='<div class="rodape">';
+  html+='<span style="font-size:7px;color:#a0aec0">Gerado em '+new Date().toLocaleDateString('pt-BR')+' &middot; Exp Pessoas</span>';
+  html+='<span style="font-size:7px;color:#a0aec0">Explosão Alimentos &mdash; Trindade, GO</span>';
+  html+='</div>';
+
+  html+='</div></body></html>';
+  var j=window.open('','_blank');j.document.write(html);j.document.close();setTimeout(function(){j.print();},800);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PDF MENSAL — calendário operacional completo, 12 páginas A4
+// Inclui aniversariantes com nome + idade, pagamentos e todos os eventos
+// ══════════════════════════════════════════════════════════════════
+function gerarPDFMensal(){
+  var ano=_calAnoAtual;
+  var eventos=getEventosCalendario(ano);
+  var cfgPag=getConfigPagamentos(ano);
+  var NM=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  var DS_PT=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  var DS=['DOM','SEG','TER','QUA','QUI','SEX','SÁB'];
+
+  // Mapa de pagamentos
+  var mapPag={};
+  for(var mi=0;mi<12;mi++){
+    var cp=cfgPag[mi];
+    var a15=anteciparParaDiaUtil(new Date(ano,mi,15));
+    var a30=anteciparParaDiaUtil(new Date(ano,mi+1,0));
+    var dt15=cp.data15||fmtDateKey(a15);
+    var dt30=cp.data30||fmtDateKey(a30);
+    if(cp.ativo15!==false){if(!mapPag[dt15])mapPag[dt15]=[];mapPag[dt15].push({tipo:'adiantamento',label:'Adiantamento'});}
+    if(cp.ativo30!==false){if(!mapPag[dt30])mapPag[dt30]=[];mapPag[dt30].push({tipo:'folha',label:'Folha'});}
+  }
+
+  // Gera HTML de uma página mensal
+  function paginaMes(m){
+    var total=new Date(ano,m+1,0).getDate();
+    var prim=new Date(ano,m,1).getDay();
+
+    // Cabeçalho de dias da semana
+    var hdrCells=DS.map(function(x,i){
+      var c=i===0?'#c53030':i===6?'#c05621':'#4a5568';
+      return'<th style="font-size:8px;font-weight:700;color:'+c+';text-align:center;padding:4px 2px;border-bottom:2px solid #e8e8e8;letter-spacing:.4px">'+x+'</th>';
+    }).join('');
+
+    // Células dos dias
+    var rows='',d=1-prim;
+    while(d<=total){
+      var cells='';
+      for(var dw=0;dw<7;dw++,d++){
+        if(d<1||d>total){
+          cells+='<td style="background:#fafafa;border:1px solid #f0f0f0"></td>';
+          continue;
+        }
+        var dtKey=String(ano)+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+        var evDia=getEventosDia(ano,m,d,eventos).filter(function(e){return!e.operacional;});
+        var pagDia=mapPag[dtKey]||[];
+        var isWeekend=dw===0||dw===6;
+        var isDom=dw===0;
+
+        // Estilo do número do dia
+        var corNum=isDom?'#c53030':isWeekend?'#c05621':'#1a202c';
+        var bgCell=isWeekend?'#fafafa':'#fff';
+        var bordaCell='border:1px solid #edf2f7';
+        var numSize='13px';
+
+        // Conteúdo extra da célula
+        var extras='';
+
+        // Pagamentos
+        pagDia.forEach(function(p){
+          var isAdiant=p.tipo==='adiantamento';
+          var bgP=isAdiant?'#f0fff4':'#ebf8ff';
+          var corP=isAdiant?'#276749':'#2b6cb0';
+          var ícone=isAdiant?'💰':'💵';
+          extras+='<div style="font-size:7px;font-weight:700;color:'+corP+';background:'+bgP+';border-radius:3px;padding:1px 4px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+ícone+' '+p.label+'</div>';
+        });
+
+        // Eventos (exceto aniversariantes)
+        evDia.filter(function(e){return e.tipo!=='aniversariantes';}).forEach(function(e){
+          var tp=CAL_TIPOS[e.tipo]||{cor:'#718096',bg:'#f7fafc',icon:'•'};
+          extras+='<div style="font-size:7px;font-weight:600;color:'+tp.cor+';background:'+tp.bg+';border-radius:3px;padding:1px 4px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+e.titulo+'">'+tp.icon+' '+e.titulo.replace(/^[^\s]*\s/,'').substring(0,26)+'</div>';
+        });
+
+        // Aniversariantes (nome + idade)
+        evDia.filter(function(e){return e.tipo==='aniversariantes'&&e.id&&e.id.indexOf('aniv_')===0;}).forEach(function(e){
+          // título: "🎂 Aniversário: Nome (X anos)"
+          var titulo=e.titulo||'';
+          var match=titulo.match(/:\s*(.+?)\s*\((\d+)/);
+          var nomeAniv=match?match[1]:'Aniversariante';
+          var idadeAniv=match?match[2]:'';
+          extras+='<div style="font-size:7px;font-weight:600;color:#b83280;background:#fce7f3;border-radius:3px;padding:1px 4px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🎂 '+nomeAniv+'</div>';
+        });
+
+        // Comemoração coletiva de aniversariantes
+        evDia.filter(function(e){return e.tipo==='aniversariantes'&&e.id&&e.id.indexOf('bday_')===0;}).forEach(function(e){
+          extras+='<div style="font-size:7px;font-weight:700;color:#b83280;background:#fce7f3;border-radius:3px;padding:1px 4px;margin-top:2px">🎉 Comemoração</div>';
+        });
+
+        // Destaque se tem pagamento
+        if(pagDia.length>0){bgCell=pagDia[0].tipo==='adiantamento'?'#f0fff4':'#ebf8ff';bordaCell='border:1px solid '+(pagDia[0].tipo==='adiantamento'?'#9ae6b4':'#90cdf4');}
+
+        cells+='<td style="vertical-align:top;'+bordaCell+';background:'+bgCell+';padding:4px;height:70px;width:14.28%">'
+          +'<div style="font-size:'+numSize+';font-weight:800;color:'+corNum+';line-height:1">'+d+'</div>'
+          +'<div style="font-size:7.5px;color:#a0aec0;margin-bottom:2px">'+DS_PT[dw].substring(0,3)+'</div>'
+          +extras
+          +'</td>';
+      }
+      rows+='<tr>'+cells+'</tr>';
     }
-    var tp=CAL_TIPOS[x.evt.tipo];
-    html+='<tr style="border-bottom:1px solid #f0f0f0"><td style="width:24px;text-align:center;font-weight:800;color:'+tp.cor+';padding:2px">'+x.dia+'</td><td style="padding:2px 6px;background:'+tp.bg+'">'+tp.icon+' '+x.evt.titulo+'</td><td style="color:#888;font-size:8px;padding:2px 4px">'+(x.evt.obs||'')+'</td></tr>';
-  });
-  html+='</table>';
-  html+='<div style="text-align:center;margin-top:10px;font-size:8px;color:#aaa">Gerado em '+new Date().toLocaleDateString('pt-BR')+' · Exp Pessoas</div>';
+
+    // Lista lateral de eventos do mês
+    var evMes=[];
+    for(var dd=1;dd<=total;dd++){
+      var dtk2=String(ano)+'-'+String(m+1).padStart(2,'0')+'-'+String(dd).padStart(2,'0');
+      getEventosDia(ano,m,dd,eventos).filter(function(e){return!e.operacional;}).forEach(function(e){
+        evMes.push({dia:dd,dtk:dtk2,evt:e});
+      });
+      (mapPag[dtk2]||[]).forEach(function(p){
+        evMes.push({dia:dd,dtk:dtk2,pag:p});
+      });
+    }
+    evMes.sort(function(a,b){return a.dia-b.dia;});
+
+    var listaLat='';
+    evMes.forEach(function(x){
+      if(x.pag){
+        var isA=x.pag.tipo==='adiantamento';
+        listaLat+='<div style="display:flex;gap:4px;align-items:baseline;padding:2px 0;border-bottom:1px solid #f0f0f0">'
+          +'<span style="font-size:8px;font-weight:800;color:'+(isA?'#276749':'#2b6cb0')+';min-width:18px">'+String(x.dia).padStart(2,'0')+'</span>'
+          +'<span style="font-size:7.5px;font-weight:700;color:'+(isA?'#276749':'#2b6cb0')+'">'+(isA?'💰 Adiantamento':'💵 Folha')+'</span>'
+          +'</div>';
+      } else {
+        var tp=CAL_TIPOS[x.evt.tipo]||{cor:'#718096',icon:'•'};
+        var isAniv=x.evt.tipo==='aniversariantes';
+        var tituloLat=x.evt.titulo;
+        if(isAniv&&x.evt.id&&x.evt.id.indexOf('aniv_')===0){
+          var match2=tituloLat.match(/:\s*(.+?)\s*\((\d+)/);
+          tituloLat=match2?'🎂 '+match2[1]:tituloLat;
+        }
+        listaLat+='<div style="display:flex;gap:4px;align-items:baseline;padding:2px 0;border-bottom:1px solid #f0f0f0">'
+          +'<span style="font-size:8px;font-weight:800;color:'+tp.cor+';min-width:18px">'+String(x.dia).padStart(2,'0')+'</span>'
+          +'<span style="font-size:7.5px;color:'+tp.cor+';font-weight:600;line-height:1.3">'+tituloLat.substring(0,40)+'</span>'
+          +'</div>';
+      }
+    });
+    if(!listaLat)listaLat='<p style="font-size:7.5px;color:#a0aec0;font-style:italic;padding:4px 0">Sem eventos neste mês.</p>';
+
+    return '<div style="width:210mm;min-height:297mm;padding:10mm 10mm 8mm 10mm;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;page-break-after:always">'
+      // cabeçalho da página
+      +'<div style="display:flex;align-items:stretch;border-radius:8px;overflow:hidden;margin-bottom:4px">'
+      +'<div style="background:linear-gradient(135deg,#1a5c38,#2f855a);flex:1;padding:10px 14px;display:flex;flex-direction:column;justify-content:center">'
+      +'<div style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-1px;line-height:1">'+NM[m].toUpperCase()+' <span style="font-size:14px;font-weight:600;opacity:.7">'+ano+'</span></div>'
+      +'<div style="font-size:9px;color:rgba(255,255,255,.7);margin-top:2px">Explosão Alimentos · Trindade — GO · Calendário Operacional</div>'
+      +'</div>'
+      +'<div style="background:#22543d;width:50px;display:flex;align-items:center;justify-content:center;font-size:24px">📅</div>'
+      +'</div>'
+      // layout principal: grade + lateral
+      +'<div style="display:flex;gap:8px;flex:1;align-items:flex-start">'
+      // grade do mês
+      +'<div style="flex:1;min-width:0">'
+      +'<table style="width:100%;border-collapse:collapse;table-layout:fixed"><thead><tr>'+hdrCells+'</tr></thead><tbody>'+rows+'</tbody></table>'
+      +'</div>'
+      // coluna lateral: agenda do mês
+      +'<div style="width:46mm;flex-shrink:0;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden">'
+      +'<div style="background:#2d3748;color:#fff;padding:5px 8px;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.5px">Agenda do Mês</div>'
+      +'<div style="padding:5px 8px;max-height:200mm;overflow:hidden">'+listaLat+'</div>'
+      +'</div>'
+      +'</div>'
+      // rodapé
+      +'<div style="border-top:1px solid #e2e8f0;padding-top:4px;display:flex;justify-content:space-between;align-items:center">'
+      +'<div style="display:flex;flex-wrap:wrap;gap:3px">'
+      +'<span style="font-size:6.5px;padding:1px 5px;border-radius:99px;background:#f0fff4;color:#276749;font-weight:700">💰 Adiantamento</span>'
+      +'<span style="font-size:6.5px;padding:1px 5px;border-radius:99px;background:#ebf8ff;color:#2b6cb0;font-weight:700">💵 Folha</span>'
+      +'<span style="font-size:6.5px;padding:1px 5px;border-radius:99px;background:#fce7f3;color:#b83280;font-weight:700">🎂 Aniversário</span>'
+      +Object.values(CAL_TIPOS).filter(function(t){return t.label!=='Aniversariantes'&&t.label!=='Pagamento';}).map(function(t){
+        return'<span style="font-size:6.5px;padding:1px 5px;border-radius:99px;background:'+t.bg+';color:'+t.cor+';font-weight:700">'+t.icon+' '+t.label+'</span>';
+      }).join('')
+      +'</div>'
+      +'<span style="font-size:6.5px;color:#a0aec0">Exp Pessoas</span>'
+      +'</div>'
+      +'</div>';
+  }
+
+  var css='';
+  css+='@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");';
+  css+='*{margin:0;padding:0;box-sizing:border-box}';
+  css+='body{font-family:"Inter",Arial,sans-serif;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}';
+  css+='@page{size:A4 portrait;margin:0}';
+  css+='@media print{body{margin:0;padding:0}}';
+
+  var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">';
+  html+='<title>Calendário Mensal '+ano+' — Explosão Alimentos</title>';
+  html+='<style>'+css+'<\/style></head><body>';
+  for(var m=0;m<12;m++) html+=paginaMes(m);
   html+='</body></html>';
-  var j=window.open('','_blank');j.document.write(html);j.document.close();setTimeout(function(){j.print();},600);
+
+  var j=window.open('','_blank');j.document.write(html);j.document.close();setTimeout(function(){j.print();},900);
 }
 
 function compartilharCalendarioWpp(){
