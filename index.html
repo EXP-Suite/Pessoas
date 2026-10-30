@@ -2030,9 +2030,11 @@ tbody tr:hover td{background:var(--bg)}
           <div style="display:flex;gap:8px;margin-top:4px" id="f-perc-adiant-group">
             <button type="button" class="btn-perc-adiant active" data-perc="40" onclick="selecionarPercAdiant(40)">40%</button>
             <button type="button" class="btn-perc-adiant" data-perc="25" onclick="selecionarPercAdiant(25)">25%</button>
+            <button type="button" class="btn-perc-adiant" data-perc="15" onclick="selecionarPercAdiant(15)">15%</button>
+            <button type="button" class="btn-perc-adiant" data-perc="10" onclick="selecionarPercAdiant(10)">10%</button>
             <button type="button" class="btn-perc-adiant" data-perc="0" onclick="selecionarPercAdiant(0)">0%</button>
           </div>
-          <div style="font-size:11px;color:var(--text3);margin-top:4px">Padrão: 40%. Use 25% ou 0% para colaboradores com consignado.</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">Padrão: 40%. Reduza para colaboradores com consignado elevado.</div>
         </div>
         <div class="form-group" style="grid-column:1/-1">
           <label>Foto do Colaborador</label>
@@ -2405,7 +2407,7 @@ tbody tr:hover td{background:var(--bg)}
 
 <div class="toast" id="toast"></div>
 <div id="wms-tooltip"></div>
-<div id="app-version">Versão 3.6.0</div>
+<div id="app-version">Versão 3.6.1</div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
@@ -8216,6 +8218,8 @@ function previewItau(){
       html+='<td style="padding:5px 8px">'+(r.digito||'-')+'</td>';
       var badgeAdiant='';
       if(r._percAdiant===25){badgeAdiant=' <span style="display:inline-block;font-size:9px;padding:1px 5px;border-radius:10px;background:#fef3c7;color:#92400e;border:1px solid #f59e0b;white-space:nowrap;vertical-align:middle">25% · consig.</span>';}
+      else if(r._percAdiant===15){badgeAdiant=' <span style="display:inline-block;font-size:9px;padding:1px 5px;border-radius:10px;background:#fff7ed;color:#c2410c;border:1px solid #fb923c;white-space:nowrap;vertical-align:middle">15% · consig.</span>';}
+      else if(r._percAdiant===10){badgeAdiant=' <span style="display:inline-block;font-size:9px;padding:1px 5px;border-radius:10px;background:#fef2f2;color:#b91c1c;border:1px solid #f87171;white-space:nowrap;vertical-align:middle">10% · consig.</span>';}
       else if(r._percAdiant===0){badgeAdiant=' <span style="display:inline-block;font-size:9px;padding:1px 5px;border-radius:10px;background:#fee2e2;color:#991b1b;border:1px solid #ef4444;white-space:nowrap;vertical-align:middle">0% · sem adt.</span>';}
       html+='<td style="padding:5px 8px;max-width:160px;overflow:hidden;white-space:nowrap">'+r.nome+badgeAdiant+'</td>';
       html+='<td style="padding:5px 8px">'+r.cpf+'</td>';
