@@ -1685,6 +1685,29 @@ tbody tr:hover td{background:var(--bg)}
   </div>
 </div>
 
+<!-- ═══ MODAL NOVOS NO BANCO ═════════════════════════════ -->
+<div class="modal-overlay hidden" id="modal-novos-banco">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header" style="background:#1e40af;color:#fff">
+      <h3 style="color:#fff">🏦 Cadastre no banco antes de continuar</h3>
+      <button class="modal-close" onclick="fecharModal('modal-novos-banco')" style="color:#fff">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#eff6ff;border:1px solid #93c5fd;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#1e40af">
+        <b>⚠️ Atenção:</b> Os funcionários abaixo foram admitidos após o último pagamento e <b>precisam ser cadastrados no banco Itaú</b> antes de você inserir o arquivo Excel — caso contrário, o banco retornará erro.
+      </div>
+      <div id="novos-banco-lista"></div>
+      <div style="font-size:12px;color:var(--text3);margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
+        Após cadastrar todos no banco, clique em <b>✅ Já cadastrei, gerar Excel</b> para continuar.
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex;gap:8px">
+      <button class="btn" onclick="fecharModal('modal-novos-banco')" style="flex:1">⬅ Voltar</button>
+      <button class="btn btn-primary" id="novos-banco-confirmar" onclick="confirmarNovosBanco()" style="flex:1;background:#1e40af;border-color:#1e40af">✅ Já cadastrei, gerar Excel</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ MODAL USUÁRIO ════════════════════════════════════ -->
 <div class="modal-overlay hidden" id="modal-usuario">
   <div class="modal" style="max-width:480px">
@@ -2382,7 +2405,7 @@ tbody tr:hover td{background:var(--bg)}
 
 <div class="toast" id="toast"></div>
 <div id="wms-tooltip"></div>
-<div id="app-version">Versão 3.4.1</div>
+<div id="app-version">Versão 3.6.0</div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
@@ -7920,6 +7943,110 @@ function calcularAdiantamento15(colab, mesAno, salarioJaParsed){
 var _itauExcedentes=[];
 var _itauMesAno='';
 
+// ──────────────────────────────────────────────────────────
+// PRÉ-VOO: verificar novos funcionários antes de gerar Excel
+// ──────────────────────────────────────────────────────────
+var _novoBancoCallback=null; // guarda qual download rodar após confirmação
+
+/**
+ * Verifica se há funcionários admitidos após o último pagamento.
+ * tipo: '15' ou '30'
+ * mesAno: 'YYYY-MM'
+ * Se houver novos → abre o modal de alerta e salva callback.
+ * Se não houver → executa callback imediatamente.
+ */
+function verificarNovosBanco(mesAno, tipo, callback){
+  var partes=mesAno.split('-');
+  var ano=Number(partes[0]), mes=Number(partes[1]);
+
+  // Data de corte: funcionários admitidos APÓS essa data precisam de cadastro,
+  // pois ainda não receberam nenhum pagamento anterior.
+  //
+  // Pagamento DIA 15 → o último pagamento que já ocorreu foi o dia 30 do mês anterior.
+  //   Quem entrou APÓS o dia 30/mês-1 nunca foi pago → precisa cadastrar no banco.
+  //   Corte = dia 30 do mês anterior (mês-1).
+  //
+  // Pagamento DIA 30 → o último pagamento que já ocorreu foi o dia 15 do mês atual.
+  //   Quem entrou APÓS o dia 15 do mês atual nunca foi pago → precisa cadastrar.
+  //   Corte = dia 15 do mês atual.
+  var dataCorte;
+  if(tipo==='15'){
+    // Último pagamento anterior = dia 30 do mês passado
+    var mesAnt=mes-1, anoAnt=ano;
+    if(mesAnt<1){mesAnt=12;anoAnt--;}
+    dataCorte=new Date(anoAnt, mesAnt-1, 30, 23, 59, 59);
+  } else {
+    // Último pagamento anterior = dia 15 do mês atual
+    dataCorte=new Date(ano, mes-1, 15, 23, 59, 59);
+  }
+
+  // Coleta colaboradores do pagamento com admissão após o corte
+  var todosColab=DB.colaboradores||[];
+  var empEl=tipo==='15'?document.getElementById('itau-empresa'):document.getElementById('dia30-empresa');
+  var empresaVal=empEl?empEl.value:'';
+
+  var novos=todosColab.filter(function(c){
+    if(c.status==='Desligado'||colabExcluido(c))return false;
+    if(!c.admissao)return false;
+    if(empresaVal&&String(c.empresa||'').trim()!==empresaVal)return false;
+    var admStr=normalizarData(c.admissao);
+    if(!admStr)return false;
+    var adm=new Date(admStr+'T00:00:00');
+    return adm>dataCorte;
+  });
+
+  if(!novos.length){
+    // Nenhum novo → prossegue direto
+    callback();
+    return;
+  }
+
+  // Há novos → monta lista e abre modal
+  _novoBancoCallback=callback;
+
+  var html='';
+  novos.forEach(function(c, i){
+    var cpfF=String(c.cpf||'').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4');
+    var pc=parseConta(c.conta);
+    var banco=String(c.banco||'—');
+    var agencia=String(c.agencia||'—');
+    var contaStr=pc.conta?(pc.conta+(pc.digito?'-'+pc.digito:'')):'—';
+    var adm=fmtData(c.admissao);
+    html+='<div style="background:'+(i%2?'#f8faff':'#fff')+';border:1px solid #bfdbfe;border-radius:8px;padding:12px 14px;margin-bottom:8px">';
+    html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">';
+    html+='<span style="font-size:18px">👤</span>';
+    html+='<div>';
+    html+='<div style="font-weight:700;font-size:14px;color:#1e3a8a">'+c.nome+'</div>';
+    html+='<div style="font-size:11px;color:var(--text3)">Admissão: '+adm+(c.cargo?' · '+c.cargo:'')+'</div>';
+    html+='</div></div>';
+    html+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;font-size:12px">';
+    html+=campo('CPF',cpfF||'—');
+    html+=campo('Banco',banco);
+    html+=campo('Agência',agencia);
+    html+=campo('Conta',contaStr);
+    html+='</div>';
+    html+='</div>';
+  });
+
+  document.getElementById('novos-banco-lista').innerHTML=html;
+  abrirModal('modal-novos-banco');
+}
+
+function campo(label, val){
+  return '<div style="background:#eff6ff;border-radius:6px;padding:6px 8px">'
+    +'<div style="font-size:10px;color:#6b7280;margin-bottom:2px">'+label+'</div>'
+    +'<div style="font-weight:600;color:#1e3a8a">'+val+'</div>'
+    +'</div>';
+}
+
+function confirmarNovosBanco(){
+  fecharModal('modal-novos-banco');
+  if(typeof _novoBancoCallback==='function'){
+    _novoBancoCallback();
+    _novoBancoCallback=null;
+  }
+}
+
 function abrirModalExcedentes(){
   // Pré-preenche data com o dia seguinte ao pagamento (dia 15 → dia 16)
   var partes=_itauMesAno.split('-');
@@ -8116,6 +8243,11 @@ function downloadItau(){
   const mesAno=document.getElementById('itau-mes').value;
   const [ano,mes]=mesAno.split('-');
 
+  // Pré-voo: verifica novos funcionários antes de gerar
+  verificarNovosBanco(mesAno,'15',function(){ _executarDownloadItau(mesAno,ano,mes); });
+}
+
+function _executarDownloadItau(mesAno,ano,mes){
   // Gera XLSX no formato exato do Itaú (sem cabeçalho)
   function gerarXlsx(){
     const XLSX=window.XLSX;
@@ -8175,7 +8307,7 @@ function downloadItau(){
     s.onerror=()=>notify('Erro ao carregar biblioteca Excel','error');
     document.head.appendChild(s);
   }
-}
+} // fim _executarDownloadItau
 
 // ══════════════════════════════════════════════════════════
 // CONFERÊNCIA DE VALES
@@ -8602,6 +8734,16 @@ function editarValorDia30(input){
 
 function downloadDia30(){
   if(!_dia30Dados.length){notify('Carregue o PDF primeiro','warn');return;}
+
+  // Determina mesAno atual para a verificação de novos
+  var _hoje=new Date();
+  var _mesAno30=_hoje.getFullYear()+'-'+String(_hoje.getMonth()+1).padStart(2,'0');
+
+  // Pré-voo: verifica novos funcionários antes de gerar
+  verificarNovosBanco(_mesAno30,'30',function(){ _executarDownloadDia30(); });
+}
+
+function _executarDownloadDia30(){
   var empresa=document.getElementById('dia30-empresa').value;
   var nomeEmpresa=empresa.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
   var hoje=new Date();
@@ -8637,7 +8779,7 @@ function downloadDia30(){
     s.onerror=function(){notify('Erro ao carregar biblioteca Excel','error');};
     document.head.appendChild(s);
   }
-}
+} // fim _executarDownloadDia30
 
 // ══════════════════════════════════════════════════════════
 // ITEM 14: LOG DE AUDITORIA
@@ -10551,6 +10693,36 @@ function excluirEvento(){
   fecharModal('modal-evento-cal');notify('Excluído');renderCalendario();
 }
 
+// ══════════════════════════════════════════════════════════════════
+// TEMAS MENSAIS — campanhas de saúde e datas especiais da empresa
+// ══════════════════════════════════════════════════════════════════
+var TEMAS_MESES=[
+  // Jan — Janeiro Branco (saúde mental) — azul escuro / fundo gelo
+  {hdr:'#1e3a5f',hdr2:'#2d5282',bg:'#eef2ff',txt:'#1e3a5f',label:'Janeiro Branco',icone:'🤍',sub:'Saúde Mental'},
+  // Fev — sem campanha — verde padrão Explosão
+  {hdr:'#1a5c38',hdr2:'#2f855a',bg:'#f0fdf4',txt:'#14532d',label:'',icone:'',sub:''},
+  // Mar — Aniversário da Explosão Alimentos — azul + vermelho
+  {hdr:'#1d4ed8',hdr2:'#b91c1c',bg:'#fff1f2',txt:'#9f1239',label:'Aniversário Explosão',icone:'🎂',sub:''},
+  // Abr — Abril Verde (SIPAT / segurança do trabalho)
+  {hdr:'#166534',hdr2:'#15803d',bg:'#f0fdf4',txt:'#14532d',label:'Abril Verde',icone:'💚',sub:'Saúde e Segurança do Trabalho'},
+  // Mai — Maio Amarelo (prevenção de acidentes de trânsito)
+  {hdr:'#92400e',hdr2:'#b45309',bg:'#fffbeb',txt:'#78350f',label:'Maio Amarelo',icone:'🚦',sub:'Prevenção de Acidentes de Trânsito'},
+  // Jun — Junho Vermelho (doação de sangue)
+  {hdr:'#b91c1c',hdr2:'#991b1b',bg:'#fff1f2',txt:'#9f1239',label:'Junho Vermelho',icone:'🩸',sub:'Doação de Sangue'},
+  // Jul — sem campanha — verde padrão
+  {hdr:'#1a5c38',hdr2:'#2f855a',bg:'#f0fdf4',txt:'#14532d',label:'',icone:'',sub:''},
+  // Ago — Agosto Lilás (violência contra a mulher)
+  {hdr:'#7e22ce',hdr2:'#6b21a8',bg:'#faf5ff',txt:'#6b21a8',label:'Agosto Lilás',icone:'💜',sub:'Combate à Violência contra a Mulher'},
+  // Set — Setembro Amarelo (prevenção ao suicídio)
+  {hdr:'#92400e',hdr2:'#b45309',bg:'#fffbeb',txt:'#78350f',label:'Setembro Amarelo',icone:'💛',sub:'Prevenção ao Suicídio'},
+  // Out — Outubro Rosa (câncer de mama)
+  {hdr:'#9d174d',hdr2:'#be185d',bg:'#fdf2f8',txt:'#9d174d',label:'Outubro Rosa',icone:'🎀',sub:'Prevenção ao Câncer de Mama'},
+  // Nov — Novembro Azul (saúde do homem)
+  {hdr:'#1e40af',hdr2:'#1d4ed8',bg:'#eff6ff',txt:'#1e40af',label:'Novembro Azul',icone:'💙',sub:'Saúde do Homem'},
+  // Dez — sem campanha — verde padrão
+  {hdr:'#1a5c38',hdr2:'#2f855a',bg:'#f0fdf4',txt:'#14532d',label:'',icone:'',sub:''},
+];
+
 function gerarPDFCalendario(){
   var ano=_calAnoAtual;
   var eventos=getEventosCalendario(ano);
@@ -10596,6 +10768,7 @@ function gerarPDFCalendario(){
 
   // ── Renderiza um bloco de mês para o grid anual ────────────────────────
   function blocoMes(m){
+    var tema=TEMAS_MESES[m];
     var prim=new Date(ano,m,1).getDay(),total=new Date(ano,m+1,0).getDate();
     var hdrCells=DS.map(function(x,i){
       var c=i===0?'#e53e3e':i===6?'#c05621':'#4a5568';
@@ -10612,7 +10785,9 @@ function gerarPDFCalendario(){
         var isWeekend=dw===0||dw===6;
         var isDom=dw===0;
         // Determina estilo da célula
-        var bgC='transparent',corN=isDom?'#c53030':isWeekend?'#b7791f':'#2d3748',fwN='500',bordaEsq='',notch='';
+        var bgC=isWeekend?tema.bg:'transparent';
+        var corN=isDom?'#c53030':isWeekend?tema.txt:'#2d3748';
+        var fwN='500',bordaEsq='',notch='';
         if(evDia.length>0){
           var tp0=CAL_TIPOS[evDia[0].tipo]||{bg:'#fef3c7',cor:'#92400e'};
           bgC=tp0.bg; corN=tp0.cor; fwN='800';
@@ -10626,20 +10801,18 @@ function gerarPDFCalendario(){
             +(haAdiant?'<span style="width:3px;height:3px;border-radius:50%;background:#38a169;display:block"></span>':'')
             +(haFolha?'<span style="width:3px;height:3px;border-radius:50%;background:#3182ce;display:block"></span>':'')
             +'</span>';
-        } else if(isWeekend){
-          bgC='#fafafa';
         }
         var titles=[].concat(evDia.map(function(e){return e.titulo;}),pagDia.map(function(p){return p.tipo==='adiantamento'?'Adiantamento':'Folha';})).join(' | ');
         cells+='<td title="'+titles+'" style="position:relative;text-align:center;padding:2.5px 0;background:'+bgC+';'+bordaEsq+'border-radius:3px;font-size:8px;font-weight:'+fwN+';color:'+corN+';line-height:1.2">'+d+notch+'</td>';
       }
       rows+='<tr>'+cells+'</tr>';
     }
-    // Cor de destaque do cabeçalho por trimestre
-    var qColors=['#1a5c38','#1a5c38','#1a5c38','#276749','#276749','#276749','#2f855a','#2f855a','#2f855a','#22543d','#22543d','#22543d'];
+    // Badge de campanha (só se tiver label)
+    var badge=tema.label?'<span style="font-size:6px;font-weight:700;color:rgba(255,255,255,.9);background:rgba(0,0,0,.18);border-radius:99px;padding:1px 5px;white-space:nowrap">'+tema.icone+' '+tema.label+'</span>':'<span style="font-size:8px;color:rgba(255,255,255,.7);font-weight:600">'+ano+'</span>';
     return '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07)">'
-      +'<div style="background:'+qColors[m]+';padding:5px 6px;display:flex;justify-content:space-between;align-items:center">'
-      +'<span style="font-size:10.5px;font-weight:800;color:#fff;letter-spacing:.5px;text-transform:uppercase">'+NM[m]+'</span>'
-      +'<span style="font-size:8px;color:rgba(255,255,255,.7);font-weight:600">'+ano+'</span>'
+      +'<div style="background:'+tema.hdr+';padding:5px 6px;display:flex;justify-content:space-between;align-items:center;gap:3px">'
+      +'<span style="font-size:10.5px;font-weight:800;color:#fff;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap">'+NM[m]+'</span>'
+      +badge
       +'</div>'
       +'<table style="width:100%;border-collapse:collapse;padding:2px"><thead><tr>'+hdrCells+'</tr></thead><tbody>'+rows+'</tbody></table>'
       +'</div>';
@@ -10781,6 +10954,7 @@ function gerarPDFMensal(){
 
   // Gera HTML de uma página mensal
   function paginaMes(m){
+    var tema=TEMAS_MESES[m];
     var total=new Date(ano,m+1,0).getDate();
     var prim=new Date(ano,m,1).getDay();
 
@@ -10805,9 +10979,9 @@ function gerarPDFMensal(){
         var isWeekend=dw===0||dw===6;
         var isDom=dw===0;
 
-        // Estilo do número do dia
-        var corNum=isDom?'#c53030':isWeekend?'#c05621':'#1a202c';
-        var bgCell=isWeekend?'#fafafa':'#fff';
+        // Estilo do número do dia — fundo de fim de semana usa a cor do tema do mês
+        var corNum=isDom?'#c53030':isWeekend?tema.txt:'#1a202c';
+        var bgCell=isWeekend?tema.bg:'#fff';
         var bordaCell='border:1px solid #edf2f7';
         var numSize='13px';
 
@@ -10894,13 +11068,13 @@ function gerarPDFMensal(){
     if(!listaLat)listaLat='<p style="font-size:7.5px;color:#a0aec0;font-style:italic;padding:4px 0">Sem eventos neste mês.</p>';
 
     return '<div style="width:210mm;min-height:297mm;padding:10mm 10mm 8mm 10mm;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;page-break-after:always">'
-      // cabeçalho da página
+      // cabeçalho da página — cor do tema do mês
       +'<div style="display:flex;align-items:stretch;border-radius:8px;overflow:hidden;margin-bottom:4px">'
-      +'<div style="background:linear-gradient(135deg,#1a5c38,#2f855a);flex:1;padding:10px 14px;display:flex;flex-direction:column;justify-content:center">'
-      +'<div style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-1px;line-height:1">'+NM[m].toUpperCase()+' <span style="font-size:14px;font-weight:600;opacity:.7">'+ano+'</span></div>'
-      +'<div style="font-size:9px;color:rgba(255,255,255,.7);margin-top:2px">Explosão Alimentos · Trindade — GO · Calendário Operacional</div>'
+      +'<div style="background:linear-gradient(135deg,'+tema.hdr+','+tema.hdr2+');flex:1;padding:10px 14px;display:flex;flex-direction:column;justify-content:center">'
+      +'<div style="font-size:22px;font-weight:900;color:#fff;letter-spacing:-1px;line-height:1">'+NM[m].toUpperCase()+' <span style="font-size:14px;font-weight:600;opacity:.7">'+ano+'</span>'+(tema.label?' <span style="font-size:11px;font-weight:700;opacity:.9;background:rgba(255,255,255,.2);border-radius:99px;padding:1px 8px;vertical-align:middle">'+tema.icone+' '+tema.label+'</span>':'')+'</div>'
+      +'<div style="font-size:9px;color:rgba(255,255,255,.7);margin-top:2px">Explosão Alimentos · Trindade — GO'+(tema.sub?' · '+tema.sub:'')+'</div>'
       +'</div>'
-      +'<div style="background:#22543d;width:50px;display:flex;align-items:center;justify-content:center;font-size:24px">📅</div>'
+      +'<div style="background:'+tema.hdr+';filter:brightness(.8);width:50px;display:flex;align-items:center;justify-content:center;font-size:24px">'+(tema.icone||'📅')+'</div>'
       +'</div>'
       // layout principal: grade + lateral
       +'<div style="display:flex;gap:8px;flex:1;align-items:flex-start">'
