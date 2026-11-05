@@ -2799,7 +2799,7 @@ tbody tr:hover td{background:var(--bg)}
 
 <div class="toast" id="toast"></div>
 <div id="wms-tooltip"></div>
-<div id="app-version">Versão 4.0.9</div>
+<div id="app-version">Versão 4.1.0</div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
@@ -11774,34 +11774,37 @@ function normalizarNomeArquivo(str){
   return str.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-zA-Z0-9]/g,'');
 }
 
-// --- Gerar XLSX no formato iVMS (apenas cabeçalho + dados) ---
+// --- Gerar XLSX no formato iVMS (com instruções + 4 colunas obrigatórias) ---
 function buildXlsxIVMS(colabs){
-  // Requer SheetJS (já incluído no sistema via CDN)
   const XLSX_LIB=window.XLSX;
   if(!XLSX_LIB){notify('Biblioteca XLSX não carregada','error');return null;}
 
-  const header=[
-    '*ID de pessoa','*Organização','*Nome da pessoa','*Gênero',
-    'Tel.','E-mail','Período efetivo','Hora de expiração',
-    'Cartão nº.','N.º do quarto','N.º do piso'
+  // Linhas 1-8: instruções do modelo original iVMS
+  const instrucoes=[
+    ['\tRegra:'],
+    ['\t1.Os itens com asterisco são obrigatórios.'],
+    ['\t2.Sexo 1:Masculino 2:Feminino'],
+    ['\t3.Formato data::YYYY/MM/DD'],
+    ['\t4.Separe os números dos cartões com ponto e vírgula.'],
+    ["\t5.Se o número do cartão iniciar com 0, adicione ' antes de 0. Por exemplo,'012345."],
+    ['\t6.Separe as hierarquias das organizações com /.'],
+    ['\t7.Formato do n.º de sala:Considere como exemplo a sala 1: o n.º da sala deve ser 1 ou 1-1-1-1 (n.º do projeto-prédio-unidade-sala).'],
   ];
 
-  const rows=[header];
+  // Linha 9: cabeçalho (só 4 colunas obrigatórias + as demais vazias para manter estrutura)
+  const header=['*ID de pessoa','*Organização','*Nome da pessoa','*Gênero','Tel.','E-mail','Período efetivo','Hora de expiração','Cartão nº.','N.º do quarto','N.º do piso'];
+
+  const rows=[...instrucoes, header];
+
+  // Linha 10+: dados (apenas A, B, C, D — resto vazio)
   colabs.forEach(c=>{
     const sexoNum=c.sexo==='Masculino'||c.sexo==='M'?'1':'2';
-    const admissao=c.admissao?String(c.admissao).replace(/-/g,'/'):'';
     rows.push([
       String(c.matricula||''),  // *ID de pessoa
       'Explosao Alimentos',     // *Organização
       String(c.nome||''),       // *Nome da pessoa
       String(sexoNum),          // *Gênero
-      String(c.telefone||''),   // Tel.
-      String(c.email||''),      // E-mail
-      String(admissao),         // Período efetivo
-      '',  // Hora de expiração
-      '',  // Cartão nº.
-      '',  // N.º do quarto
-      ''   // N.º do piso
+      '','','','','','',''      // demais colunas vazias
     ]);
   });
 
