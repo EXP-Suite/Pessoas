@@ -1930,6 +1930,52 @@ tbody tr:hover td{background:var(--bg)}
     <button class="btn btn-primary" onclick="gerarArquivosIVMS()" id="btn-gerar-ivms">⬇ Gerar arquivos para o iVMS</button>
   </div>
 
+  <!-- Passo a passo iVMS -->
+  <div style="margin-bottom:12px">
+    <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.ivms-chevron').style.transform=this.nextElementSibling.style.display==='block'?'rotate(180deg)':'rotate(0deg)'"
+      style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;user-select:none;padding:6px 0">
+      <span>📋 Como usar — passo a passo</span>
+      <span class="ivms-chevron" style="margin-left:auto;font-size:10px;transition:transform .2s">▼</span>
+    </div>
+    <div style="display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+
+        <!-- Importar -->
+        <div class="card" style="padding:14px;font-size:12px;line-height:1.7">
+          <div style="font-weight:700;color:var(--accent);margin-bottom:8px;font-size:13px">⬆ Importar pessoas</div>
+          <ol style="margin:0;padding-left:18px;color:var(--text1)">
+            <li>Selecione os colaboradores e clique em <strong>Gerar arquivos para o iVMS</strong></li>
+            <li>Serão gerados lotes de 10: <code>iVMS_Pessoas_lote1.xlsx</code> e <code>iVMS_Fotos_lote1.zip</code></li>
+            <li>No iVMS → <strong>Controle de Acesso → Gestão de Pessoas</strong></li>
+            <li>Clique em <strong>Importar</strong> e selecione o <code>.xlsx</code> de cada lote</li>
+            <li>Para importar fotos: clique em <strong>Importar</strong> novamente, marque a opção <strong>Face</strong> e selecione o <code>.zip</code> correspondente</li>
+            <li>Repita os passos 4 e 5 para cada lote</li>
+            <li>Vá em <strong>Controle de Acesso → Grupo de Acesso</strong></li>
+            <li>Selecione o grupo e clique em <strong>Aplicar tudo aos dispositivos</strong></li>
+            <li>Aguarde a confirmação de envio ✅</li>
+          </ol>
+        </div>
+
+        <!-- Excluir -->
+        <div class="card" style="padding:14px;font-size:12px;line-height:1.7">
+          <div style="font-weight:700;color:var(--danger,#ef4444);margin-bottom:8px;font-size:13px">🗑 Excluir pessoas</div>
+          <ol style="margin:0;padding-left:18px;color:var(--text1)">
+            <li>No iVMS → <strong>Controle de Acesso → Gestão de Pessoas</strong></li>
+            <li>Selecione as pessoas que deseja excluir</li>
+            <li>Clique em <strong>Apagar</strong> — remove do software (PC)</li>
+            <li>Vá em <strong>Controle de Acesso → Grupo de Acesso</strong></li>
+            <li>Clique em <strong>Aplicar tudo aos dispositivos</strong> — sincroniza a exclusão com o leitor físico</li>
+            <li>Para confirmar: acesse <strong>Configuração Remota</strong> do dispositivo e verifique se as pessoas foram removidas ✅</li>
+          </ol>
+          <div style="margin-top:10px;padding:8px;background:var(--warn-bg,rgba(234,179,8,.1));border-radius:6px;color:var(--text2);font-size:11px">
+            ⚠ Atenção: apagar só no software <strong>não remove</strong> do leitor físico. Sempre aplicar ao dispositivo após excluir.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <!-- KPIs -->
   <div class="summary-grid" style="margin-bottom:12px">
     <div class="stat-card ok"><div class="stat-label">Ativos</div><div class="stat-value" id="facial-kpi-ativos">—</div></div>
@@ -2799,7 +2845,7 @@ tbody tr:hover td{background:var(--bg)}
 
 <div class="toast" id="toast"></div>
 <div id="wms-tooltip"></div>
-<div id="app-version">Versão 4.1.0</div>
+<div id="app-version">Versão 4.1.5</div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
@@ -11774,6 +11820,11 @@ function normalizarNomeArquivo(str){
   return str.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-zA-Z0-9]/g,'');
 }
 
+// Remove acentos mas mantém espaços e letras (para iVMS que não aceita UTF-8)
+function removerAcentos(str){
+  return String(str||'').normalize('NFD').replace(/[̀-ͯ]/g,'');
+}
+
 // --- Gerar XLSX no formato iVMS (com instruções + 4 colunas obrigatórias) ---
 function buildXlsxIVMS(colabs){
   const XLSX_LIB=window.XLSX;
@@ -11800,10 +11851,10 @@ function buildXlsxIVMS(colabs){
   colabs.forEach(c=>{
     const sexoNum=c.sexo==='Masculino'||c.sexo==='M'?'1':'2';
     rows.push([
-      String(c.matricula||''),  // *ID de pessoa
-      'Explosao Alimentos',     // *Organização
-      String(c.nome||''),       // *Nome da pessoa
-      String(sexoNum),          // *Gênero
+      String(c.matricula||''),       // *ID de pessoa
+      'Explosao Alimentos',          // *Organização
+      removerAcentos(c.nome||''),    // *Nome da pessoa (sem acentos — iVMS não aceita UTF-8)
+      String(sexoNum),               // *Gênero
       '','','','','','',''      // demais colunas vazias
     ]);
   });
@@ -11816,7 +11867,7 @@ function buildXlsxIVMS(colabs){
   return XLSX_LIB.write(wb,{bookType:'xlsx',type:'array'});
 }
 
-// --- Gerar arquivos para o iVMS (botão principal) ---
+// --- Gerar arquivos para o iVMS (botão principal) — lotes de 10 ---
 async function gerarArquivosIVMS(){
   const checkboxes=[...document.querySelectorAll('.facial-check:checked')];
   if(!checkboxes.length){notify('Selecione ao menos um colaborador','error');return;}
@@ -11837,7 +11888,6 @@ async function gerarArquivosIVMS(){
 
   btn.disabled=true;
   divRes.style.display='block';
-  divRes.innerHTML='<div class="card" style="color:var(--text2);font-size:13px">⏳ Buscando fotos no Drive… aguarde.</div>';
 
   // Garante SheetJS e JSZip carregados em paralelo
   await Promise.all([
@@ -11853,105 +11903,101 @@ async function gerarArquivosIVMS(){
     })
   ]);
 
-  // ---- XLSX (gerado localmente, não precisa de rede) ----
-  let xlsxData;
-  try{
-    xlsxData=buildXlsxIVMS(colabs);
-  }catch(xlsxErr){
-    btn.disabled=false;
-    divRes.innerHTML=`<div class="card" style="color:var(--danger,#ef4444)">Erro ao gerar planilha: ${xlsxErr.message}</div>`;
-    return;
-  }
-  if(!xlsxData){
-    btn.disabled=false;
-    divRes.innerHTML='<div class="card" style="color:var(--danger,#ef4444)">Erro ao gerar planilha XLSX.</div>';
-    return;
-  }
+  // Divide em lotes de 10
+  const LOTE_MAX=10;
+  const lotes=[];
+  for(let i=0;i<colabs.length;i+=LOTE_MAX) lotes.push(colabs.slice(i,i+LOTE_MAX));
+  const totalLotes=lotes.length;
 
-  // ---- ZIP via proxy do Apps Script ----
-  // Separa quem tem foto (precisa do Drive) de quem não tem
-  const comFotoColab=colabs.filter(c=>c.fotoId);
-  const semFoto=colabs.filter(c=>!c.fotoId).map(c=>c.nome);
+  let totalFotos=0;
+  let totalErros=[];
+  let totalSemFoto=[];
 
-  let comFotoNomes=[];
-  let errosFoto=[];
-  const zip=new JSZip();
+  for(let li=0;li<lotes.length;li++){
+    const lote=lotes[li];
+    const sufixo=totalLotes>1?`_lote${li+1}`:'';
 
-  if(comFotoColab.length){
-    divRes.innerHTML=`<div class="card" style="color:var(--text2);font-size:13px">⏳ Buscando ${comFotoColab.length} foto(s) no Drive… isso pode levar alguns segundos.</div>`;
+    divRes.innerHTML=`<div class="card" style="color:var(--text2);font-size:13px">⏳ Processando lote ${li+1} de ${totalLotes} (${lote.length} colaboradores)…</div>`;
 
-    try{
-      const payload={
-        action:'getFotosBase64',
-        data:{
-          fotos:comFotoColab.map(c=>({
-            fotoId:c.fotoId,
-            matricula:c.matricula,
-            primeiroNome:normalizarNomeArquivo((c.nome||'').split(' ')[0])
-          }))
+    // ---- XLSX do lote ----
+    let xlsxData;
+    try{ xlsxData=buildXlsxIVMS(lote); }
+    catch(e){ btn.disabled=false; divRes.innerHTML=`<div class="card" style="color:var(--danger,#ef4444)">Erro ao gerar planilha lote ${li+1}: ${e.message}</div>`; return; }
+    if(!xlsxData){ btn.disabled=false; return; }
+
+    const xlsxBlob=new Blob([xlsxData],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const xlsxUrl=URL.createObjectURL(xlsxBlob);
+    const aXlsx=document.createElement('a');
+    aXlsx.href=xlsxUrl; aXlsx.download=`iVMS_Pessoas${sufixo}.xlsx`;
+    document.body.appendChild(aXlsx); aXlsx.click(); document.body.removeChild(aXlsx);
+    setTimeout(()=>URL.revokeObjectURL(xlsxUrl),5000);
+
+    // ---- ZIP de fotos do lote ----
+    const comFotoColab=lote.filter(c=>c.fotoId);
+    const semFotoLote=lote.filter(c=>!c.fotoId).map(c=>c.nome);
+    totalSemFoto=[...totalSemFoto,...semFotoLote];
+
+    if(comFotoColab.length){
+      divRes.innerHTML=`<div class="card" style="color:var(--text2);font-size:13px">⏳ Buscando ${comFotoColab.length} foto(s) — lote ${li+1}/${totalLotes}…</div>`;
+      try{
+        const payload={
+          action:'getFotosBase64',
+          data:{
+            fotos:comFotoColab.map(c=>({
+              fotoId:c.fotoId,
+              matricula:c.matricula,
+              nomeCompleto:removerAcentos(c.nome||'')
+            }))
+          }
+        };
+        const resp=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
+        const json=await resp.json();
+        if(!json.ok) throw new Error(json.error||'Erro desconhecido no script');
+
+        const zip=new JSZip();
+        (json.fotos||[]).forEach(f=>{
+          // Nome da foto = matricula_NomeCompleto.jpg (igual ao nome na planilha)
+          const nomeArq=f.matricula+'_'+f.nomeCompleto+'.jpg';
+          const bin=atob(f.base64);
+          const arr=new Uint8Array(bin.length);
+          for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+          zip.file(nomeArq,arr);
+          totalFotos++;
+        });
+        (json.erros||[]).forEach(e=>totalErros.push(e.nome+' ('+e.erro+')'));
+
+        if(Object.keys(zip.files).length){
+          divRes.innerHTML=`<div class="card" style="color:var(--text2);font-size:13px">⏳ Compactando ZIP lote ${li+1}…</div>`;
+          const zipBlob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
+          const zipUrl=URL.createObjectURL(zipBlob);
+          const aZip=document.createElement('a');
+          aZip.href=zipUrl; aZip.download=`iVMS_Fotos${sufixo}.zip`;
+          document.body.appendChild(aZip); aZip.click(); document.body.removeChild(aZip);
+          setTimeout(()=>URL.revokeObjectURL(zipUrl),5000);
         }
-      };
-      const resp=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
-      const json=await resp.json();
-
-      if(!json.ok) throw new Error(json.error||'Erro desconhecido no script');
-
-      // Monta o ZIP com os base64 recebidos
-      (json.fotos||[]).forEach(f=>{
-        const nomeArq=f.matricula+'_'+f.primeiroNome+'.jpg';
-        // base64 → Uint8Array
-        const bin=atob(f.base64);
-        const arr=new Uint8Array(bin.length);
-        for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
-        zip.file(nomeArq,arr);
-        comFotoNomes.push(f.matricula+'_'+f.primeiroNome);
-      });
-
-      // Erros retornados pelo script
-      (json.erros||[]).forEach(e=>{
-        errosFoto.push(e.nome+' ('+e.erro+')');
-      });
-
-    }catch(err){
-      btn.disabled=false;
-      divRes.innerHTML=`<div class="card" style="color:var(--danger,#ef4444)">Erro ao buscar fotos: ${err.message}</div>`;
-      return;
+      }catch(err){
+        btn.disabled=false;
+        divRes.innerHTML=`<div class="card" style="color:var(--danger,#ef4444)">Erro ao buscar fotos lote ${li+1}: ${err.message}</div>`;
+        return;
+      }
     }
   }
 
-  // ---- Downloads ----
-  // XLSX
-  const xlsxBlob=new Blob([xlsxData],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-  const xlsxUrl=URL.createObjectURL(xlsxBlob);
-  const aXlsx=document.createElement('a');
-  aXlsx.href=xlsxUrl; aXlsx.download='iVMS_Pessoas.xlsx';
-  document.body.appendChild(aXlsx); aXlsx.click(); document.body.removeChild(aXlsx);
-  setTimeout(()=>URL.revokeObjectURL(xlsxUrl),5000);
-
-  // ZIP (só se tiver ao menos uma foto)
-  if(comFotoNomes.length){
-    divRes.innerHTML='<div class="card" style="color:var(--text2);font-size:13px">⏳ Compactando ZIP…</div>';
-    const zipBlob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
-    const zipUrl=URL.createObjectURL(zipBlob);
-    const aZip=document.createElement('a');
-    aZip.href=zipUrl; aZip.download='iVMS_Fotos.zip';
-    document.body.appendChild(aZip); aZip.click(); document.body.removeChild(aZip);
-    setTimeout(()=>URL.revokeObjectURL(zipUrl),5000);
-  }
-
-  // ---- Resumo ----
-  const todosSemFoto=[...semFoto,...errosFoto];
+  // ---- Resumo final ----
+  const todosSemFoto=[...totalSemFoto,...totalErros];
+  const lotesInfo=totalLotes>1?`<div style="font-size:13px;margin-bottom:4px">Lotes gerados: <strong>${totalLotes} arquivo(s) XLSX + ZIP</strong></div>`:'';
   divRes.innerHTML=`<div class="card" style="border-left:4px solid var(--accent)">
-    <div style="font-weight:700;font-size:13px;margin-bottom:8px">Resumo da geração</div>
-    <div style="font-size:13px;margin-bottom:4px">Planilha XLSX: <strong>${colabs.length} colaborador(es)</strong></div>
-    <div style="font-size:13px;margin-bottom:4px">Fotos no ZIP: <strong>${comFotoNomes.length} foto(s)</strong></div>
+    <div style="font-weight:700;font-size:13px;margin-bottom:8px">✅ Geração concluída</div>
+    ${lotesInfo}
+    <div style="font-size:13px;margin-bottom:4px">Total de colaboradores: <strong>${colabs.length}</strong></div>
+    <div style="font-size:13px;margin-bottom:4px">Fotos no ZIP: <strong>${totalFotos} foto(s)</strong></div>
     ${todosSemFoto.length
       ?`<div style="font-size:13px;color:var(--warning,#f59e0b);margin-top:8px"><strong>Sem foto / com erro (${todosSemFoto.length}):</strong><br>${todosSemFoto.join(', ')}</div>`
       :'<div style="font-size:13px;color:var(--ok,#22c55e);margin-top:4px">Todos com foto!</div>'}
   </div>`;
 
   btn.disabled=false;
-  notify('Arquivos gerados com sucesso!');
+  notify(`${totalLotes} lote(s) gerado(s) com sucesso!`);
 }
 
 // Versão
