@@ -2213,27 +2213,16 @@ tbody tr:hover td{background:var(--bg)}
       </div>
 
       <!-- Mensagem -->
-      <div style="font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:600">📋 Mensagem</div>
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:8px;white-space:pre-wrap;font-size:13px;line-height:1.6;font-family:inherit" id="pix-share-msg"></div>
-      <button class="btn btn-primary" style="width:100%;margin-bottom:14px" onclick="copiarMsgPix(this)">📋 Copiar mensagem</button>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px;white-space:pre-wrap;font-size:13px;line-height:1.6;font-family:inherit" id="pix-share-msg"></div>
 
-      <!-- Pix Copia e Cola — campo separado -->
-      <div id="pix-copia-cola-section" style="display:none">
-        <div style="border-top:1px solid var(--border);margin-bottom:12px"></div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:600">📲 Pix Copia e Cola</div>
-        <input id="pix-emv-payload" readonly onclick="this.select()" style="width:100%;background:var(--accent-bg);border:2px dashed var(--accent);border-radius:var(--radius-sm);padding:10px 12px;font-size:11px;font-family:monospace;word-break:break-all;cursor:pointer;color:var(--accent);font-weight:600;margin-bottom:8px;display:block" title="Clique para selecionar o código">
-        <button class="btn btn-primary" style="width:100%;margin-bottom:14px" onclick="copiarPayloadPix(this)">📲 Copiar código Pix</button>
-        <!-- QR Code -->
-        <div style="border-top:1px solid var(--border);padding-top:12px;margin-bottom:4px">
-          <div style="font-size:12px;color:var(--text2);margin-bottom:8px;font-weight:600;text-align:center">📷 QR Code Pix</div>
-          <div id="pix-qr-wrap" style="text-align:center">
-            <canvas id="pix-qr-canvas" style="border:1px solid var(--border);border-radius:var(--radius-sm);display:none;max-width:100%"></canvas>
-            <div id="pix-qr-loading" style="font-size:12px;color:var(--text3);padding:8px 0">Gerando QR Code...</div>
-          </div>
-        </div>
-      </div>
+      <!-- Campo oculto para manter compatibilidade com funções existentes -->
+      <input id="pix-emv-payload" type="hidden">
+      <canvas id="pix-qr-canvas" style="display:none"></canvas>
+      <div id="pix-qr-loading" style="display:none"></div>
+      <div id="pix-copia-cola-section" style="display:none"></div>
+      <div id="pix-qr-wrap" style="display:none"></div>
 
-      <button class="btn" style="width:100%;background:#25D366;color:#fff;border-color:#25D366;margin-top:8px" id="pix-share-wpp" onclick="abrirWhatsAppPix()">📱 Abrir WhatsApp</button>
+      <button class="btn btn-primary" style="width:100%;font-size:14px;padding:12px" onclick="copiarTudoPix(this)">📲 Copiar mensagem e código Pix</button>
     </div>
     <div class="modal-footer">
       <button class="btn btn-primary" onclick="fecharModal('modal-pix-share')">Fechar</button>
@@ -2845,7 +2834,7 @@ tbody tr:hover td{background:var(--bg)}
 
 <div class="toast" id="toast"></div>
 <div id="wms-tooltip"></div>
-<div id="app-version">Versão 4.1.5</div>
+<div id="app-version">Versão 4.2.0</div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
@@ -5322,14 +5311,28 @@ function gerarPixEMV(chave,valor,nome,cidade,motivo,txid){
 
 function copiarPixDireto(id){
   const p=DB.pagamentos_pix.find(x=>String(x.id)===String(id));
-  if(!p||!p.pixCopiaECola){notify('Pix Copia e Cola não disponível.','warn');return;}
-  navigator.clipboard.writeText(p.pixCopiaECola).then(()=>{
-    notify('📲 Pix Copia e Cola copiado!');
+  if(!p){notify('Pagamento não encontrado.','error');return;}
+  // Usa payload salvo ou gera na hora
+  let payload=p.pixCopiaECola||'';
+  if(!payload&&p.pix&&p.valor){
+    try{
+      const localStr=localStorage.getItem('rh_empresa_cidade')||'Trindade - GO';
+      const cidade=removerAcentos(localStr.split('-')[0]||localStr).trim().substring(0,15).toUpperCase();
+      const nome=removerAcentos(p.colaboradorNome||'FUNCIONARIO').substring(0,25).toUpperCase();
+      payload=gerarPixEMV(p.pix,parseFloat(p.valor)||0,nome,cidade,p.motivo||p.tipo||'PIX',String(p.id||'').substring(0,25));
+      // Salva para próxima vez
+      p.pixCopiaECola=payload;
+      sincronizarScript('editarPagamentoPix',p);
+    }catch(e){notify('Erro ao gerar código Pix.','error');return;}
+  }
+  if(!payload){notify('Chave PIX ou valor não disponível.','warn');return;}
+  navigator.clipboard.writeText(payload).then(()=>{
+    notify('📲 Código Pix copiado!');
   }).catch(()=>{
     const ta=document.createElement('textarea');
-    ta.value=p.pixCopiaECola;document.body.appendChild(ta);ta.select();
+    ta.value=payload;document.body.appendChild(ta);ta.select();
     document.execCommand('copy');document.body.removeChild(ta);
-    notify('📲 Pix Copia e Cola copiado!');
+    notify('📲 Código Pix copiado!');
   });
 }
 
@@ -5495,7 +5498,7 @@ function compartilharPix(id){
 function abrirSharePix(obj){
   _pixShareMsg=montarMsgPix(obj);
 
-  // Se não tem payload salvo, regenera na hora a partir dos dados do pagamento
+  // Resolve o payload EMV
   if(obj.pixCopiaECola){
     _pixPayload=obj.pixCopiaECola;
   } else if(obj.pix && obj.valor){
@@ -5508,7 +5511,6 @@ function abrirSharePix(obj){
         (obj.tipo||'PIX').substring(0,35),
         String(obj.id||'').substring(0,25)
       );
-      // Salva para próxima vez
       obj.pixCopiaECola=_pixPayload;
       sincronizarScript('editarPagamentoPix',obj);
     }catch(e){
@@ -5521,22 +5523,11 @@ function abrirSharePix(obj){
 
   document.getElementById('pix-share-chave').textContent=obj.pix||'—';
   document.getElementById('pix-share-msg').textContent=_pixShareMsg;
-  const tel=(obj.pix||'').replace(/\D/g,'');
-  document.getElementById('pix-share-wpp').style.display=tel.length>8?'':'none';
 
-  // Pix Copia e Cola + QR Code
-  const section=document.getElementById('pix-copia-cola-section');
+  // Guarda payload no campo hidden para compatibilidade
   const payloadEl=document.getElementById('pix-emv-payload');
-  if(_pixPayload){
-    payloadEl.value=_pixPayload;
-    section.style.display='block';
-    gerarQRCodePix(_pixPayload);
-  } else {
-    section.style.display='none';
-    document.getElementById('pix-qr-loading').textContent='Chave PIX ou valor não encontrado — edite o pagamento para gerar o QR.';
-    document.getElementById('pix-qr-canvas').style.display='none';
-    section.style.display='block';
-  }
+  if(payloadEl) payloadEl.value=_pixPayload||'';
+
   abrirModal('modal-pix-share');
 }
 function copiarPayloadPix(btn){
@@ -7908,8 +7899,29 @@ function copiarMsgPix(btn){
   });
 }
 
+function copiarTudoPix(btn){
+  const texto=_pixPayload
+    ? _pixShareMsg+'\n\n'+_pixPayload
+    : _pixShareMsg;
+  navigator.clipboard.writeText(texto).then(()=>{
+    const orig=btn.textContent;btn.textContent='✅ Copiado!';
+    setTimeout(()=>btn.textContent=orig,2000);
+  }).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=texto;document.body.appendChild(ta);ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);
+    const orig=btn.textContent;btn.textContent='✅ Copiado!';
+    setTimeout(()=>btn.textContent=orig,2000);
+  });
+}
+
 function abrirWhatsAppPix(){
-  const url='https://web.whatsapp.com/send?text='+encodeURIComponent(_pixShareMsg);
+  // Inclui o código Pix Copia e Cola no final da mensagem
+  // O WhatsApp detecta o padrão EMV (começa com 000201) e exibe o botão "Copiar código Pix" automaticamente
+  const texto=_pixPayload
+    ? _pixShareMsg+'\n\n'+_pixPayload
+    : _pixShareMsg;
+  const url='https://web.whatsapp.com/send?text='+encodeURIComponent(texto);
   window.open(url,'_blank');
 }
 
@@ -8081,7 +8093,7 @@ function renderPix(){
         +(bts[p.status]||'')
         +'<button class="btn btn-sm" onclick="abrirModalPix(\''+id+'\')">✏️ Editar</button>'
         +'<button class="btn btn-sm" onclick="compartilharPix(\''+id+'\')" style="background:#1a5c38;color:#fff;border-color:#1a5c38">🔍 Ver QR</button>'
-        +(p.pixCopiaECola?'<button class="btn btn-sm" onclick="copiarPixDireto(\''+id+'\')" style="background:#0070f3;color:#fff;border-color:#0070f3">📲 Copiar Pix</button>':'')
+        +(p.pix&&p.valor?'<button class="btn btn-sm" onclick="copiarPixDireto(\''+id+'\')" style="background:#0070f3;color:#fff;border-color:#0070f3">📲 Copiar Pix</button>':'')
         +'<button class="btn btn-sm" onclick="compartilharPix(\''+id+'\')" style="background:#25D366;color:#fff;border-color:#25D366">📱 Enviar</button>'
         +'<button class="btn btn-sm btn-danger" onclick="excluirPagamentoPix(\''+id+'\')">🗑</button>'
       +'</div>'
