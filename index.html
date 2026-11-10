@@ -805,6 +805,7 @@ tbody tr:hover td{background:var(--bg)}
     <button class="nav-btn" onclick="showPage('pix',this)"><span class="nav-icon">💸</span>Solicitações PIX</button>
     <button class="nav-btn" onclick="showPage('calendario',this)"><span class="nav-icon">📅</span>Calendário</button>
     <button class="nav-btn" onclick="showPage('leitor-facial',this)"><span class="nav-icon">🤳</span>Leitor Facial</button>
+    <button class="nav-btn" onclick="showPage('tv',this)"><span class="nav-icon">📺</span>TV Corporativa</button>
 
     <div class="sidebar-section">Sistema</div>
     <button class="nav-btn" onclick="showPage('config',this)"><span class="nav-icon">⚙️</span>Configurações</button>
@@ -2017,10 +2018,170 @@ tbody tr:hover td{background:var(--bg)}
   </div>
 </div>
 
+<!-- ═══ PAGE TV CORPORATIVA ═══════════════════════════════ -->
+<div class="page" id="page-tv">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+    <div style="font-size:13px;font-weight:600;color:var(--text2)">📺 TV Corporativa — Gestão de Conteúdo</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="abrirModalTVSlide(null)">➕ Novo Slide</button>
+      <button class="btn btn-primary" onclick="abrirModalTVRecado(null)" style="background:#0070f3;border-color:#0070f3">➕ Novo Aviso</button>
+      <button class="btn" onclick="abrirTVScreen()" style="gap:6px">📺 Abrir tela da TV</button>
+    </div>
+  </div>
+
+  <!-- Tabs TV -->
+  <div style="display:flex;gap:0;border-bottom:2px solid var(--border2);margin-bottom:16px">
+    <button id="tvtab-btn-slides" onclick="switchTVTab('slides')" style="padding:8px 16px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid var(--accent);color:var(--accent);margin-bottom:-2px">🖼 Slides</button>
+    <button id="tvtab-btn-recados" onclick="switchTVTab('recados')" style="padding:8px 16px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:var(--text2);margin-bottom:-2px">📢 Avisos (Ticker)</button>
+    <button id="tvtab-btn-config" onclick="switchTVTab('config')" style="padding:8px 16px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:var(--text2);margin-bottom:-2px">⚙️ Configurações</button>
+  </div>
+
+  <!-- Tab: Slides -->
+  <div id="tvtab-slides">
+    <div id="tv-slides-list" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div id="tv-slides-empty" style="display:none;text-align:center;padding:40px;color:var(--text3);font-size:14px">
+      Nenhum slide cadastrado. Clique em <strong>+ Novo Slide</strong> para começar.
+    </div>
+  </div>
+
+  <!-- Tab: Recados / Ticker -->
+  <div id="tvtab-recados" style="display:none">
+    <div id="tv-recados-list" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div id="tv-recados-empty" style="display:none;text-align:center;padding:40px;color:var(--text3);font-size:14px">
+      Nenhum aviso cadastrado.
+    </div>
+  </div>
+
+  <!-- Tab: Config -->
+  <div id="tvtab-config" style="display:none">
+    <div class="card" style="max-width:520px">
+      <div class="card-title">⚙️ Configurações da TV</div>
+      <div class="form-grid" style="margin-top:12px">
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Nome da empresa (exibido no cabeçalho da TV)</label>
+          <input id="tv-cfg-empresa" type="text" placeholder="Explosão Alimentos" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Dias sem acidentes de trabalho</label>
+          <input id="tv-cfg-acidentes" type="number" min="0" placeholder="0" class="form-control">
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <button class="btn btn-primary" onclick="salvarConfigTV()">💾 Salvar configurações</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview miniatura -->
+  <div style="margin-top:20px;border-top:1px solid var(--border2);padding-top:16px">
+    <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px">👁 Pré-visualização (slide mais recente)</div>
+    <div id="tv-preview" style="width:400px;height:225px;max-width:100%;background:#0A0A0A;border-radius:8px;overflow:hidden;border:1px solid var(--border2);position:relative;display:flex;align-items:center;justify-content:center;font-family:'Segoe UI',system-ui,sans-serif;">
+      <div id="tv-preview-content" style="color:#fff;font-size:11px;text-align:center;padding:16px">
+        <span style="opacity:.4">Nenhum slide ativo</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div><!-- /main -->
 
 </div><!-- /app-content -->
 </div><!-- /app-layout -->
+
+<!-- ═══ MODAIS TV CORPORATIVA ════════════════════════════ -->
+<div class="modal-overlay hidden" id="modal-tv-slide">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <h3 id="modal-tv-slide-title">🖼 Novo Slide</h3>
+      <button class="modal-close" onclick="fecharModal('modal-tv-slide')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Tipo do Slide *</label>
+          <select id="tv-slide-tipo" class="form-control" onchange="atualizarPreviewSlide();_toggleCamposSlide()">
+            <option value="aviso">🔴 Aviso</option>
+            <option value="info">ℹ️ Informação</option>
+            <option value="conquista">🏆 Conquista</option>
+            <option value="meta">🎯 Meta</option>
+            <option value="livre">📌 Destaque livre</option>
+            <option value="imagem">🖼 Imagem</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Ordem de exibição</label>
+          <input id="tv-slide-ordem" type="number" min="1" placeholder="1" class="form-control" value="1">
+        </div>
+        <!-- Campo URL — só aparece para tipo Imagem -->
+        <div class="form-group" id="tv-slide-url-wrap" style="grid-column:1/-1;display:none">
+          <label>URL da imagem *</label>
+          <input id="tv-slide-url" type="url" placeholder="https://lh3.googleusercontent.com/d/... ou outro URL público" class="form-control" oninput="atualizarPreviewSlide()">
+          <small style="color:var(--text3);margin-top:4px;display:block">Cole aqui o link público da imagem (Google Drive, site, etc.)</small>
+        </div>
+        <div class="form-group" id="tv-slide-titulo-wrap" style="grid-column:1/-1">
+          <label>Título *</label>
+          <input id="tv-slide-titulo" type="text" placeholder="Ex: Meta de Produção Atingida!" class="form-control" oninput="atualizarPreviewSlide()">
+        </div>
+        <div class="form-group" id="tv-slide-texto-wrap" style="grid-column:1/-1">
+          <label>Texto complementar <span style="color:var(--text3);font-weight:400">(opcional)</span></label>
+          <textarea id="tv-slide-texto" rows="3" placeholder="Descrição adicional..." class="form-control" style="resize:vertical" oninput="atualizarPreviewSlide()"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Cor personalizada <span style="color:var(--text3);font-weight:400">(opcional)</span></label>
+          <input id="tv-slide-cor" type="color" class="form-control" style="height:38px;padding:2px 4px" value="#FFFFFF" oninput="atualizarPreviewSlide()">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="tv-slide-ativo" class="form-control">
+            <option value="true">✅ Ativo — aparece na TV</option>
+            <option value="false">⏸ Inativo — oculto</option>
+          </select>
+        </div>
+        <!-- Mini preview -->
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Pré-visualização</label>
+          <div id="modal-tv-preview" style="width:100%;height:140px;background:#0A0A0A;border-radius:6px;overflow:hidden;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-family:'Segoe UI',system-ui,sans-serif;"></div>
+        </div>
+        <div class="form-group" style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn" onclick="fecharModal('modal-tv-slide')">Cancelar</button>
+          <button class="btn btn-primary" onclick="salvarSlide()">💾 Salvar Slide</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modal-tv-recado">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h3 id="modal-tv-recado-title">📢 Novo Aviso (Ticker)</h3>
+      <button class="modal-close" onclick="fecharModal('modal-tv-recado')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Texto do aviso *</label>
+          <textarea id="tv-recado-texto" rows="3" placeholder="Ex: Reunião geral hoje às 17h no refeitório!" class="form-control" style="resize:vertical"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Prioridade <span style="color:var(--text3);font-weight:400">(maior = aparece primeiro)</span></label>
+          <input id="tv-recado-prioridade" type="number" min="0" max="10" placeholder="0" class="form-control" value="0">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="tv-recado-ativo" class="form-control">
+            <option value="true">✅ Ativo</option>
+            <option value="false">⏸ Inativo</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn" onclick="fecharModal('modal-tv-recado')">Cancelar</button>
+          <button class="btn btn-primary" onclick="salvarRecado()">💾 Salvar Aviso</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ═══ MODAL PIX ═════════════════════════════════════════ -->
 <div class="modal-overlay hidden" id="modal-pix">
@@ -2215,17 +2376,21 @@ tbody tr:hover td{background:var(--bg)}
       <!-- Mensagem -->
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px;white-space:pre-wrap;font-size:13px;line-height:1.6;font-family:inherit" id="pix-share-msg"></div>
 
-      <!-- Campo oculto para manter compatibilidade com funções existentes -->
+      <!-- Campo oculto para o payload EMV -->
       <input id="pix-emv-payload" type="hidden">
       <canvas id="pix-qr-canvas" style="display:none"></canvas>
       <div id="pix-qr-loading" style="display:none"></div>
       <div id="pix-copia-cola-section" style="display:none"></div>
       <div id="pix-qr-wrap" style="display:none"></div>
 
-      <button class="btn btn-primary" style="width:100%;font-size:14px;padding:12px" onclick="copiarTudoPix(this)">📲 Copiar mensagem e código Pix</button>
+      <!-- Dois botões separados: mensagem + código Pix -->
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-primary" style="width:100%;font-size:14px;padding:11px" onclick="copiarMsgPix(this)">💬 Copiar mensagem</button>
+        <button class="btn" id="btn-copiar-pix-code" style="width:100%;font-size:14px;padding:11px;background:#0070f3;color:#fff;border-color:#0070f3" onclick="copiarPayloadPix(this)">📲 Copiar código Pix</button>
+      </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-primary" onclick="fecharModal('modal-pix-share')">Fechar</button>
+      <button class="btn" onclick="fecharModal('modal-pix-share')">Fechar</button>
     </div>
   </div>
 </div>
@@ -2834,7 +2999,7 @@ tbody tr:hover td{background:var(--bg)}
 
 <div class="toast" id="toast"></div>
 <div id="wms-tooltip"></div>
-<div id="app-version">Versão 4.2.0</div>
+<div id="app-version">Versão 4.3.0</div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
@@ -2865,6 +3030,9 @@ let DB = {
   cal_eventos:     safeArr('cal_eventos'),
   atestados:       safeArr('rh_atestados'),
   avaliacoes:      safeArr('rh_avaliacoes'),
+  tv_slides:       safeArr('rh_tv_slides'),
+  tv_recados:      safeArr('rh_tv_recados'),
+  tv_config:       safeArr('rh_tv_config'),
 };
 // Empresas cadastradas
 const EMPRESAS = [
@@ -2887,6 +3055,9 @@ function salvarDB(){
   localStorage.setItem('rh_documentos',JSON.stringify(DB.documentos));
   localStorage.setItem('rh_talentos',JSON.stringify(DB.talentos));
   localStorage.setItem('rh_pagamentos_pix',JSON.stringify(DB.pagamentos_pix));
+  localStorage.setItem('rh_tv_slides',JSON.stringify(DB.tv_slides));
+  localStorage.setItem('rh_tv_recados',JSON.stringify(DB.tv_recados));
+  localStorage.setItem('rh_tv_config',JSON.stringify(DB.tv_config));
 }
 
 // ══════════════════════════════════════════
@@ -2941,7 +3112,7 @@ function setSyncStatus(st,msg){
 // ══════════════════════════════════════════
 // NAVEGAÇÃO
 // ══════════════════════════════════════════
-const PAGE_TITLES={'dashboard':'Dashboard','colaboradores':'Colaboradores','ferias':'Férias','carreira':'Carreira','quadro':'Quadro de Vagas','advertencias':'Advertências','atestados':'Atestados','aniversarios':'Aniversários','desligamentos':'Desligamentos','documentos':'Documentos','talentos':'Banco de Talentos','pagamentos':'Folha & Vales','pix':'Solicitações PIX','calendario':'Calendário','leitor-facial':'Leitor Facial','config':'Configurações'};
+const PAGE_TITLES={'dashboard':'Dashboard','colaboradores':'Colaboradores','ferias':'Férias','carreira':'Carreira','quadro':'Quadro de Vagas','advertencias':'Advertências','atestados':'Atestados','aniversarios':'Aniversários','desligamentos':'Desligamentos','documentos':'Documentos','talentos':'Banco de Talentos','pagamentos':'Folha & Vales','pix':'Solicitações PIX','calendario':'Calendário','leitor-facial':'Leitor Facial','tv':'TV Corporativa','config':'Configurações'};
 function showPage(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
@@ -2956,7 +3127,7 @@ function showPage(id,btn){
   // Sincroniza bottom nav
   const bBtn=document.querySelector(`.bnav-btn[data-page="${id}"]`);
   if(bBtn)bBtn.classList.add('active');
-  const m={dashboard:renderDashboard,colaboradores:renderColabs,ferias:renderFerias,carreira:renderCarreira,quadro:renderQuadroVagas,advertencias:()=>{populateSelectColabs(['adv-colaborador']);renderAdvertencias();},atestados:()=>{populateSelectColabs(['at-colaborador']);renderAtestados();},aniversarios:renderAniversarios,desligamentos:()=>{populateSelectColabs(['desl-colaborador'],true);renderDesligamentos();},documentos:()=>{populateSelectColabs(['doc-filtro-colab','doc-colab']);renderDocumentos();},talentos:renderTalentos,pix:()=>{populateSelectColabs(['pix-colab','pix-filtro-colab']);renderPix();},pagamentos:renderPagePagamentos,config:carregarConfig,calendario:renderCalendario,'leitor-facial':renderFacial};
+  const m={dashboard:renderDashboard,colaboradores:renderColabs,ferias:renderFerias,carreira:renderCarreira,quadro:renderQuadroVagas,advertencias:()=>{populateSelectColabs(['adv-colaborador']);renderAdvertencias();},atestados:()=>{populateSelectColabs(['at-colaborador']);renderAtestados();},aniversarios:renderAniversarios,desligamentos:()=>{populateSelectColabs(['desl-colaborador'],true);renderDesligamentos();},documentos:()=>{populateSelectColabs(['doc-filtro-colab','doc-colab']);renderDocumentos();},talentos:renderTalentos,pix:()=>{populateSelectColabs(['pix-colab','pix-filtro-colab']);renderPix();},pagamentos:renderPagePagamentos,config:carregarConfig,calendario:renderCalendario,'leitor-facial':renderFacial,tv:renderTV};
   if(m[id])m[id]();
 }
 
@@ -4695,6 +4866,9 @@ async function sincronizar(){
       }
       if(d.result.atestados&&Array.isArray(d.result.atestados))DB.atestados=d.result.atestados;
       if(d.result.avaliacoes&&Array.isArray(d.result.avaliacoes))DB.avaliacoes=d.result.avaliacoes;
+      if(d.result.tv_slides&&Array.isArray(d.result.tv_slides)){DB.tv_slides=d.result.tv_slides;localStorage.setItem('rh_tv_slides',JSON.stringify(DB.tv_slides));}
+      if(d.result.tv_recados&&Array.isArray(d.result.tv_recados)){DB.tv_recados=d.result.tv_recados;localStorage.setItem('rh_tv_recados',JSON.stringify(DB.tv_recados));}
+      if(d.result.tv_config&&Array.isArray(d.result.tv_config)){DB.tv_config=d.result.tv_config;localStorage.setItem('rh_tv_config',JSON.stringify(DB.tv_config));}
       if(d.result.usuarios && Array.isArray(d.result.usuarios)&&d.result.usuarios.length){
         DB.usuarios=d.result.usuarios;
         localStorage.setItem('exp_usuarios',JSON.stringify(d.result.usuarios));
@@ -4715,6 +4889,7 @@ async function sincronizar(){
         else if(pAtiva.id==='page-desligamentos')renderDesligamentos();
         else if(pAtiva.id==='page-pix')renderPix();
         else if(pAtiva.id==='page-pagamentos')renderPagePagamentos();
+        else if(pAtiva.id==='page-tv')renderTV();
       }
     }else{setSyncStatus('offline','Erro: '+(d.error||'?'));notify(d.error||'Erro ao sincronizar','error');}
   }catch(e){setSyncStatus('offline','Erro de conexão');notify('Erro: '+e.message,'error');}
@@ -5524,9 +5699,13 @@ function abrirSharePix(obj){
   document.getElementById('pix-share-chave').textContent=obj.pix||'—';
   document.getElementById('pix-share-msg').textContent=_pixShareMsg;
 
-  // Guarda payload no campo hidden para compatibilidade
+  // Guarda payload no campo hidden
   const payloadEl=document.getElementById('pix-emv-payload');
   if(payloadEl) payloadEl.value=_pixPayload||'';
+
+  // Exibe ou oculta o botão de copiar código Pix conforme disponibilidade
+  const btnPix=document.getElementById('btn-copiar-pix-code');
+  if(btnPix) btnPix.style.display=_pixPayload?'':'none';
 
   abrirModal('modal-pix-share');
 }
@@ -12014,6 +12193,313 @@ async function gerarArquivosIVMS(){
 
 // Versão
 // v3.7.0 — Leitor Facial (iVMS-4200) + Matrícula sequencial
+// v4.3.0 — TV Corporativa
+
+// ══════════════════════════════════════════
+// TV CORPORATIVA — ADMIN
+// ══════════════════════════════════════════
+let _tvSlideEditId = null;
+let _tvRecadoEditId = null;
+let _tvTab = 'slides';
+
+function abrirTVScreen(){
+  window.open('tv.html','tv_corporativa','width=1280,height=720,menubar=no,toolbar=no,location=no,scrollbars=no');
+}
+
+function switchTVTab(tab){
+  _tvTab = tab;
+  ['slides','recados','config'].forEach(t=>{
+    const el=document.getElementById('tvtab-'+t);
+    const btn=document.getElementById('tvtab-btn-'+t);
+    if(el) el.style.display=t===tab?'block':'none';
+    if(btn){
+      btn.style.borderBottomColor=t===tab?'var(--accent)':'transparent';
+      btn.style.color=t===tab?'var(--accent)':'var(--text2)';
+    }
+  });
+  if(tab==='config') carregarConfigTV();
+  if(tab==='slides') renderTVSlides();
+  if(tab==='recados') renderTVRecados();
+}
+
+function renderTV(){
+  switchTVTab('slides');
+  renderTVSlides();
+  atualizarPreviewGeral();
+}
+
+// ── Slides ──────────────────────────────────────────────────
+function renderTVSlides(){
+  const lista=(DB.tv_slides||[]).slice().sort((a,b)=>(parseInt(a.ordem)||0)-(parseInt(b.ordem)||0));
+  const listEl=document.getElementById('tv-slides-list');
+  const emptyEl=document.getElementById('tv-slides-empty');
+  if(!listEl)return;
+  if(lista.length===0){listEl.innerHTML='';emptyEl.style.display='block';return;}
+  emptyEl.style.display='none';
+
+  const TIPO_CORES={aviso:'#CC1A1A',info:'#0070F3',conquista:'#FFD600',meta:'#00A651',livre:'#7C3AED',imagem:'#555'};
+  const TIPO_LABEL={aviso:'🔴 Aviso',info:'ℹ️ Info',conquista:'🏆 Conquista',meta:'🎯 Meta',livre:'📌 Destaque',imagem:'🖼 Imagem'};
+
+  listEl.innerHTML=lista.map(s=>{
+    const ativo=String(s.ativo)==='true';
+    const cor=TIPO_CORES[s.tipo]||'#999';
+    const subinfo=s.tipo==='imagem'
+      ? (s.url?`<div style="font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🔗 ${s.url}</div>`:'<div style="font-size:11px;color:#ef4444">URL não definido!</div>')
+      : (s.texto?`<div style="font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.texto}</div>`:'');
+    return `<div style="display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:12px 14px;${ativo?'':'opacity:.5'}">
+      <span style="font-size:18px;cursor:move;color:var(--text3)" title="Reordenar">⠿</span>
+      <span style="background:${cor};color:${s.tipo==='conquista'?'#111':'#fff'};font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;white-space:nowrap">${TIPO_LABEL[s.tipo]||s.tipo}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.titulo||'(sem título)'}</div>
+        ${subinfo}
+      </div>
+      <div style="font-size:11px;color:var(--text3);flex-shrink:0">Ordem: ${s.ordem||'—'}</div>
+      <span style="font-size:12px;${ativo?'color:#22c55e':'color:var(--text3)'}">●</span>
+      <button class="btn btn-sm" onclick="abrirModalTVSlide('${s.id}')" style="flex-shrink:0">✏️</button>
+      <button class="btn btn-sm" onclick="excluirTVSlide('${s.id}')" style="flex-shrink:0;color:var(--danger,#ef4444)">🗑</button>
+    </div>`;
+  }).join('');
+
+  atualizarPreviewGeral();
+}
+
+function abrirModalTVSlide(id){
+  _tvSlideEditId=id;
+  const isEdit=id!=null;
+  document.getElementById('modal-tv-slide-title').textContent=isEdit?'✏️ Editar Slide':'🖼 Novo Slide';
+  if(isEdit){
+    const s=(DB.tv_slides||[]).find(x=>String(x.id)===String(id));
+    if(!s)return;
+    document.getElementById('tv-slide-tipo').value=s.tipo||'info';
+    document.getElementById('tv-slide-titulo').value=s.titulo||'';
+    document.getElementById('tv-slide-texto').value=s.texto||'';
+    document.getElementById('tv-slide-cor').value=s.cor||'#FFFFFF';
+    document.getElementById('tv-slide-ordem').value=s.ordem||1;
+    document.getElementById('tv-slide-ativo').value=String(s.ativo)==='true'?'true':'false';
+    document.getElementById('tv-slide-url').value=s.url||'';
+  } else {
+    document.getElementById('tv-slide-tipo').value='info';
+    document.getElementById('tv-slide-titulo').value='';
+    document.getElementById('tv-slide-texto').value='';
+    document.getElementById('tv-slide-cor').value='#FFFFFF';
+    document.getElementById('tv-slide-ordem').value=((DB.tv_slides||[]).length)+1;
+    document.getElementById('tv-slide-ativo').value='true';
+    document.getElementById('tv-slide-url').value='';
+  }
+  _toggleCamposSlide();
+  atualizarPreviewSlide();
+  abrirModal('modal-tv-slide');
+}
+
+function atualizarPreviewSlide(){
+  const tipo=document.getElementById('tv-slide-tipo')?.value||'info';
+  const titulo=document.getElementById('tv-slide-titulo')?.value||'';
+  const texto=document.getElementById('tv-slide-texto')?.value||'';
+  const cor=document.getElementById('tv-slide-cor')?.value||'#FFFFFF';
+  const url=document.getElementById('tv-slide-url')?.value||'';
+  const previewEl=document.getElementById('modal-tv-preview');
+  if(!previewEl)return;
+  previewEl.innerHTML=buildSlidePreviewHTML(tipo,titulo,texto,cor,'100%','140px',url);
+}
+
+function _toggleCamposSlide(){
+  const tipo=document.getElementById('tv-slide-tipo')?.value||'info';
+  const isImagem=tipo==='imagem';
+  const urlWrap=document.getElementById('tv-slide-url-wrap');
+  const tituloWrap=document.getElementById('tv-slide-titulo-wrap');
+  const textoWrap=document.getElementById('tv-slide-texto-wrap');
+  if(urlWrap) urlWrap.style.display=isImagem?'':'none';
+  if(tituloWrap) tituloWrap.style.display=isImagem?'none':'';
+  if(textoWrap) textoWrap.style.display=isImagem?'none':'';
+}
+
+function buildSlidePreviewHTML(tipo,titulo,texto,cor,w,h,url){
+  if(tipo==='imagem'){
+    if(url){
+      return `<div style="width:${w};height:${h};background:#000;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden">
+        <img src="${url}" style="max-width:100%;max-height:100%;object-fit:contain" onerror="this.style.opacity='.1'">
+        <span style="position:absolute;bottom:4px;right:6px;font-size:9px;color:rgba(255,255,255,.4)">🖼 Imagem</span>
+      </div>`;
+    }
+    return `<div style="width:${w};height:${h};background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-family:'Segoe UI',system-ui,sans-serif">
+      <span style="font-size:28px;opacity:.3">🖼</span>
+      <span style="font-size:10px;color:rgba(255,255,255,.3)">Cole o URL da imagem acima</span>
+    </div>`;
+  }
+  const BG={aviso:'#1a0000',info:'#000a1a',conquista:'#1a1500',meta:'#001a08',livre:'#0d0014'};
+  const LABEL={aviso:'🔴 AVISO',info:'ℹ️ INFORMAÇÃO',conquista:'🏆 CONQUISTA',meta:'🎯 META',livre:'📌 DESTAQUE'};
+  const LBCOR={aviso:'#CC1A1A',info:'#0070F3',conquista:'#FFD600',meta:'#00A651',livre:'#7C3AED'};
+  const LBTXT={conquista:'#111'};
+  const bg=BG[tipo]||'#111';
+  const lbBg=LBCOR[tipo]||'#555';
+  const lbTxt=LBTXT[tipo]||'#fff';
+  return `<div style="width:${w};height:${h};background:${bg};display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;gap:6px;font-family:'Segoe UI',system-ui,sans-serif">
+    <span style="background:${lbBg};color:${lbTxt};font-size:9px;font-weight:700;padding:2px 8px;border-radius:3px;letter-spacing:1px">${LABEL[tipo]||tipo}</span>
+    <div style="color:${cor};font-size:16px;font-weight:800;text-align:center;line-height:1.2">${titulo||'<span style="opacity:.3">Título aqui</span>'}</div>
+    ${texto?`<div style="color:rgba(255,255,255,.75);font-size:11px;text-align:center;line-height:1.3">${texto}</div>`:''}
+  </div>`;
+}
+
+function salvarSlide(){
+  const tipo=document.getElementById('tv-slide-tipo').value;
+  const titulo=(document.getElementById('tv-slide-titulo')?.value||'').trim();
+  const url=(document.getElementById('tv-slide-url')?.value||'').trim();
+  if(tipo==='imagem'){
+    if(!url){notify('Informe o URL da imagem.','warn');return;}
+  } else {
+    if(!titulo){notify('Informe o título do slide.','warn');return;}
+  }
+  const agora=new Date().toISOString();
+  const obj={
+    id:_tvSlideEditId!=null?String(_tvSlideEditId):String(gerarId()),
+    tipo:tipo,
+    titulo:tipo==='imagem'?(titulo||'Imagem'):titulo,
+    texto:(document.getElementById('tv-slide-texto')?.value||'').trim(),
+    url:url,
+    cor:document.getElementById('tv-slide-cor')?.value||'',
+    ativo:document.getElementById('tv-slide-ativo').value,
+    ordem:parseInt(document.getElementById('tv-slide-ordem')?.value||'1')||1,
+    criadoEm:agora
+  };
+  if(!DB.tv_slides)DB.tv_slides=[];
+  if(_tvSlideEditId!=null){
+    const idx=DB.tv_slides.findIndex(x=>String(x.id)===String(_tvSlideEditId));
+    if(idx>-1)DB.tv_slides[idx]=obj; else DB.tv_slides.push(obj);
+    sincronizarScript('editarTVSlide',obj);
+  } else {
+    DB.tv_slides.push(obj);
+    sincronizarScript('novoTVSlide',obj);
+  }
+  salvarDB();
+  fecharModal('modal-tv-slide');
+  renderTVSlides();
+  notify('Slide salvo!');
+}
+
+function excluirTVSlide(id){
+  if(!confirm('Excluir este slide da TV?'))return;
+  DB.tv_slides=(DB.tv_slides||[]).filter(x=>String(x.id)!==String(id));
+  sincronizarScript('excluirTVSlide',{id:String(id)});
+  salvarDB();
+  renderTVSlides();
+  notify('Slide excluído.','warn');
+}
+
+// ── Recados ─────────────────────────────────────────────────
+function renderTVRecados(){
+  const lista=(DB.tv_recados||[]).slice().sort((a,b)=>(parseInt(b.prioridade)||0)-(parseInt(a.prioridade)||0));
+  const listEl=document.getElementById('tv-recados-list');
+  const emptyEl=document.getElementById('tv-recados-empty');
+  if(!listEl)return;
+  if(lista.length===0){listEl.innerHTML='';emptyEl.style.display='block';return;}
+  emptyEl.style.display='none';
+  listEl.innerHTML=lista.map(r=>{
+    const ativo=String(r.ativo)==='true';
+    return `<div style="display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:12px 14px;${ativo?'':'opacity:.5'}">
+      <span style="font-size:18px;color:var(--accent)">📢</span>
+      <div style="flex:1;min-width:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.texto||'—'}</div>
+      <div style="font-size:11px;color:var(--text3);flex-shrink:0">Prio: ${r.prioridade||0}</div>
+      <span style="font-size:12px;${ativo?'color:#22c55e':'color:var(--text3)'}">●</span>
+      <button class="btn btn-sm" onclick="abrirModalTVRecado('${r.id}')" style="flex-shrink:0">✏️</button>
+      <button class="btn btn-sm" onclick="excluirTVRecado('${r.id}')" style="flex-shrink:0;color:var(--danger,#ef4444)">🗑</button>
+    </div>`;
+  }).join('');
+}
+
+function abrirModalTVRecado(id){
+  _tvRecadoEditId=id;
+  const isEdit=id!=null;
+  document.getElementById('modal-tv-recado-title').textContent=isEdit?'✏️ Editar Aviso':'📢 Novo Aviso (Ticker)';
+  if(isEdit){
+    const r=(DB.tv_recados||[]).find(x=>String(x.id)===String(id));
+    if(!r)return;
+    document.getElementById('tv-recado-texto').value=r.texto||'';
+    document.getElementById('tv-recado-prioridade').value=r.prioridade||0;
+    document.getElementById('tv-recado-ativo').value=String(r.ativo)==='true'?'true':'false';
+  } else {
+    document.getElementById('tv-recado-texto').value='';
+    document.getElementById('tv-recado-prioridade').value='0';
+    document.getElementById('tv-recado-ativo').value='true';
+  }
+  abrirModal('modal-tv-recado');
+}
+
+function salvarRecado(){
+  const texto=(document.getElementById('tv-recado-texto')?.value||'').trim();
+  if(!texto){notify('Informe o texto do aviso.','warn');return;}
+  const agora=new Date().toISOString();
+  const obj={
+    id:_tvRecadoEditId!=null?String(_tvRecadoEditId):String(gerarId()),
+    texto:texto,
+    ativo:document.getElementById('tv-recado-ativo').value,
+    prioridade:parseInt(document.getElementById('tv-recado-prioridade')?.value||'0')||0,
+    criadoEm:agora
+  };
+  if(!DB.tv_recados)DB.tv_recados=[];
+  if(_tvRecadoEditId!=null){
+    const idx=DB.tv_recados.findIndex(x=>String(x.id)===String(_tvRecadoEditId));
+    if(idx>-1)DB.tv_recados[idx]=obj; else DB.tv_recados.push(obj);
+    sincronizarScript('editarTVRecado',obj);
+  } else {
+    DB.tv_recados.push(obj);
+    sincronizarScript('novoTVRecado',obj);
+  }
+  salvarDB();
+  fecharModal('modal-tv-recado');
+  renderTVRecados();
+  notify('Aviso salvo!');
+}
+
+function excluirTVRecado(id){
+  if(!confirm('Excluir este aviso do ticker?'))return;
+  DB.tv_recados=(DB.tv_recados||[]).filter(x=>String(x.id)!==String(id));
+  sincronizarScript('excluirTVRecado',{id:String(id)});
+  salvarDB();
+  renderTVRecados();
+  notify('Aviso excluído.','warn');
+}
+
+// ── Config TV ───────────────────────────────────────────────
+function carregarConfigTV(){
+  const cfg={};
+  (DB.tv_config||[]).forEach(c=>{if(c.chave)cfg[c.chave]=c.valor;});
+  if(document.getElementById('tv-cfg-empresa'))
+    document.getElementById('tv-cfg-empresa').value=cfg.nomeEmpresa||'';
+  if(document.getElementById('tv-cfg-acidentes'))
+    document.getElementById('tv-cfg-acidentes').value=cfg.diasSemAcidente||'0';
+}
+
+function salvarConfigTV(){
+  const empresa=(document.getElementById('tv-cfg-empresa')?.value||'').trim();
+  const acidentes=document.getElementById('tv-cfg-acidentes')?.value||'0';
+  const configs=[
+    {chave:'nomeEmpresa',valor:empresa||'Explosão Alimentos'},
+    {chave:'diasSemAcidente',valor:acidentes}
+  ];
+  // Atualiza DB local
+  if(!DB.tv_config)DB.tv_config=[];
+  configs.forEach(c=>{
+    const idx=DB.tv_config.findIndex(x=>x.chave===c.chave);
+    if(idx>-1)DB.tv_config[idx].valor=c.valor; else DB.tv_config.push(c);
+  });
+  salvarDB();
+  sincronizarScript('salvarTVConfig',{configs:configs});
+  notify('Configurações da TV salvas!');
+}
+
+// ── Preview geral ───────────────────────────────────────────
+function atualizarPreviewGeral(){
+  const prevEl=document.getElementById('tv-preview-content');
+  if(!prevEl)return;
+  const ativo=(DB.tv_slides||[]).filter(s=>String(s.ativo)==='true').sort((a,b)=>(parseInt(a.ordem)||0)-(parseInt(b.ordem)||0));
+  if(ativo.length===0){
+    prevEl.innerHTML='<span style="opacity:.4">Nenhum slide ativo</span>';
+    return;
+  }
+  const s=ativo[0];
+  const previewEl=document.getElementById('tv-preview');
+  if(previewEl)previewEl.innerHTML=buildSlidePreviewHTML(s.tipo||'info',s.titulo||'',s.texto||'',s.cor||'#FFF','100%','100%',s.url||'');
+}
 </script>
 
 <!-- ═══ BOTTOM NAV (mobile) ══════════════════════════════ -->
