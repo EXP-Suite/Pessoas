@@ -3020,7 +3020,7 @@ tbody tr:hover td{background:var(--bg)}
 
 <div class="toast" id="toast"></div>
 <div id="wms-tooltip"></div>
-<div id="app-version">Versão 4.3.2</div>
+<div id="app-version">Versão 4.3.3</div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
@@ -8827,6 +8827,10 @@ function previewItau(){
     if(!empresa){notify('Selecione a empresa','error');return;}
     var todos=DB.colaboradores||[];
     var ativos=[];
+    // Mês de referência para excluir admitidos no mesmo mês
+    var _partesMes=mesAno.split('-');
+    var _anoRef=_partesMes[0], _mesRef=_partesMes[1]; // ex: '2026', '11'
+    var _prefixoMes=_anoRef+'-'+_mesRef; // ex: '2026-11'
     for(var i=0;i<todos.length;i++){
       var c=todos[i];
       var status=String(c.status||'').trim().toLowerCase().replace(/\s+/g,' ');
@@ -8837,6 +8841,9 @@ function previewItau(){
       if(sal<=0)continue;
       if(!cpf)continue;
       if(empresa&&emp!==empresa)continue;
+      // Admitidos no mesmo mês de referência só recebem no dia 30, não no dia 15
+      var admStr=normalizarData(c.admissao)||String(c.admissao||'').trim().slice(0,10);
+      if(admStr&&admStr.slice(0,7)===_prefixoMes)continue;
       ativos.push(c);
     }
     if(!ativos.length){
@@ -12214,7 +12221,7 @@ async function gerarArquivosIVMS(){
 
 // Versão
 // v3.7.0 — Leitor Facial (iVMS-4200) + Matrícula sequencial
-// v4.3.2 — Permissão TV nos usuários; bordas TV-friendly; remove botão Abrir TV
+// v4.3.3 — Exclui admitidos no mês corrente do pagamento dia 15
 
 // ══════════════════════════════════════════
 // TV CORPORATIVA — ADMIN
