@@ -2061,8 +2061,13 @@ tbody tr:hover td{background:var(--bg)}
           <input id="tv-cfg-empresa" type="text" placeholder="Explosão Alimentos" class="form-control">
         </div>
         <div class="form-group">
-          <label>Dias sem acidentes de trabalho</label>
-          <input id="tv-cfg-acidentes" type="number" min="0" placeholder="0" class="form-control">
+          <label>Data do último acidente de trabalho</label>
+          <input id="tv-cfg-data-acidente" type="date" class="form-control">
+          <small style="color:var(--text2);font-size:11px;margin-top:4px;display:block">A TV calculará automaticamente os dias desde esta data</small>
+        </div>
+        <div class="form-group">
+          <label style="color:var(--text2)">Dias sem acidentes (calculado automaticamente)</label>
+          <input id="tv-cfg-acidentes-display" type="number" min="0" placeholder="0" class="form-control" disabled style="opacity:.6;cursor:not-allowed">
         </div>
         <div class="form-group" style="grid-column:1/-1">
           <button class="btn btn-primary" onclick="salvarConfigTV()">💾 Salvar configurações</button>
@@ -12504,17 +12509,48 @@ function carregarConfigTV(){
   (DB.tv_config||[]).forEach(c=>{if(c.chave)cfg[c.chave]=c.valor;});
   if(document.getElementById('tv-cfg-empresa'))
     document.getElementById('tv-cfg-empresa').value=cfg.nomeEmpresa||'';
-  if(document.getElementById('tv-cfg-acidentes'))
-    document.getElementById('tv-cfg-acidentes').value=cfg.diasSemAcidente||'0';
+  // Campo de data do último acidente
+  const dtAcEl=document.getElementById('tv-cfg-data-acidente');
+  if(dtAcEl) dtAcEl.value=cfg.dataUltimoAcidente||'';
+  // Calcula e exibe dias automaticamente
+  const dispEl=document.getElementById('tv-cfg-acidentes-display');
+  if(dispEl){
+    if(cfg.dataUltimoAcidente){
+      const p=cfg.dataUltimoAcidente.split('-');
+      const dtAc=new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]));
+      const hoje=new Date(); hoje.setHours(0,0,0,0);
+      const dias=Math.max(0,Math.floor((hoje-dtAc)/(1000*60*60*24)));
+      dispEl.value=dias;
+    } else {
+      dispEl.value=cfg.diasSemAcidente||'0';
+    }
+  }
+  // Atualiza display ao mudar a data
+  if(dtAcEl) dtAcEl.addEventListener('change',function(){
+    if(dispEl && this.value){
+      const p=this.value.split('-');
+      const dtAc=new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]));
+      const hoje=new Date(); hoje.setHours(0,0,0,0);
+      dispEl.value=Math.max(0,Math.floor((hoje-dtAc)/(1000*60*60*24)));
+    }
+  });
 }
 
 function salvarConfigTV(){
   const empresa=(document.getElementById('tv-cfg-empresa')?.value||'').trim();
-  const acidentes=document.getElementById('tv-cfg-acidentes')?.value||'0';
+  const dataAcidente=(document.getElementById('tv-cfg-data-acidente')?.value||'').trim();
   const configs=[
     {chave:'nomeEmpresa',valor:empresa||'Explosão Alimentos'},
-    {chave:'diasSemAcidente',valor:acidentes}
+    {chave:'dataUltimoAcidente',valor:dataAcidente}
   ];
+  // Mantém diasSemAcidente para compatibilidade com versões antigas
+  if(dataAcidente){
+    const p=dataAcidente.split('-');
+    const dtAc=new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]));
+    const hoje=new Date(); hoje.setHours(0,0,0,0);
+    const dias=Math.max(0,Math.floor((hoje-dtAc)/(1000*60*60*24)));
+    configs.push({chave:'diasSemAcidente',valor:String(dias)});
+  }
   // Atualiza DB local
   if(!DB.tv_config)DB.tv_config=[];
   configs.forEach(c=>{
@@ -12523,6 +12559,14 @@ function salvarConfigTV(){
   });
   salvarDB();
   sincronizarScript('salvarTVConfig',{configs:configs});
+  // Atualiza display imediatamente
+  const dispEl=document.getElementById('tv-cfg-acidentes-display');
+  if(dispEl && dataAcidente){
+    const p=dataAcidente.split('-');
+    const dtAc=new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]));
+    const hoje=new Date(); hoje.setHours(0,0,0,0);
+    dispEl.value=Math.max(0,Math.floor((hoje-dtAc)/(1000*60*60*24)));
+  }
   notify('Configurações da TV salvas!');
 }
 
