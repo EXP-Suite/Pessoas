@@ -1984,6 +1984,9 @@ tbody tr:hover td{background:var(--bg)}
     </div>
   </div>
 
+  <!-- Banner migração inicial iVMS -->
+  <div id="facial-migracao-banner" style="display:none"></div>
+
   <!-- KPIs -->
   <div class="summary-grid" style="margin-bottom:12px">
     <div class="stat-card ok"><div class="stat-label">Ativos</div><div class="stat-value" id="facial-kpi-ativos">—</div></div>
@@ -3059,7 +3062,7 @@ tbody tr:hover td{background:var(--bg)}
 
 <div class="toast" id="toast"></div>
 <div id="wms-tooltip"></div>
-<div id="app-version">Versão 4.7.0</div>
+<div id="app-version">Versão 4.7.3</div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
@@ -4955,6 +4958,8 @@ async function sincronizar(){
       }
       if(d.result.atestados&&Array.isArray(d.result.atestados))DB.atestados=d.result.atestados;
       if(d.result.avaliacoes&&Array.isArray(d.result.avaliacoes))DB.avaliacoes=d.result.avaliacoes;
+      if(d.result.ivms_status&&Array.isArray(d.result.ivms_status))DB.ivms_status=d.result.ivms_status;
+      if(d.result.ivms_desligados&&Array.isArray(d.result.ivms_desligados))DB.ivms_desligados=d.result.ivms_desligados;
       if(d.result.tv_slides&&Array.isArray(d.result.tv_slides)){DB.tv_slides=d.result.tv_slides;localStorage.setItem('rh_tv_slides',JSON.stringify(DB.tv_slides));}
       if(d.result.tv_recados&&Array.isArray(d.result.tv_recados)){DB.tv_recados=d.result.tv_recados;localStorage.setItem('rh_tv_recados',JSON.stringify(DB.tv_recados));}
       if(d.result.tv_config&&Array.isArray(d.result.tv_config)){DB.tv_config=d.result.tv_config;localStorage.setItem('rh_tv_config',JSON.stringify(DB.tv_config));}
@@ -11977,22 +11982,113 @@ function gerarProximaMatricula(){
   return String(max+1);
 }
 
-// ── Helpers de status iVMS (localStorage) ───────────────────────────────
-function ivmsGetStatus(colabId){ try{ return JSON.parse(localStorage.getItem('ivms_status')||'{}'); }catch(e){ return {}; } }
-function ivmsSetCadastrado(ids){
-  try{
-    const st=ivmsGetStatus();
-    ids.forEach(id=>{ st[String(id)]={cadastrado:true,data:new Date().toISOString()}; });
-    localStorage.setItem('ivms_status',JSON.stringify(st));
-  }catch(e){}
+// ── Cache local iVMS (sincroniza com o script) ───────────────────────────
+// DB.ivms_status     = [{colaboradorId, cadastrado, dataCadastro}, ...]
+// DB.ivms_desligados = [{desligamentoId, removido, dataRemocao}, ...]
+
+function ivmsGetStatus(){
+  // Retorna mapa {colaboradorId: {cadastrado, dataCadastro}}
+  const st={};
+  (DB.ivms_status||[]).forEach(r=>{ st[String(r.colaboradorId)]={cadastrado:!!r.cadastrado,data:r.dataCadastro}; });
+  return st;
 }
-function ivmsGetDesligStatus(desligId){ try{ return JSON.parse(localStorage.getItem('ivms_desl_status')||'{}'); }catch(e){ return {}; } }
-function ivmsMarcarRemovidoDesl(desligId){
+
+function ivmsGetDesligStatus(){
+  // Retorna mapa {desligamentoId: {removido, dataRemocao}}
+  const st={};
+  (DB.ivms_desligados||[]).forEach(r=>{ st[String(r.desligamentoId)]={removido:!!r.removido,data:r.dataRemocao}; });
+  return st;
+}
+
+async function ivmsSetCadastrado(ids){
+  if(!SCRIPT_URL){notify('URL do script não configurada','error');return;}
+  const hoje=new Date().toISOString().slice(0,10);
+  // Envia cada um em paralelo
+  await Promise.all(ids.map(id=>
+    fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({action:'ivmsMarcarCadastrado',data:{colaboradorId:String(id),cadastrado:true,dataCadastro:hoje}})
+    }).then(r=>r.json())
+  ));
+  // Atualiza cache local
+  ids.forEach(id=>{
+    const idx=(DB.ivms_status||[]).findIndex(r=>String(r.colaboradorId)===String(id));
+    if(idx>=0) DB.ivms_status[idx]={colaboradorId:String(id),cadastrado:true,dataCadastro:hoje};
+    else{ if(!DB.ivms_status) DB.ivms_status=[]; DB.ivms_status.push({colaboradorId:String(id),cadastrado:true,dataCadastro:hoje}); }
+  });
+}
+
+async function ivmsMarcarRemovidoDesl(desligId){
+  if(!SCRIPT_URL){notify('URL do script não configurada','error');throw new Error('Sem URL');}
+  const hoje=new Date().toISOString().slice(0,10);
+  const payload={action:'ivmsMarcarRemovido',data:{desligamentoId:String(desligId),removido:true,dataRemocao:hoje}};
+  const resp=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
+  const json=await resp.json();
+  if(!json.ok) throw new Error(json.error||'Erro no script');
+  // Atualiza cache local
+  if(!DB.ivms_desligados) DB.ivms_desligados=[];
+  const idx=DB.ivms_desligados.findIndex(r=>String(r.desligamentoId)===String(desligId));
+  if(idx>=0) DB.ivms_desligados[idx]={desligamentoId:String(desligId),removido:true,dataRemocao:hoje};
+  else DB.ivms_desligados.push({desligamentoId:String(desligId),removido:true,dataRemocao:hoje});
+}
+
+async function ivmsDesfazerRemovidoDesl(desligId){
+  if(!SCRIPT_URL){notify('URL do script não configurada','error');throw new Error('Sem URL');}
+  const payload={action:'ivmsDesfazerRemovido',data:{desligamentoId:String(desligId)}};
+  const resp=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
+  const json=await resp.json();
+  if(!json.ok) throw new Error(json.error||'Erro no script');
+  if(DB.ivms_desligados) DB.ivms_desligados=DB.ivms_desligados.filter(r=>String(r.desligamentoId)!==String(desligId));
+}
+
+// --- Migração inicial iVMS ---
+// Se nunca houve registro, oferece inicializar todos como cadastrados/removidos
+function ivmsMigracaoInicial(){
+  if(!SCRIPT_URL) return;
+  const semRegistro=(!DB.ivms_status||DB.ivms_status.length===0);
+  if(!semRegistro) return; // já tem dados, nada a fazer
+
+  const ativos=DB.colaboradores.filter(c=>c.status==='Ativo');
+  const desligados=DB.desligamentos||[];
+  if(!ativos.length) return;
+
+  const banner=document.getElementById('facial-migracao-banner');
+  if(!banner) return;
+  banner.style.display='block';
+  banner.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:12px 16px;background:rgba(234,179,8,.12);border:1px solid rgba(234,179,8,.4);border-radius:8px;margin-bottom:12px">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--text1)">⚙️ Configuração inicial iVMS</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:3px">Nenhum status encontrado. Como os colaboradores já estavam inseridos antes dessa atualização, marque o estado atual:</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="ivmsInicializarTodos()" style="padding:8px 16px;background:#22c55e;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer">
+          ✅ Todos ativos já cadastrados no iVMS
+        </button>
+      </div>
+    </div>`;
+}
+
+async function ivmsInicializarTodos(){
+  const ativos=DB.colaboradores.filter(c=>c.status==='Ativo');
+  const desligados=DB.desligamentos||[];
+  if(!confirm(`Confirmar que todos os ${ativos.length} colaboradores ativos já estão cadastrados no iVMS, e os desligados nunca foram inseridos?`)) return;
+
+  const banner=document.getElementById('facial-migracao-banner');
+  if(banner) banner.innerHTML=`<div style="padding:10px 16px;font-size:13px;color:var(--text2)">⏳ Inicializando ${ativos.length} colaboradores…</div>`;
+
   try{
-    const st=ivmsGetDesligStatus();
-    st[String(desligId)]={removido:true,data:new Date().toISOString()};
-    localStorage.setItem('ivms_desl_status',JSON.stringify(st));
-  }catch(e){}
+    // Marca todos os ativos como cadastrados
+    await ivmsSetCadastrado(ativos.map(c=>String(c.id)));
+    // Marca todos os desligados como removidos (nunca chegaram a ser inseridos)
+    for(const d of desligados){
+      if(d.id) await ivmsMarcarRemovidoDesl(d.id);
+    }
+    notify(`✅ ${ativos.length} colaboradores inicializados!`);
+    if(banner) banner.style.display='none';
+    renderFacial();
+  }catch(err){
+    notify('Erro na inicialização: '+err.message,'error');
+  }
 }
 
 // --- Render da aba ---
@@ -12002,6 +12098,9 @@ function renderFacial(){
   const ivmsSt=ivmsGetStatus();
   const cadastrados=ativos.filter(c=>ivmsSt[String(c.id)]?.cadastrado);
   const pendentes=ativos.filter(c=>!ivmsSt[String(c.id)]?.cadastrado);
+
+  // Verifica se precisa de migração inicial
+  ivmsMigracaoInicial();
 
   document.getElementById('facial-kpi-ativos').textContent=ativos.length;
   document.getElementById('facial-kpi-cadastrados').textContent=cadastrados.length;
@@ -12125,20 +12224,28 @@ function renderFacialDesligados(){
   }).join('');
 }
 
-function facialConfirmarRemocao(desligId){
+async function facialConfirmarRemocao(desligId){
   if(!confirm('Confirmar que este colaborador foi removido do leitor facial (iVMS)?')) return;
-  ivmsMarcarRemovidoDesl(desligId);
-  notify('Remoção registrada!');
-  renderFacialDesligados();
+  notify('Salvando...');
+  try{
+    await ivmsMarcarRemovidoDesl(desligId);
+    notify('✅ Remoção registrada no servidor!');
+    renderFacialDesligados();
+  }catch(err){
+    notify('Erro ao salvar: '+err.message,'error');
+    console.error('ivmsMarcarRemovido erro:',err);
+  }
 }
 
-function facialDesfazerRemocao(desligId){
+async function facialDesfazerRemocao(desligId){
+  notify('Desfazendo...');
   try{
-    const st=ivmsGetDesligStatus();
-    delete st[String(desligId)];
-    localStorage.setItem('ivms_desl_status',JSON.stringify(st));
-  }catch(e){}
-  renderFacialDesligados();
+    await ivmsDesfazerRemovidoDesl(desligId);
+    notify('Desfeito.');
+    renderFacialDesligados();
+  }catch(err){
+    notify('Erro ao desfazer: '+err.message,'error');
+  }
 }
 
 function facialAtualizarKpiSel(){
@@ -12393,14 +12500,13 @@ async function gerarArquivosIVMS(){
   notify(`${totalLotes} lote(s) gerado(s) — confirme o cadastro no iVMS após importar!`);
 }
 
-function confirmarCadastroIVMS(ids){
+async function confirmarCadastroIVMS(ids){
   if(!confirm(`Confirmar que ${ids.length} colaborador(es) foram cadastrados com sucesso no iVMS-4200?`)) return;
-  ivmsSetCadastrado(ids);
-  notify(`✅ ${ids.length} colaborador(es) marcados como cadastrados no iVMS!`);
-  // Atualiza KPIs e re-renderiza
-  renderFacial();
-  // Fecha/atualiza o bloco de resultado
   const divRes=document.getElementById('facial-resultado');
+  if(divRes) divRes.innerHTML=`<div class="card" style="font-size:13px;color:var(--text2)">⏳ Salvando no servidor…</div>`;
+  await ivmsSetCadastrado(ids);
+  notify(`✅ ${ids.length} colaborador(es) marcados como cadastrados no iVMS!`);
+  renderFacial();
   if(divRes) divRes.innerHTML=`<div class="card" style="border-left:4px solid #22c55e;font-size:13px">✅ <strong>${ids.length} colaborador(es)</strong> marcados como cadastrados no iVMS-4200.</div>`;
 }
 
