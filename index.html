@@ -3043,7 +3043,7 @@ tbody tr:hover td{background:var(--bg)}
 
 <div class="toast" id="toast"></div>
 <div id="wms-tooltip"></div>
-<div id="app-version">Versão 4.6.0</div>
+<div id="app-version">Versão 4.6.4</div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
@@ -12507,7 +12507,8 @@ function salvarSlide(){
     ativo:document.getElementById('tv-slide-ativo').value,
     ordem:parseInt(document.getElementById('tv-slide-ordem')?.value||'1')||1,
     dataInicio:limparData(rawIni),
-    dataFim:limparData(rawFim)
+    dataFim:limparData(rawFim),
+    criadoEm:_tvSlideEditId!=null?(((DB.tv_slides||[]).find(x=>String(x.id)===String(_tvSlideEditId))||{}).criadoEm||''):new Date().toISOString()
   };
   if(!DB.tv_slides)DB.tv_slides=[];
   if(_tvSlideEditId!=null){
