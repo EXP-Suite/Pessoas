@@ -2154,7 +2154,8 @@ tbody tr:hover td{background:var(--bg)}
         </div>
         <div class="form-group">
           <label>Cor personalizada <span style="color:var(--text3);font-weight:400">(opcional)</span></label>
-          <input id="tv-slide-cor" type="color" class="form-control" style="height:38px;padding:2px 4px" value="#FFFFFF" oninput="atualizarPreviewSlide()">
+          <input id="tv-slide-cor" type="color" class="form-control" style="height:38px;padding:2px 4px" value="#1A3FBF" oninput="validarCorSlide(this);atualizarPreviewSlide()">
+          <small id="tv-slide-cor-aviso" style="color:#e11d48;font-size:11px;margin-top:3px;display:none">⚠️ Cor muito clara — o título pode ficar invisível no slide.</small>
         </div>
         <div class="form-group">
           <label>Status</label>
@@ -3042,7 +3043,7 @@ tbody tr:hover td{background:var(--bg)}
 
 <div class="toast" id="toast"></div>
 <div id="wms-tooltip"></div>
-<div id="app-version">Versão 4.5.0</div>
+<div id="app-version">Versão 4.6.0</div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
@@ -8399,6 +8400,34 @@ window.addEventListener('DOMContentLoaded',()=>{
         }
       })
       .catch(function(){setSyncStatus('offline','Sem conexão');});
+
+    // Bug 1 fix: auto-sync silencioso de tv_slides a cada 60s
+    // garante que slides criados por outro usuário apareçam sem sync manual
+    setInterval(function(){
+      if(!SCRIPT_URL)return;
+      fetch(SCRIPT_URL+'?action=listarTodos')
+        .then(function(r){return r.json();})
+        .then(function(d){
+          if(d.ok&&d.result){
+            var atualizou=false;
+            if(d.result.tv_slides&&Array.isArray(d.result.tv_slides)){
+              DB.tv_slides=d.result.tv_slides;
+              localStorage.setItem('rh_tv_slides',JSON.stringify(DB.tv_slides));
+              atualizou=true;
+            }
+            if(d.result.tv_recados&&Array.isArray(d.result.tv_recados)){
+              DB.tv_recados=d.result.tv_recados;
+              localStorage.setItem('rh_tv_recados',JSON.stringify(DB.tv_recados));
+              atualizou=true;
+            }
+            if(atualizou){
+              var pAtiva=document.querySelector('.page.active');
+              if(pAtiva&&pAtiva.id==='page-tv')renderTVSlides();
+            }
+          }
+        })
+        .catch(function(){/* silencioso */});
+    }, 60000);
   }
 });
 
@@ -12440,6 +12469,15 @@ function buildSlidePreviewHTML(tipo,titulo,texto,cor,w,h,url){
   </div>`;
 }
 
+function validarCorSlide(inputEl){
+  const hex=inputEl.value||'#000000';
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  // luminância relativa — cores acima de 180 são consideradas "claras demais"
+  const lum=0.299*r+0.587*g+0.114*b;
+  const aviso=document.getElementById('tv-slide-cor-aviso');
+  if(aviso) aviso.style.display=lum>180?'block':'none';
+}
+
 function salvarSlide(){
   const tipo=document.getElementById('tv-slide-tipo').value;
   const titulo=(document.getElementById('tv-slide-titulo')?.value||'').trim();
@@ -12449,19 +12487,28 @@ function salvarSlide(){
   } else {
     if(!titulo){notify('Informe o título do slide.','warn');return;}
   }
-  const agora=new Date().toISOString();
+  // Cor — se muito clara, bloqueia
+  const corVal=document.getElementById('tv-slide-cor')?.value||'#1A3FBF';
+  const r=parseInt(corVal.slice(1,3),16),g=parseInt(corVal.slice(3,5),16),b=parseInt(corVal.slice(5,7),16);
+  if(0.299*r+0.587*g+0.114*b>200){
+    notify('Escolha uma cor mais escura para o título ficar visível.','warn');return;
+  }
+  // Datas — garante formato YYYY-MM-DD (sem timestamp)
+  const rawIni=(document.getElementById('tv-slide-data-inicio')?.value||'').trim();
+  const rawFim=(document.getElementById('tv-slide-data-fim')?.value||'').trim();
+  const limparData=function(v){if(!v)return'';var s=String(v).trim();if(s.indexOf('T')>0)s=s.slice(0,10);return s;};
   const obj={
     id:_tvSlideEditId!=null?String(_tvSlideEditId):String(gerarId()),
     tipo:tipo,
     titulo:tipo==='imagem'?(titulo||'Imagem'):titulo,
     texto:(document.getElementById('tv-slide-texto')?.value||'').trim(),
     url:url,
-    cor:document.getElementById('tv-slide-cor')?.value||'',
+    cor:corVal,
     ativo:document.getElementById('tv-slide-ativo').value,
     ordem:parseInt(document.getElementById('tv-slide-ordem')?.value||'1')||1,
-    dataInicio:document.getElementById('tv-slide-data-inicio')?.value||'',
-    dataFim:document.getElementById('tv-slide-data-fim')?.value||'',
-    criadoEm:agora
+    dataInicio:limparData(rawIni),
+    dataFim:limparData(rawFim)
+    // criadoEm removido — causava aparição de timestamp ISO no campo texto na TV
   };
   if(!DB.tv_slides)DB.tv_slides=[];
   if(_tvSlideEditId!=null){
