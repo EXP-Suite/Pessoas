@@ -925,7 +925,7 @@ tbody tr:hover td{background:var(--bg)}
     <div class="card" style="padding:0;overflow:hidden">
       <div style="padding:14px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
         <div style="font-size:13px;font-weight:700;color:var(--text)">🎁 Aniversariantes do Mês Seguinte</div>
-        <span class="alert-cta" onclick="showPage('aniversarios')" style="font-size:11px">Ver todos →</span>
+        <span class="alert-cta" onclick="_anivMesProx=true;showPage('aniversarios')" style="font-size:11px">Ver todos →</span>
       </div>
       <div id="dash-bday-prox-list" style="padding:10px 16px"></div>
     </div>
@@ -1345,6 +1345,11 @@ tbody tr:hover td{background:var(--bg)}
       <div class="card-title">🔖 Contratos de Experiência</div>
       <div id="lista-experiencia"><div class="empty">Nenhum vencimento próximo.</div></div>
     </div>
+  </div>
+  <!-- Card mês seguinte — aparece abaixo e recebe scroll quando vem do dashboard -->
+  <div class="card" id="bday-mes-prox" style="margin-top:16px">
+    <div class="card-title" id="bday-mes-prox-titulo">🎁 Aniversariantes do Mês Seguinte</div>
+    <div id="bday-mes-prox-list" style="display:flex;flex-direction:column;gap:8px"><div class="empty">Carregando...</div></div>
   </div>
 </div>
 
@@ -3037,7 +3042,7 @@ tbody tr:hover td{background:var(--bg)}
 
 <div class="toast" id="toast"></div>
 <div id="wms-tooltip"></div>
-<div id="app-version">Versão 4.4.0</div>
+<div id="app-version">Versão 4.5.0</div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
@@ -4550,6 +4555,10 @@ function getBdayMes(colabsParam,mes){
 }
 function renderAniversarios(){
   const h=hoje(),hObj=new Date(h+'T00:00');
+  // Se veio do dashboard "mês seguinte", rola para essa seção
+  const irParaProx=!!window._anivMesProx;
+  window._anivMesProx=false;
+
   const bdays=getBdayMes();
   document.getElementById('bday-mes').innerHTML=bdays.length?bdays.map(c=>{
     const nd=normalizarData(c.nascimento);
@@ -4560,6 +4569,31 @@ function renderAniversarios(){
       <div><div class="bday-name">Dia ${dia} — ${c.nome} ${tag}</div><div class="bday-info">${c.cargo||'—'} · ${c.setor||'—'}</div></div>
     </div>`;
   }).join(''):'<div class="empty">Nenhum aniversariante este mês.</div>';
+
+  // Preenche também o card de mês seguinte
+  const mesAtual=new Date().getMonth()+1;
+  const mesProx=mesAtual===12?1:mesAtual+1;
+  const anoProx=mesAtual===12?new Date().getFullYear()+1:new Date().getFullYear();
+  const nomeMesProx=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][mesProx-1];
+  const bdaysProx=getBdayMes(null,mesProx);
+  const cardProx=document.getElementById('bday-mes-prox');
+  if(cardProx){
+    document.getElementById('bday-mes-prox-titulo').textContent='🎁 Aniversariantes de '+nomeMesProx;
+    cardProx.style.display='';
+    document.getElementById('bday-mes-prox-list').innerHTML=bdaysProx.length?bdaysProx.map(c=>{
+      const nd=normalizarData(c.nascimento);
+      const dt=new Date(nd+'T00:00'),dia=dt.getDate();
+      return`<div class="bday-card">
+        <div class="bday-avatar" style="background:#0369a1">${c.nome?.[0]||'?'}</div>
+        <div><div class="bday-name">Dia ${dia} — ${c.nome}</div><div class="bday-info">${c.cargo||'—'} · ${c.setor||'—'}</div></div>
+      </div>`;
+    }).join(''):'<div class="empty">Nenhum aniversariante em '+nomeMesProx+'.</div>';
+  }
+
+  // Se veio do dashboard "mês seguinte", rola para o card
+  if(irParaProx&&cardProx){
+    setTimeout(()=>cardProx.scrollIntoView({behavior:'smooth',block:'start'}),150);
+  }
   // ASO
   const asoItems=DB.colaboradores.filter(c=>c.status!=='Desligado'&&c.aso).map(c=>({...c,d:diasEntre(h,c.aso)})).filter(c=>c.d<=60).sort((a,b)=>a.d-b.d);
   document.getElementById('lista-aso').innerHTML=asoItems.length?asoItems.map(c=>`
