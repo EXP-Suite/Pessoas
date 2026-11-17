@@ -3062,7 +3062,7 @@ tbody tr:hover td{background:var(--bg)}
 
 <div class="toast" id="toast"></div>
 <div id="wms-tooltip"></div>
-<div id="app-version">Versão 4.7.3</div>
+<div id="app-version">Versão 4.7.4</div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
@@ -12001,19 +12001,19 @@ function ivmsGetDesligStatus(){
 }
 
 async function ivmsSetCadastrado(ids){
-  if(!SCRIPT_URL){notify('URL do script não configurada','error');return;}
+  if(!SCRIPT_URL){notify('URL do script não configurada','error');throw new Error('Sem URL');}
   const hoje=new Date().toISOString().slice(0,10);
-  // Envia cada um em paralelo
-  await Promise.all(ids.map(id=>
-    fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify({action:'ivmsMarcarCadastrado',data:{colaboradorId:String(id),cadastrado:true,dataCadastro:hoje}})
-    }).then(r=>r.json())
-  ));
+  // Uma única chamada com todos os IDs em lote
+  const payload={action:'ivmsMarcarCadastradoLote',data:{ids:ids.map(String),dataCadastro:hoje}};
+  const resp=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
+  const json=await resp.json();
+  if(!json.ok) throw new Error(json.error||'Erro no script');
   // Atualiza cache local
+  if(!DB.ivms_status) DB.ivms_status=[];
   ids.forEach(id=>{
-    const idx=(DB.ivms_status||[]).findIndex(r=>String(r.colaboradorId)===String(id));
+    const idx=DB.ivms_status.findIndex(r=>String(r.colaboradorId)===String(id));
     if(idx>=0) DB.ivms_status[idx]={colaboradorId:String(id),cadastrado:true,dataCadastro:hoje};
-    else{ if(!DB.ivms_status) DB.ivms_status=[]; DB.ivms_status.push({colaboradorId:String(id),cadastrado:true,dataCadastro:hoje}); }
+    else DB.ivms_status.push({colaboradorId:String(id),cadastrado:true,dataCadastro:hoje});
   });
 }
 
@@ -12070,24 +12070,36 @@ function ivmsMigracaoInicial(){
 
 async function ivmsInicializarTodos(){
   const ativos=DB.colaboradores.filter(c=>c.status==='Ativo');
-  const desligados=DB.desligamentos||[];
+  const desligados=(DB.desligamentos||[]).filter(d=>d.id);
   if(!confirm(`Confirmar que todos os ${ativos.length} colaboradores ativos já estão cadastrados no iVMS, e os desligados nunca foram inseridos?`)) return;
 
   const banner=document.getElementById('facial-migracao-banner');
-  if(banner) banner.innerHTML=`<div style="padding:10px 16px;font-size:13px;color:var(--text2)">⏳ Inicializando ${ativos.length} colaboradores…</div>`;
+  if(banner) banner.innerHTML=`<div style="padding:10px 16px;font-size:13px;color:var(--text2)">⏳ Inicializando…</div>`;
 
   try{
-    // Marca todos os ativos como cadastrados
+    // Uma chamada em lote para ativos
     await ivmsSetCadastrado(ativos.map(c=>String(c.id)));
-    // Marca todos os desligados como removidos (nunca chegaram a ser inseridos)
-    for(const d of desligados){
-      if(d.id) await ivmsMarcarRemovidoDesl(d.id);
+    // Uma chamada em lote para desligados
+    if(desligados.length){
+      const hoje=new Date().toISOString().slice(0,10);
+      const payload={action:'ivmsMarcarRemovidoLote',data:{ids:desligados.map(d=>String(d.id)),dataRemocao:hoje}};
+      const resp=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
+      const json=await resp.json();
+      if(!json.ok) throw new Error(json.error||'Erro ao marcar desligados');
+      // Atualiza cache local
+      if(!DB.ivms_desligados) DB.ivms_desligados=[];
+      desligados.forEach(d=>{
+        const idx=DB.ivms_desligados.findIndex(r=>String(r.desligamentoId)===String(d.id));
+        if(idx>=0) DB.ivms_desligados[idx]={desligamentoId:String(d.id),removido:true,dataRemocao:hoje};
+        else DB.ivms_desligados.push({desligamentoId:String(d.id),removido:true,dataRemocao:hoje});
+      });
     }
-    notify(`✅ ${ativos.length} colaboradores inicializados!`);
+    notify(`✅ ${ativos.length} ativos e ${desligados.length} desligados inicializados!`);
     if(banner) banner.style.display='none';
     renderFacial();
   }catch(err){
     notify('Erro na inicialização: '+err.message,'error');
+    if(banner) banner.innerHTML=`<div style="padding:10px 16px;font-size:13px;color:var(--danger,#ef4444)">❌ ${err.message} — tente novamente.</div>`;
   }
 }
 
